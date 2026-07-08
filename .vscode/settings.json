@@ -1,0 +1,37 @@
+{
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#a9def9",
+    "activityBar.foreground": "#000000",
+    "titleBar.activeBackground": "#e4c1f9",
+    "titleBar.activeForeground": "#000000",
+    "statusBar.background": "#d0f4de",
+    "statusBar.foreground": "#000000",
+    "titleBar.inactiveBackground": "#053147",
+    "titleBar.inactiveForeground": "#F4FBFE"
+  },
+  "clangd.fallbackFlags": [
+    "-xc++",
+    "-std=c++17",
+    "-D__MQL__",
+    "-D__MQL5__",
+    "-include/Users/tachagon/.vscode/extensions/ngsoftware.mql-clangd-1.1.62/files/mql_clangd_compat.h",
+    "-fms-extensions",
+    "-fms-compatibility",
+    "-ferror-limit=0",
+    "-Wno-invalid-token-paste",
+    "-Wno-unused-value",
+    "-Wno-unknown-pragmas",
+    "-Wno-writable-strings",
+    "-Xclang",
+    "-Wno-invalid-pp-directive",
+    "-Wno-unknown-directives",
+    "-Wno-language-extension-token",
+    "-I/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework",
+    "-I/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework/Include"
+  ],
+  "files.associations": {
+    "*.mqh": "cpp",
+    "*.mq4": "cpp",
+    "*.mq5": "cpp"
+  }
+}
