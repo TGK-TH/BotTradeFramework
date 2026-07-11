@@ -17,9 +17,7 @@ compile_commands.json
 # Experts
 Experts/*
 !Experts/TGK/
-!Experts/TGK/**
 
 # ignore all Include folders except Include/BotTrade
 Include/*
 !Include/BotTrade/
-!Include/BotTrade/**
