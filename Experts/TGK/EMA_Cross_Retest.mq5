@@ -19,10 +19,12 @@
 
 #include <BotTrade/Trade/TrailingStop.mqh>
 
-#include <BotTrade/Types/Candle.mqh>
+#include <BotTrade/Types/BotContext.mqh>
 #include <BotTrade/Types/TradeState.mqh>
 
 CTrade trade;
+
+BotContext ctx;
 
 //=====================================================
 // INPUTS
@@ -47,12 +49,6 @@ input double NonTrendTrailStartRR = 1.0;
 input double NonTrendTrailStepRR = 0.5;
 
 //=====================================================
-// STATES
-//=====================================================
-
-TradeState State = STATE_WAIT_CROSS;
-
-//=====================================================
 // DIRECTION
 //=====================================================
 
@@ -72,17 +68,8 @@ ENUM_DIRECTION Direction = DIR_NONE;
 datetime LastM15Bar = 0;
 
 //=====================================================
-// A CANDLE VARIABLES
+// TRADE VARIABLES
 //=====================================================
-
-Candle A;
-
-/*
-double AHigh = 0;
-double ALow = 0;
-
-datetime ABarTime = 0;
-*/
 
 double TradeSL = 0;
 double TradeTP = 0;
@@ -217,8 +204,8 @@ bool BuyB()
       iLow(_Symbol, PERIOD_M15, 1);
 
    return
-      closeM15 > A.High &&
-      lowM15 > A.Low;
+      closeM15 > ctx.A.High &&
+      lowM15 > ctx.A.Low;
 }
 
 //-----------------------------------------------------
@@ -232,8 +219,8 @@ bool SellB()
       iHigh(_Symbol, PERIOD_M15, 1);
 
    return
-      closeM15 < A.Low &&
-      highM15 < A.High;
+      closeM15 < ctx.A.Low &&
+      highM15 < ctx.A.High;
 }
 
 //=====================================================
@@ -268,7 +255,7 @@ void ProcessStateMachine()
 
    if(H1CrossUp())
    {
-      State = STATE_WAIT_RETEST;
+      ctx.State = STATE_WAIT_RETEST;
       Direction = DIR_BUY;
 
       Print("H1 CROSS UP");
@@ -276,7 +263,7 @@ void ProcessStateMachine()
 
    if(H1CrossDown())
    {
-      State = STATE_WAIT_RETEST;
+      ctx.State = STATE_WAIT_RETEST;
       Direction = DIR_SELL;
 
       Print("H1 CROSS DOWN");
@@ -286,7 +273,7 @@ void ProcessStateMachine()
    // WAIT RETEST
    //--------------------------------------------------
 
-   if(State == STATE_WAIT_RETEST)
+   if(ctx.State == STATE_WAIT_RETEST)
    {
       datetime barTime = iTime(_Symbol, PERIOD_M15, 1);
 
@@ -294,7 +281,7 @@ void ProcessStateMachine()
       {
          if(BuyRetest())
          {
-            State = STATE_WAIT_A;
+            ctx.State = STATE_WAIT_A;
 
             Print(
                "BUY RETEST DONE ON BAR ",
@@ -307,7 +294,7 @@ void ProcessStateMachine()
       {
          if(SellRetest())
          {
-            State = STATE_WAIT_A;
+            ctx.State = STATE_WAIT_A;
 
             Print(
                "SELL RETEST DONE ON BAR ",
@@ -321,7 +308,7 @@ void ProcessStateMachine()
    // WAIT A
    //--------------------------------------------------
 
-   if(State == STATE_WAIT_A)
+   if(ctx.State == STATE_WAIT_A)
    {
       datetime barTime =
          iTime(_Symbol, PERIOD_M15, 1);
@@ -341,7 +328,7 @@ void ProcessStateMachine()
    // WAIT B
    //--------------------------------------------------
 
-   if(State == STATE_WAIT_B) {
+   if(ctx.State == STATE_WAIT_B) {
       bool adxBuy =
          GetADX(ADXHandle, 1) >= ADXThreshold &&
          GetDIPlus(ADXHandle, 1) > GetDIMinus(ADXHandle, 1);
@@ -353,8 +340,8 @@ void ProcessStateMachine()
       datetime currentBar = iTime(_Symbol, PERIOD_M15, 1);
 
       // B Must be next to A only
-      if(currentBar > A.Time + PeriodSeconds(PERIOD_M15)) {
-         State = STATE_WAIT_A;
+      if(currentBar > ctx.A.Time + PeriodSeconds(PERIOD_M15)) {
+         ctx.State = STATE_WAIT_A;
 
          Print("B NOT FOUND -> BACK TO WAIT A");
       }
@@ -396,20 +383,20 @@ void ProcessStateMachine()
                            " TP=",
                            TradeTP);
 
-                        State = STATE_IN_TRADE;
+                        ctx.State = STATE_IN_TRADE;
                      }
                   } else {
-                     State = STATE_WAIT_CROSS;
+                     ctx.State = STATE_WAIT_CROSS;
                   } // End of adxBuy
                } // End of !HasPosition
             } // End of BuyB()
             else {
-               if (currentBar == A.Time + PeriodSeconds(PERIOD_M15)) {
+               if (currentBar == ctx.A.Time + PeriodSeconds(PERIOD_M15)) {
                   if (BuyA()) {
                      ProcessBuyWaitA();
                   }
                   else{
-                     State = STATE_WAIT_A;
+                     ctx.State = STATE_WAIT_A;
                      Print("Not BuyB() -> BACK TO WAIT A");
                   }
                }
@@ -453,20 +440,20 @@ void ProcessStateMachine()
                            " TP=",
                            TradeTP);
 
-                        State = STATE_IN_TRADE;
+                        ctx.State = STATE_IN_TRADE;
                      }
                   } else {
-                     State = STATE_WAIT_CROSS;
+                     ctx.State = STATE_WAIT_CROSS;
                   } // End of adxSell
                } // End of !HasPosition()
             } // End of SellB()
             else {
-               if (currentBar == A.Time + PeriodSeconds(PERIOD_M15)) {
+               if (currentBar == ctx.A.Time + PeriodSeconds(PERIOD_M15)) {
                   if (SellA()) {
                      ProcessSellWaitA();
                   }
                   else {
-                     State = STATE_WAIT_A;
+                     ctx.State = STATE_WAIT_A;
                      Print("Not SellB() -> BACK TO WAIT A");
                   }
                }
@@ -481,7 +468,7 @@ void ProcessStateMachine()
 
    Print(
       "STATE = ",
-      State,
+      ctx.State,
       " | DIR = ",
       Direction
    );
@@ -494,6 +481,8 @@ void ProcessStateMachine()
 int OnInit()
 {
    Print("EA STARTED");
+
+   ctx.State = STATE_WAIT_CROSS;
 
    ADXHandle = iADX(
       _Symbol,

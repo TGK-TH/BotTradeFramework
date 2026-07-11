@@ -16,11 +16,11 @@ void ProcessBuyWaitA()
    {
       datetime barTime = iTime(_Symbol, PERIOD_M15, 1);
 
-      A.High = iHigh(_Symbol, PERIOD_M15, 1);
-      A.Low = iLow(_Symbol, PERIOD_M15, 1);
-      A.Time = barTime;
+      ctx.A.High = iHigh(_Symbol, PERIOD_M15, 1);
+      ctx.A.Low = iLow(_Symbol, PERIOD_M15, 1);
+      ctx.A.Time = barTime;
 
-      State = STATE_WAIT_B;
+      ctx.State = STATE_WAIT_B;
 
       Print(
          "FOUND BUY A ON ",
@@ -34,11 +34,11 @@ void ProcessSellWaitA()
    if(SellA())
    {
       datetime barTime = iTime(_Symbol, PERIOD_M15, 1);
-      A.High = iHigh(_Symbol, PERIOD_M15, 1);
-      A.Low = iLow(_Symbol, PERIOD_M15, 1);
-      A.Time = barTime;
+      ctx.A.High = iHigh(_Symbol, PERIOD_M15, 1);
+      ctx.A.Low = iLow(_Symbol, PERIOD_M15, 1);
+      ctx.A.Time = barTime;
 
-      State = STATE_WAIT_B;
+      ctx.State = STATE_WAIT_B;
 
       Print(
          "FOUND SELL A ON ",
