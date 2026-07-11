@@ -315,12 +315,12 @@ void ProcessStateMachine()
 
       if(Direction == DIR_BUY)
       {
-         ProcessBuyWaitA();
+         ProcessBuyWaitA(ctx);
       }
 
       if(Direction == DIR_SELL)
       {
-         ProcessSellWaitA();
+         ProcessSellWaitA(ctx);
       }
    }
 
@@ -393,7 +393,7 @@ void ProcessStateMachine()
             else {
                if (currentBar == ctx.A.Time + PeriodSeconds(PERIOD_M15)) {
                   if (BuyA()) {
-                     ProcessBuyWaitA();
+                     ProcessBuyWaitA(ctx);
                   }
                   else{
                      ctx.State = STATE_WAIT_A;
@@ -450,7 +450,7 @@ void ProcessStateMachine()
             else {
                if (currentBar == ctx.A.Time + PeriodSeconds(PERIOD_M15)) {
                   if (SellA()) {
-                     ProcessSellWaitA();
+                     ProcessSellWaitA(ctx);
                   }
                   else {
                      ctx.State = STATE_WAIT_A;

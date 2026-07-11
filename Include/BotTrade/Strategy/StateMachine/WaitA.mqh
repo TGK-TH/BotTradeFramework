@@ -6,11 +6,13 @@
 #property copyright "Tatchagon Koonkoei"
 #property link      "https://www.mql5.com"
 
+#include <BotTrade/Types/BotContext.mqh>
+
 //=====================================================
 // PROCESS STATE WAIT_A
 //=====================================================
 
-void ProcessBuyWaitA()
+void ProcessBuyWaitA(BotContext &ctx)
 {
    if(BuyA())
    {
@@ -29,7 +31,7 @@ void ProcessBuyWaitA()
    }
 }
 
-void ProcessSellWaitA()
+void ProcessSellWaitA(BotContext &ctx)
 {
    if(SellA())
    {
