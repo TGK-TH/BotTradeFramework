@@ -20,6 +20,7 @@
 #include <BotTrade/Trade/TrailingStop.mqh>
 
 #include <BotTrade/Types/Candle.mqh>
+#include <BotTrade/Types/TradeState.mqh>
 
 CTrade trade;
 
@@ -49,16 +50,7 @@ input double NonTrendTrailStepRR = 0.5;
 // STATES
 //=====================================================
 
-enum ENUM_STATE
-{
-   STATE_WAIT_CROSS = 0,
-   STATE_WAIT_RETEST,
-   STATE_WAIT_A,
-   STATE_WAIT_B,
-   STATE_IN_TRADE
-};
-
-ENUM_STATE State = STATE_WAIT_CROSS;
+TradeState State = STATE_WAIT_CROSS;
 
 //=====================================================
 // DIRECTION
