@@ -9,6 +9,17 @@
 # VSCode Extensions
 .cache/
 .mql-auto-forwards/
+compile_commands.json
 
 # Optional
 .vscode/ipch/
+
+# Experts
+Experts/*
+!Experts/TGK/
+!Experts/TGK/**
+
+# ignore all Include folders except Include/BotTrade
+Include/*
+!Include/BotTrade/
+!Include/BotTrade/**
