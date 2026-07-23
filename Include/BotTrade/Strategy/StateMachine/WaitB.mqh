@@ -7,6 +7,8 @@
 
 #include <BotTrade/Strategy/StateMachine/WaitA.mqh>
 
+#include <BotTrade/Trade/OrderExecution.mqh>
+
 #include <BotTrade/Types/BotContext.mqh>
 
 //=====================================================
@@ -40,12 +42,14 @@ void ProcessBuyWaitB(BotContext &ctx) {
           MaxLot
         );
 
-        bool result = trade.Buy(
-          CurrentLot,
+        bool result = ExecuteBuy(
+          trade,
           _Symbol,
-          EntryPrice,
+          CurrentLot,
           TradeSL,
-          TradeTP);
+          TradeTP,
+          "BUY"
+        );
 
         if(result) {
           Print(
@@ -107,12 +111,14 @@ void ProcessSellWaitB(BotContext &ctx) {
           MaxLot
         );
 
-        bool result = trade.Sell(
-          CurrentLot,
+        bool result = ExecuteSell(
+          trade,
           _Symbol,
-          EntryPrice,
+          CurrentLot,
           TradeSL,
-          TradeTP);
+          TradeTP,
+          "SELL"
+        );
 
         if(result) {
           Print(
