@@ -4,10 +4,19 @@
 #include "TradeState.mqh"
 #include "Candle.mqh"
 
-struct BotContext
-{
+struct BotContext {
    TradeState State;
    Candle     A;
+
+   double TradeSL;
+   double TradeTP;
+
+   double EntryPrice;
+   double InitialRisk;
+
+   bool TrendMode;
+
+   double CurrentLot;
 };
 
 #endif

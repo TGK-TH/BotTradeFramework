@@ -69,20 +69,6 @@ ENUM_DIRECTION Direction = DIR_NONE;
 datetime LastM15Bar = 0;
 
 //=====================================================
-// TRADE VARIABLES
-//=====================================================
-
-double TradeSL = 0;
-double TradeTP = 0;
-
-double EntryPrice = 0;
-double InitialRisk = 0;
-
-bool TrendMode = false;
-
-double CurrentLot = 0;
-
-//=====================================================
 // H1 CROSS
 //=====================================================
 
@@ -369,7 +355,14 @@ int OnInit()
 {
    Print("EA STARTED");
 
+   // Set initial context values
    ctx.State = STATE_WAIT_CROSS;
+   ctx.TradeSL = 0;
+   ctx.TradeTP = 0;
+   ctx.EntryPrice = 0;
+   ctx.InitialRisk = 0;
+   ctx.TrendMode = false;
+   ctx.CurrentLot = 0;
 
    ADXHandle = iADX(
       _Symbol,
@@ -389,10 +382,10 @@ void OnTick()
       trade,
       _Symbol,
 
-      EntryPrice,
-      InitialRisk,
+      ctx.EntryPrice,
+      ctx.InitialRisk,
 
-      TrendMode,
+      ctx.TrendMode,
 
       TrendTrailStartRR,
       TrendTrailStepRR,
@@ -400,8 +393,8 @@ void OnTick()
       NonTrendTrailStartRR,
       NonTrendTrailStepRR,
 
-      TradeSL,
-      TradeTP
+      ctx.TradeSL,
+      ctx.TradeTP
    );
 
    if (!IsNewBar(_Symbol, PERIOD_M15, LastM15Bar))

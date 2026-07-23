@@ -27,17 +27,17 @@ void ProcessBuyWaitB(BotContext &ctx) {
 
     if(!HasPosition()) {
       if (adxBuy) {
-        EntryPrice = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
-        TradeSL = LastPivotLow(_Symbol, PERIOD_M15) - SLBuffer;
-        InitialRisk = EntryPrice - TradeSL;
-        TrendMode = IsH4BullTrend();
-        TradeTP = 0;
+        ctx.EntryPrice = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+        ctx.TradeSL = LastPivotLow(_Symbol, PERIOD_M15) - SLBuffer;
+        ctx.InitialRisk = ctx.EntryPrice - ctx.TradeSL;
+        ctx.TrendMode = IsH4BullTrend();
+        ctx.TradeTP = 0;
 
-        CurrentLot = CalcLot(
+        ctx.CurrentLot = CalcLot(
           _Symbol,
           ORDER_TYPE_BUY,
-          EntryPrice,
-          TradeSL,
+          ctx.EntryPrice,
+          ctx.TradeSL,
           RiskUSD,
           MaxLot
         );
@@ -45,20 +45,20 @@ void ProcessBuyWaitB(BotContext &ctx) {
         bool result = ExecuteBuy(
           trade,
           _Symbol,
-          CurrentLot,
-          TradeSL,
-          TradeTP,
+          ctx.CurrentLot,
+          ctx.TradeSL,
+          ctx.TradeTP,
           "BUY"
         );
 
         if(result) {
           Print(
             "BUY OPENED Lot=",
-            CurrentLot,
+            ctx.CurrentLot,
             " SL=",
-            TradeSL,
+            ctx.TradeSL,
             " TP=",
-            TradeTP);
+            ctx.TradeTP);
 
           ctx.State = STATE_IN_TRADE;
         }
@@ -96,17 +96,17 @@ void ProcessSellWaitB(BotContext &ctx) {
 
     if(!HasPosition()) {
       if (adxSell) {
-        EntryPrice = SymbolInfoDouble(_Symbol,SYMBOL_BID);
-        TradeSL = LastPivotHigh(_Symbol, PERIOD_M15) + SLBuffer;
-        InitialRisk = TradeSL - EntryPrice;
-        TrendMode = IsH4BearTrend();
-        TradeTP = 0;
+        ctx.EntryPrice = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+        ctx.TradeSL = LastPivotHigh(_Symbol, PERIOD_M15) + SLBuffer;
+        ctx.InitialRisk = ctx.TradeSL - ctx.EntryPrice;
+        ctx.TrendMode = IsH4BearTrend();
+        ctx.TradeTP = 0;
 
-        CurrentLot = CalcLot(
+        ctx.CurrentLot = CalcLot(
           _Symbol,
           ORDER_TYPE_SELL,
-          EntryPrice,
-          TradeSL,
+          ctx.EntryPrice,
+          ctx.TradeSL,
           RiskUSD,
           MaxLot
         );
@@ -114,20 +114,20 @@ void ProcessSellWaitB(BotContext &ctx) {
         bool result = ExecuteSell(
           trade,
           _Symbol,
-          CurrentLot,
-          TradeSL,
-          TradeTP,
+          ctx.CurrentLot,
+          ctx.TradeSL,
+          ctx.TradeTP,
           "SELL"
         );
 
         if(result) {
           Print(
             "SELL OPENED Lot=",
-            CurrentLot,
+            ctx.CurrentLot,
             " SL=",
-            TradeSL,
+            ctx.TradeSL,
             " TP=",
-            TradeTP);
+            ctx.TradeTP);
 
           ctx.State = STATE_IN_TRADE;
         }
