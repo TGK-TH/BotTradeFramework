@@ -14,7 +14,7 @@
     "-std=c++17",
     "-D__MQL__",
     "-D__MQL5__",
-    "-include/Users/tachagon/.vscode/extensions/ngsoftware.mql-clangd-1.1.62/files/mql_clangd_compat.h",
+    "-include/Users/tachagon/.vscode/extensions/ngsoftware.mql-clangd-1.1.63/files/mql_clangd_compat.h",
     "-fms-extensions",
     "-fms-compatibility",
     "-ferror-limit=0",
