@@ -6,6 +6,9 @@
 #include <Trade/Trade.mqh>
 
 #include <BotTrade/Indicators/EMA.mqh>
+#include <BotTrade/Indicators/Pivot.mqh>
+
+#include <BotTrade/Risk/LotCalculator.mqh>
 
 CTrade trade;
 
@@ -14,7 +17,13 @@ CTrade trade;
 //======================
 input int    FastEMA = 12;
 input int    SlowEMA = 26;
-input double LotSize = 0.10;
+
+input bool IsFixedLot = true;
+input double FixedLotValue = 0.10;
+
+input double RiskUSD = 1000;
+input double MaxLot = 100.0;
+input double SLBuffer = 1.5;
 
 //======================
 // Variables
@@ -92,23 +101,46 @@ bool isCrossDown() {
 //+------------------------------------------------------------------+
 void CheckSignal()
 {
-   if(isCrossUp())
-   {
+   // BUY Signal
+   if(isCrossUp()) {
+      double tradeSL = LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
+
+      double buyQty = IsFixedLot ?
+         FixedLotValue :
+         CalcLot(
+            _Symbol,
+            ORDER_TYPE_BUY,
+            SymbolInfoDouble(_Symbol, SYMBOL_ASK), tradeSL,
+            RiskUSD,
+            MaxLot
+         );
+
       ClosePosition(POSITION_TYPE_SELL);
 
-      if(!PositionSelect(_Symbol))
-      {
-         trade.Buy(LotSize);
+      if(!PositionSelect(_Symbol)) {
+         trade.Buy(buyQty);
       }
    }
 
-   if(isCrossDown())
-   {
+   // SELL Signal
+   if(isCrossDown()) {
+      double tradeSL = LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+
+      double sellQty = IsFixedLot ?
+         FixedLotValue :
+         CalcLot(
+            _Symbol,
+            ORDER_TYPE_SELL,
+            SymbolInfoDouble(_Symbol, SYMBOL_BID), tradeSL,
+            RiskUSD,
+            MaxLot
+         );
+
       ClosePosition(POSITION_TYPE_BUY);
 
       if(!PositionSelect(_Symbol))
       {
-         trade.Sell(LotSize);
+         trade.Sell(sellQty);
       }
    }
 }
