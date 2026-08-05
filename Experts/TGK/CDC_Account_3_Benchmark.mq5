@@ -25,6 +25,8 @@ input double RiskUSD = 1000;
 input double MaxLot = 100.0;
 input double SLBuffer = 1.5;
 
+input bool SetSlAtLastPivot = false;
+
 //======================
 // Variables
 //======================
@@ -118,7 +120,14 @@ void CheckSignal()
       ClosePosition(POSITION_TYPE_SELL);
 
       if(!PositionSelect(_Symbol)) {
-         trade.Buy(buyQty);
+         trade.Buy(
+            buyQty,
+            _Symbol,
+            0,
+            SetSlAtLastPivot ? tradeSL : 0,
+            0,
+            "BUY"
+         );
       }
    }
 
@@ -140,7 +149,14 @@ void CheckSignal()
 
       if(!PositionSelect(_Symbol))
       {
-         trade.Sell(sellQty);
+         trade.Sell(
+            sellQty,
+            _Symbol,
+            0,
+            SetSlAtLastPivot ? tradeSL : 0,
+            0,
+            "SELL"
+         );
       }
    }
 }
