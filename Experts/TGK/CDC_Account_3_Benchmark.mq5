@@ -8,6 +8,8 @@
 #include <BotTrade/Indicators/EMA.mqh>
 #include <BotTrade/Indicators/Pivot.mqh>
 
+#include <BotTrade/Position/Position.mqh>
+
 #include <BotTrade/Risk/LotCalculator.mqh>
 
 #include <BotTrade/Strategy/EmaCross/IsEmaCrossUp.mqh>
@@ -41,8 +43,7 @@ int slowHandle;
 //+------------------------------------------------------------------+
 //| Expert initialization                                            |
 //+------------------------------------------------------------------+
-int OnInit()
-{
+int OnInit() {
    fastHandle = iMA(_Symbol, PERIOD_CURRENT, FastEMA, 0, MODE_EMA, PRICE_CLOSE);
    slowHandle = iMA(_Symbol, PERIOD_CURRENT, SlowEMA, 0, MODE_EMA, PRICE_CLOSE);
 
@@ -55,8 +56,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 //| Expert deinitialization                                          |
 //+------------------------------------------------------------------+
-void OnDeinit(const int reason)
-{
+void OnDeinit(const int reason) {
    IndicatorRelease(fastHandle);
    IndicatorRelease(slowHandle);
 }
@@ -64,8 +64,7 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 //| Expert Tick                                                      |
 //+------------------------------------------------------------------+
-void OnTick()
-{
+void OnTick() {
    // Run only once per candle
    datetime currentBar = iTime(_Symbol, PERIOD_CURRENT, 0);
 
@@ -80,8 +79,7 @@ void OnTick()
 //+------------------------------------------------------------------+
 //| Check EMA Cross                                                  |
 //+------------------------------------------------------------------+
-void CheckSignal()
-{
+void CheckSignal() {
    // BUY Signal
    if(IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA)) {
       double tradeSL = LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
@@ -96,9 +94,9 @@ void CheckSignal()
             MaxLot
          );
 
-      ClosePosition(POSITION_TYPE_SELL);
+      ClosePosition(trade, _Symbol, POSITION_TYPE_SELL);
 
-      if(!PositionSelect(_Symbol)) {
+      if(!HasPosition()) {
          trade.Buy(
             buyQty,
             _Symbol,
@@ -124,10 +122,9 @@ void CheckSignal()
             MaxLot
          );
 
-      ClosePosition(POSITION_TYPE_BUY);
+      ClosePosition(trade, _Symbol, POSITION_TYPE_BUY);
 
-      if(!PositionSelect(_Symbol))
-      {
+      if(!HasPosition()) {
          trade.Sell(
             sellQty,
             _Symbol,
@@ -137,19 +134,5 @@ void CheckSignal()
             "SELL"
          );
       }
-   }
-}
-
-//+------------------------------------------------------------------+
-//| Close Position                                                   |
-//+------------------------------------------------------------------+
-void ClosePosition(ENUM_POSITION_TYPE type)
-{
-   if(!PositionSelect(_Symbol))
-      return;
-
-   if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == type)
-   {
-      trade.PositionClose(_Symbol);
    }
 }
