@@ -47,6 +47,9 @@ int slowHandle;
 Segment segments[];
 
 int currentBarIndex = -1;
+bool greenCross = false;
+bool redCross = false;
+bool crossHappened = false;
 
 //==================================================
 // CURRENT SEGMENT
@@ -103,6 +106,10 @@ void OnTick() {
    lastBarTime = currentBar;
    currentBarIndex += 1;
 
+   greenCross = IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
+   redCross = IsEmaCrossDown(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
+   crossHappened = greenCross || redCross;
+
    CheckSignal();
 }
 
@@ -151,7 +158,7 @@ void UpdateCurrentSegment(
 //+------------------------------------------------------------------+
 void CheckSignal() {
    // BUY Signal
-   if(IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA)) {
+   if(greenCross) {
       double tradeSL = LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
 
       double buyQty = IsFixedLot ?
@@ -179,7 +186,7 @@ void CheckSignal() {
    }
 
    // SELL Signal
-   if(IsEmaCrossDown(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA)) {
+   if(redCross) {
       double tradeSL = LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
 
       double sellQty = IsFixedLot ?
