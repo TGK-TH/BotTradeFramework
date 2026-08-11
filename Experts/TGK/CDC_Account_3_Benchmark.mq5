@@ -10,6 +10,9 @@
 
 #include <BotTrade/Risk/LotCalculator.mqh>
 
+#include <BotTrade/Strategy/EmaCross/IsEmaCrossUp.mqh>
+#include <BotTrade/Strategy/EmaCross/IsEmaCrossDown.mqh>
+
 CTrade trade;
 
 //======================
@@ -75,36 +78,12 @@ void OnTick()
 }
 
 //+------------------------------------------------------------------+
-//| Check EMA Cross Up                                               |
-//+------------------------------------------------------------------+
-bool isCrossUp() {
-  double emaFastPrev = GetEMA(_Symbol, PERIOD_CURRENT, FastEMA, 2);
-  double emaSlowPrev = GetEMA(_Symbol, PERIOD_CURRENT, SlowEMA, 2);
-  double emaFastCurr = GetEMA(_Symbol, PERIOD_CURRENT, FastEMA, 1);
-  double emaSlowCurr = GetEMA(_Symbol, PERIOD_CURRENT, SlowEMA, 1);
-
-  return emaFastPrev <= emaSlowPrev && emaFastCurr > emaSlowCurr;
-}
-
-//+------------------------------------------------------------------+
-//| Check EMA Cross Down                                             |
-//+------------------------------------------------------------------+
-bool isCrossDown() {
-  double emaFastPrev = GetEMA(_Symbol, PERIOD_CURRENT, FastEMA, 2);
-  double emaSlowPrev = GetEMA(_Symbol, PERIOD_CURRENT, SlowEMA, 2);
-  double emaFastCurr = GetEMA(_Symbol, PERIOD_CURRENT, FastEMA, 1);
-  double emaSlowCurr = GetEMA(_Symbol, PERIOD_CURRENT, SlowEMA, 1);
-
-  return emaFastPrev >= emaSlowPrev && emaFastCurr < emaSlowCurr;
-}
-
-//+------------------------------------------------------------------+
 //| Check EMA Cross                                                  |
 //+------------------------------------------------------------------+
 void CheckSignal()
 {
    // BUY Signal
-   if(isCrossUp()) {
+   if(IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA)) {
       double tradeSL = LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
 
       double buyQty = IsFixedLot ?
@@ -132,7 +111,7 @@ void CheckSignal()
    }
 
    // SELL Signal
-   if(isCrossDown()) {
+   if(IsEmaCrossDown(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA)) {
       double tradeSL = LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
 
       double sellQty = IsFixedLot ?
