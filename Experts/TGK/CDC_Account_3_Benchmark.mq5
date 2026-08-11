@@ -15,6 +15,8 @@
 #include <BotTrade/Strategy/EmaCross/IsEmaCrossUp.mqh>
 #include <BotTrade/Strategy/EmaCross/IsEmaCrossDown.mqh>
 
+#include <BotTrade/Trade/OrderExecution.mqh>
+
 CTrade trade;
 
 //======================
@@ -97,10 +99,10 @@ void CheckSignal() {
       ClosePosition(trade, _Symbol, POSITION_TYPE_SELL);
 
       if(!HasPosition()) {
-         trade.Buy(
-            buyQty,
+         ExecuteBuy(
+            trade,
             _Symbol,
-            0,
+            buyQty,
             SetSlAtLastPivot ? tradeSL : 0,
             0,
             "BUY"
@@ -125,10 +127,10 @@ void CheckSignal() {
       ClosePosition(trade, _Symbol, POSITION_TYPE_BUY);
 
       if(!HasPosition()) {
-         trade.Sell(
-            sellQty,
+         ExecuteSell(
+            trade,
             _Symbol,
-            0,
+            sellQty,
             SetSlAtLastPivot ? tradeSL : 0,
             0,
             "SELL"
