@@ -17,6 +17,8 @@
 
 #include <BotTrade/Trade/OrderExecution.mqh>
 
+#include <BotTrade/Types/CdcLookalikeAccount2/Segment.mqh>
+
 CTrade trade;
 
 //======================
@@ -42,17 +44,41 @@ datetime lastBarTime = 0;
 int fastHandle;
 int slowHandle;
 
+Segment segments[];
+
+int currentBarIndex = -1;
+
+//==================================================
+// CURRENT SEGMENT
+//==================================================
+int segStart = -1;
+
+double currentHigh = 0.0;
+double currentLow = 0.0;
+
+int currentHighBar = -1;
+int currentLowBar = -1;
+
+bool currentIsGreen = false;
+
 //+------------------------------------------------------------------+
 //| Expert initialization                                            |
 //+------------------------------------------------------------------+
 int OnInit() {
-   fastHandle = iMA(_Symbol, PERIOD_CURRENT, FastEMA, 0, MODE_EMA, PRICE_CLOSE);
-   slowHandle = iMA(_Symbol, PERIOD_CURRENT, SlowEMA, 0, MODE_EMA, PRICE_CLOSE);
+  fastHandle = iMA(_Symbol, PERIOD_CURRENT, FastEMA, 0, MODE_EMA, PRICE_CLOSE);
+  slowHandle = iMA(_Symbol, PERIOD_CURRENT, SlowEMA, 0, MODE_EMA, PRICE_CLOSE);
 
-   if(fastHandle == INVALID_HANDLE || slowHandle == INVALID_HANDLE)
-      return(INIT_FAILED);
+  if(fastHandle == INVALID_HANDLE || slowHandle == INVALID_HANDLE)
+    return(INIT_FAILED);
 
-   return(INIT_SUCCEEDED);
+  InitializeSegment(
+    currentBarIndex,
+    0.0,
+    0.0,
+    false
+  );
+
+  return(INIT_SUCCEEDED);
 }
 
 //+------------------------------------------------------------------+
@@ -70,12 +96,54 @@ void OnTick() {
    // Run only once per candle
    datetime currentBar = iTime(_Symbol, PERIOD_CURRENT, 0);
 
+  // Is New Bar?
    if(currentBar == lastBarTime)
       return;
 
    lastBarTime = currentBar;
+   currentBarIndex += 1;
 
    CheckSignal();
+}
+
+//==================================================
+// INITIALIZE SEGMENT
+//==================================================
+
+void InitializeSegment(
+  int barIndex,
+  double barHigh,
+  double barLow,
+  bool isGreen
+) {
+    segStart = barIndex;
+
+    currentHigh = barHigh;
+    currentLow = barLow;
+
+    currentHighBar = barIndex;
+    currentLowBar = barIndex;
+
+    currentIsGreen = isGreen;
+}
+
+//==================================================
+// UPDATE CURRENT SEGMENT
+//==================================================
+void UpdateCurrentSegment(
+  int barIndex,
+  double barHigh,
+  double barLow
+) {
+  if (barHigh > currentHigh) {
+    currentHigh = barHigh;
+    currentHighBar = barIndex;
+  }
+
+  if (barLow < currentLow) {
+    currentLow = barLow;
+    currentLowBar = barIndex;
+  }
 }
 
 //+------------------------------------------------------------------+
