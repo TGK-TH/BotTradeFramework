@@ -24,3 +24,20 @@ bool IsEmaCrossDown(
 
   return emaFastPrev >= emaSlowPrev && emaFastCurr < emaSlowCurr;
 }
+
+// Uses handles owned by the calling EA. This avoids creating indicator handles
+// on every signal check.
+bool IsEmaCrossDownByHandle(int fastEmaHandle, int slowEmaHandle) {
+  double emaFastPrev;
+  double emaSlowPrev;
+  double emaFastCurr;
+  double emaSlowCurr;
+
+  if(!GetEMAByHandle(fastEmaHandle, 2, emaFastPrev) ||
+     !GetEMAByHandle(slowEmaHandle, 2, emaSlowPrev) ||
+     !GetEMAByHandle(fastEmaHandle, 1, emaFastCurr) ||
+     !GetEMAByHandle(slowEmaHandle, 1, emaSlowCurr))
+    return false;
+
+  return emaFastPrev >= emaSlowPrev && emaFastCurr < emaSlowCurr;
+}
