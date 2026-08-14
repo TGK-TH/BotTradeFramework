@@ -1,14 +1,14 @@
 #include <Trade/Trade.mqh>
 
 bool ExecuteBuy(
-  CTrade &trade,
+  CTrade &trader,
   string symbol,
   double lot,
   double sl,
   double tp,
   string comment = ""
 ) {
-  return trade.Buy(
+  return trader.Buy(
     lot,
     symbol,
     0,
@@ -19,14 +19,14 @@ bool ExecuteBuy(
 }
 
 bool ExecuteSell(
-  CTrade &trade,
+  CTrade &trader,
   string symbol,
   double lot,
   double sl,
   double tp,
   string comment = ""
 ) {
-  return trade.Sell(
+  return trader.Sell(
     lot,
     symbol,
     0,
