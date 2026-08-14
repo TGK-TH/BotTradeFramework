@@ -105,10 +105,38 @@ void OnTick() {
 
    lastBarTime = currentBar;
    currentBarIndex += 1;
+   double barHigh = iHigh(_Symbol, PERIOD_CURRENT, 1);
+   double barLow = iLow(_Symbol, PERIOD_CURRENT, 1);
+
+   UpdateCurrentSegment(
+      currentBarIndex,
+      barHigh,
+      barLow
+   );
 
    greenCross = IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
    redCross = IsEmaCrossDown(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
    crossHappened = greenCross || redCross;
+
+   if (!crossHappened)
+      return;
+
+   SaveCurrentSegment(
+      currentBarIndex,
+      barHigh,
+      barLow
+   );
+
+   Segment s0;
+   Segment s1;
+   Segment s2;
+
+   if (GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)) {
+      // print log there enough segments
+      Print("Segment 0: StartBar=", s0.startBar, ", EndBar=", s0.endBar, ", CrossBar=", s0.crossBar, ", Highest=", s0.highest, ", HighestBar=", s0.highestBar, ", Lowest=", s0.lowest, ", LowestBar=", s0.lowestBar, ", IsGreen=", s0.isGreen);
+      Print("Segment 1: StartBar=", s1.startBar, ", EndBar=", s1.endBar, ", CrossBar=", s1.crossBar, ", Highest=", s1.highest, ", HighestBar=", s1.highestBar, ", Lowest=", s1.lowest, ", LowestBar=", s1.lowestBar, ", IsGreen=", s1.isGreen);
+      Print("Segment 2: StartBar=", s2.startBar, ", EndBar=", s2.endBar, ", CrossBar=", s2.crossBar, ", Highest=", s2.highest, ", HighestBar=", s2.highestBar, ", Lowest=", s2.lowest, ", LowestBar=", s2.lowestBar, ", IsGreen=", s2.isGreen);
+   }
 
    CheckSignal();
 }
@@ -151,6 +179,65 @@ void UpdateCurrentSegment(
     currentLow = barLow;
     currentLowBar = barIndex;
   }
+}
+
+//==================================================
+// SAVE SEGMENT
+//==================================================
+void SaveCurrentSegment(
+   int barIndex,
+   double barHigh,
+   double barLow
+) {
+   //==================================================
+   // Save Previous Segment
+   //==================================================
+   Segment newSegment;
+
+   newSegment.startBar = segStart;
+   newSegment.endBar = barIndex - 1;
+   newSegment.crossBar = barIndex;
+
+   newSegment.highest = currentHigh;
+   newSegment.highestBar = currentHighBar;
+
+   newSegment.lowest = currentLow;
+   newSegment.lowestBar = currentLowBar;
+
+   newSegment.isGreen = currentIsGreen;
+
+   int newSize = ArraySize(segments) + 1;
+   ArrayResize(segments, newSize);
+
+   segments[newSize - 1] = newSegment;
+
+   //==================================================
+   // Start Next Segment
+   //==================================================
+   segStart = barIndex;
+
+   currentHigh = barHigh;
+   currentHighBar = barIndex;
+
+   currentLow = barLow;
+   currentLowBar = barIndex;
+
+   currentIsGreen = greenCross;
+}
+
+//==================================================
+// SEGMENT FUNCTIONS
+//==================================================
+bool GetSegment(int offset, Segment &result) {
+   int count = ArraySize(segments);
+
+   if (count <= offset)
+      return false;
+
+   int index = count - 1 - offset;
+   result = segments[index];
+
+   return true;
 }
 
 //+------------------------------------------------------------------+
