@@ -16,6 +16,7 @@
 #include <BotTrade/Strategy/EmaCross/IsEmaCrossDown.mqh>
 
 #include <BotTrade/Trade/OrderExecution.mqh>
+#include <BotTrade/Trade/TargetPositionReconciler.mqh>
 
 #include <BotTrade/Types/CdcLookalikeAccount2/Segment.mqh>
 
@@ -36,6 +37,9 @@ input double SLBuffer = 1.5;
 
 input bool SetSlAtLastPivot = false;
 
+input long MagicNumber = 3004;
+input int  RetrySeconds = 5;
+
 //======================
 // Variables
 //======================
@@ -43,6 +47,8 @@ datetime lastBarTime = 0;
 
 int fastHandle;
 int slowHandle;
+
+CTargetPositionReconciler positionReconciler;
 
 Segment segments[];
 
@@ -74,6 +80,20 @@ int OnInit() {
   if(fastHandle == INVALID_HANDLE || slowHandle == INVALID_HANDLE)
     return(INIT_FAILED);
 
+  trade.SetExpertMagicNumber((ulong)MagicNumber);
+  trade.SetTypeFillingBySymbol(_Symbol);
+
+  positionReconciler.Initialize(
+    _Symbol,
+    MagicNumber,
+    "CDCLOOKACC2",
+    RetrySeconds
+  );
+  positionReconciler.Restore();
+
+  // Do not execute a historical cross when the EA is attached mid-bar.
+  lastBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
+
   InitializeSegment(
     currentBarIndex,
     0.0,
@@ -99,46 +119,47 @@ void OnTick() {
    // Run only once per candle
    datetime currentBar = iTime(_Symbol, PERIOD_CURRENT, 0);
 
-  // Is New Bar?
-   if(currentBar == lastBarTime)
-      return;
+  // Signals use closed candles and are evaluated only once per new candle.
+  if (currentBar != 0 && currentBar != lastBarTime) {
+    lastBarTime = currentBar;
+    currentBarIndex += 1;
+    double barHigh = iHigh(_Symbol, PERIOD_CURRENT, 1);
+    double barLow = iLow(_Symbol, PERIOD_CURRENT, 1);
 
-   lastBarTime = currentBar;
-   currentBarIndex += 1;
-   double barHigh = iHigh(_Symbol, PERIOD_CURRENT, 1);
-   double barLow = iLow(_Symbol, PERIOD_CURRENT, 1);
-
-   UpdateCurrentSegment(
+    UpdateCurrentSegment(
       currentBarIndex,
       barHigh,
       barLow
-   );
+    );
 
-   greenCross = IsEmaCrossUp(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
-   redCross = IsEmaCrossDown(_Symbol, PERIOD_CURRENT, FastEMA, SlowEMA);
-   crossHappened = greenCross || redCross;
+    greenCross = IsEmaCrossUpByHandle(fastHandle, slowHandle);
+    redCross = IsEmaCrossDownByHandle(fastHandle, slowHandle);
 
-   if (!crossHappened)
-      return;
+    crossHappened = greenCross || redCross;
 
-   SaveCurrentSegment(
-      currentBarIndex,
-      barHigh,
-      barLow
-   );
+    if (crossHappened) {
+      SaveCurrentSegment(
+        currentBarIndex,
+        barHigh,
+        barLow
+      );
 
-   Segment s0;
-   Segment s1;
-   Segment s2;
+      Segment s0;
+      Segment s1;
+      Segment s2;
 
-   if (GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)) {
-      // print log there enough segments
-      Print("Segment 0: StartBar=", s0.startBar, ", EndBar=", s0.endBar, ", CrossBar=", s0.crossBar, ", Highest=", s0.highest, ", HighestBar=", s0.highestBar, ", Lowest=", s0.lowest, ", LowestBar=", s0.lowestBar, ", IsGreen=", s0.isGreen);
-      Print("Segment 1: StartBar=", s1.startBar, ", EndBar=", s1.endBar, ", CrossBar=", s1.crossBar, ", Highest=", s1.highest, ", HighestBar=", s1.highestBar, ", Lowest=", s1.lowest, ", LowestBar=", s1.lowestBar, ", IsGreen=", s1.isGreen);
-      Print("Segment 2: StartBar=", s2.startBar, ", EndBar=", s2.endBar, ", CrossBar=", s2.crossBar, ", Highest=", s2.highest, ", HighestBar=", s2.highestBar, ", Lowest=", s2.lowest, ", LowestBar=", s2.lowestBar, ", IsGreen=", s2.isGreen);
-   }
+      if (GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)) {
+        // print log there enough segments
+        Print("Segment 0: StartBar=", s0.startBar, ", EndBar=", s0.endBar, ", CrossBar=", s0.crossBar, ", Highest=", s0.highest, ", HighestBar=", s0.highestBar, ", Lowest=", s0.lowest, ", LowestBar=", s0.lowestBar, ", IsGreen=", s0.isGreen);
+        Print("Segment 1: StartBar=", s1.startBar, ", EndBar=", s1.endBar, ", CrossBar=", s1.crossBar, ", Highest=", s1.highest, ", HighestBar=", s1.highestBar, ", Lowest=", s1.lowest, ", LowestBar=", s1.lowestBar, ", IsGreen=", s1.isGreen);
+        Print("Segment 2: StartBar=", s2.startBar, ", EndBar=", s2.endBar, ", CrossBar=", s2.crossBar, ", Highest=", s2.highest, ", HighestBar=", s2.highestBar, ", Lowest=", s2.lowest, ", LowestBar=", s2.lowestBar, ", IsGreen=", s2.isGreen);
+      }
 
-   CheckSignal();
+      CheckSignal(iTime(_Symbol, PERIOD_CURRENT, 1));
+    } // End of cross happened check
+  } // End of new bar check
+
+  ReconcilePosition();
 }
 
 //==================================================
@@ -241,62 +262,84 @@ bool GetSegment(int offset, Segment &result) {
 }
 
 //+------------------------------------------------------------------+
+//| Confirm that a pending target still agrees with the last closed  |
+//| candle. This runs on every tick so a target retained through a   |
+//| market break is checked before it is executed at market reopen.  |
+//+------------------------------------------------------------------+
+void ValidatePendingTrend() {
+   if(positionReconciler.Target() == DESIRED_POSITION_NONE)
+      return;
+
+   double fastEma;
+   double slowEma;
+   if(!GetEMAByHandle(fastHandle, 1, fastEma) ||
+      !GetEMAByHandle(slowHandle, 1, slowEma))
+      return;
+
+   positionReconciler.CancelIfTrendChanged(
+    fastEma > slowEma,
+    fastEma < slowEma
+  );
+}
+
+//+------------------------------------------------------------------+
+//| Build order parameters using current price immediately before    |
+//| execution, then ask the common reconciler to reach the target.   |
+//+------------------------------------------------------------------+
+void ReconcilePosition() {
+  ValidatePendingTrend();
+
+  ENUM_DESIRED_POSITION target = positionReconciler.Target();
+  if (target == DESIRED_POSITION_NONE)
+    return;
+
+  bool isBuy = target == DESIRED_POSITION_BUY;
+  double tradeSL = isBuy
+                   ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
+                   : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+  double price = SymbolInfoDouble(
+    _Symbol,
+    isBuy ? SYMBOL_ASK : SYMBOL_BID
+  );
+  double lot = IsFixedLot
+               ? FixedLotValue
+               : CalcLot(
+                    _Symbol,
+                    isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
+                    price,
+                    tradeSL,
+                    RiskUSD,
+                    MaxLot
+                 );
+
+  positionReconciler.Reconcile(
+    trade,
+    lot,
+    SetSlAtLastPivot ? tradeSL : 0,
+    0,
+    isBuy ? "BUY" : "SELL"
+  );
+}
+
+//+------------------------------------------------------------------+
 //| Check EMA Cross                                                  |
 //+------------------------------------------------------------------+
-void CheckSignal() {
-   // BUY Signal
-   if(greenCross) {
-      double tradeSL = LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
+void CheckSignal(datetime signalBarTime) {
+  // BUY Signal
+  if (greenCross) {
+    positionReconciler.SetTarget(
+      DESIRED_POSITION_BUY,
+      signalBarTime
+    );
+    return;
+  }
 
-      double buyQty = IsFixedLot ?
-         FixedLotValue :
-         CalcLot(
-            _Symbol,
-            ORDER_TYPE_BUY,
-            SymbolInfoDouble(_Symbol, SYMBOL_ASK), tradeSL,
-            RiskUSD,
-            MaxLot
-         );
-
-      ClosePosition(trade, _Symbol, POSITION_TYPE_SELL);
-
-      if(!HasPosition()) {
-         ExecuteBuy(
-            trade,
-            _Symbol,
-            buyQty,
-            SetSlAtLastPivot ? tradeSL : 0,
-            0,
-            "BUY"
-         );
-      }
-   }
-
-   // SELL Signal
-   if(redCross) {
-      double tradeSL = LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
-
-      double sellQty = IsFixedLot ?
-         FixedLotValue :
-         CalcLot(
-            _Symbol,
-            ORDER_TYPE_SELL,
-            SymbolInfoDouble(_Symbol, SYMBOL_BID), tradeSL,
-            RiskUSD,
-            MaxLot
-         );
-
-      ClosePosition(trade, _Symbol, POSITION_TYPE_BUY);
-
-      if(!HasPosition()) {
-         ExecuteSell(
-            trade,
-            _Symbol,
-            sellQty,
-            SetSlAtLastPivot ? tradeSL : 0,
-            0,
-            "SELL"
-         );
-      }
-   }
+  // SELL Signal
+  if (redCross) {
+    positionReconciler.SetTarget(
+      DESIRED_POSITION_SELL,
+      signalBarTime
+    );
+    return;
+  }
 }
