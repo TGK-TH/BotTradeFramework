@@ -19,6 +19,7 @@
 #include <BotTrade/Trade/TargetPositionReconciler.mqh>
 
 #include <BotTrade/Types/CdcLookalikeAccount2/Segment.mqh>
+#include <BotTrade/Types/CdcLookalikeAccount2/Pattern.mqh>
 
 CTrade trade;
 
@@ -27,6 +28,9 @@ CTrade trade;
 //======================
 input int    FastEMA = 12;
 input int    SlowEMA = 26;
+
+input double RetracementMin = 61.8;
+input double RetracementMax = 100.0;
 
 input bool IsFixedLot = true;
 input double FixedLotValue = 0.10;
@@ -150,6 +154,9 @@ void OnTick() {
         barLow
       );
 
+      Pattern testBuyPattern;
+      BuildBuyPattern(testBuyPattern);
+
       Segment s0;
       Segment s1;
       Segment s2;
@@ -256,20 +263,123 @@ void SaveCurrentSegment(
 // SEGMENT FUNCTIONS
 //==================================================
 bool GetSegment(int offset, Segment &result) {
-   int count = ArraySize(segments);
+  int count = ArraySize(segments);
 
-   if (count <= offset)
-      return false;
+  if (count <= offset)
+    return false;
 
-   int index = count - 1 - offset;
-   result = segments[index];
+  int index = count - 1 - offset;
+  result = segments[index];
 
-   return true;
+  return true;
 }
 
 bool HasEnoughSegments(int count) {
-   return ArraySize(segments) >= count;
+  return ArraySize(segments) >= count;
 }
+
+//==================================================
+// BUILD BUY PATTERN
+//==================================================
+void BuildBuyPattern(Pattern &result) {
+  //==================================================
+  // Default Result
+  //==================================================
+  result.valid = false;
+  result.isBuy = true;
+
+  result.point1 = EMPTY_VALUE;
+  result.point2 = EMPTY_VALUE;
+  result.point3 = EMPTY_VALUE;
+
+  result.point1Bar = -1;
+  result.point2Bar = -1;
+  result.point3Bar = -1;
+
+  result.retracement = EMPTY_VALUE;
+
+  //==================================================
+  // Need at least 3 segments
+  //==================================================
+  if (!HasEnoughSegments(3))
+    return;
+
+  //==================================================
+  // Get S0 / S1 / S2
+  //
+  // S0 = Latest
+  // S1 = Previous
+  // S2 = Previous of Previous
+  //==================================================
+  Segment s0, s1, s2;
+  if (!(GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)))
+    return;
+
+  //==================================================
+  // Pattern:
+  //
+  // S2 = Red
+  // S1 = Green
+  // S0 = Red
+  //==================================================
+  bool correctSequence = !s2.isGreen && s1.isGreen && !s0.isGreen;
+  if (!correctSequence) return;
+
+  //==================================================
+  // BUY Points
+  //
+  // L1 = S2 Lowest
+  // H1 = S1 Highest
+  // L2 = S0 Lowest
+  //==================================================
+  double low1 = s2.lowest;
+  double high1 = s1.highest;
+  double low2 = s0.lowest;
+
+  int low1Bar = s2.lowestBar;
+  int high1Bar = s1.highestBar;
+  int low2Bar = s0.lowestBar;
+
+  //==================================================
+  // Higher Low
+  //==================================================
+  bool higherLow = low2 > low1;
+
+  //==================================================
+  // Range
+  //==================================================
+  double L1H1Range = high1 - low1;
+  if (L1H1Range <= 0.0) return;
+
+  //==================================================
+  // Retracement
+  //==================================================
+  double retracement = (high1 - low2) / L1H1Range * 100.0;
+
+  //==================================================
+  // Valid Pattern
+  //==================================================
+  bool valid =
+    higherLow &&
+    retracement >= RetracementMin &&
+    retracement <= RetracementMax;
+
+  //==================================================
+  // Save Result
+  //==================================================
+  result.valid = valid;
+  result.isBuy = true;
+
+  result.point1 = low1;
+  result.point2 = high1;
+  result.point3 = low2;
+
+  result.point1Bar = low1Bar;
+  result.point2Bar = high1Bar;
+  result.point3Bar = low2Bar;
+
+  result.retracement = retracement;
+} // END OF BuildBuyPattern
 
 //+------------------------------------------------------------------+
 //| Confirm that a pending target still agrees with the last closed  |
