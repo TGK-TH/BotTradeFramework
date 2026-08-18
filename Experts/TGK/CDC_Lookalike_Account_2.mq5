@@ -94,11 +94,17 @@ int OnInit() {
   // Do not execute a historical cross when the EA is attached mid-bar.
   lastBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
 
+  double emaFast;
+  double emaSlow;
+  if(!GetEMAByHandle(fastHandle, 0, emaFast) ||
+     !GetEMAByHandle(slowHandle, 0, emaSlow))
+    return(INIT_FAILED);
+
   InitializeSegment(
     currentBarIndex,
-    0.0,
-    0.0,
-    false
+    iHigh(_Symbol, PERIOD_CURRENT, 0),
+    iLow(_Symbol, PERIOD_CURRENT, 0),
+    emaFast > emaSlow
   );
 
   return(INIT_SUCCEEDED);
