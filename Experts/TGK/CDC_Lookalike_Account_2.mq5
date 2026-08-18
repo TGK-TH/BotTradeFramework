@@ -154,8 +154,9 @@ void OnTick() {
         barLow
       );
 
-      Pattern testBuyPattern;
+      Pattern testBuyPattern, testSellPattern;
       BuildBuyPattern(testBuyPattern);
+      BuildSellPattern(testSellPattern);
 
       Segment s0;
       Segment s1;
@@ -301,8 +302,7 @@ void BuildBuyPattern(Pattern &result) {
   //==================================================
   // Need at least 3 segments
   //==================================================
-  if (!HasEnoughSegments(3))
-    return;
+  if (!HasEnoughSegments(3)) return;
 
   //==================================================
   // Get S0 / S1 / S2
@@ -380,6 +380,108 @@ void BuildBuyPattern(Pattern &result) {
 
   result.retracement = retracement;
 } // END OF BuildBuyPattern
+
+//==================================================
+// BUILD SELL PATTERN
+//==================================================
+void BuildSellPattern(Pattern &result) {
+  //==================================================
+  // Default Result
+  //==================================================
+  result.valid = false;
+  result.isBuy = false;
+
+  result.point1 = EMPTY_VALUE;
+  result.point2 = EMPTY_VALUE;
+  result.point3 = EMPTY_VALUE;
+
+  result.point1Bar = -1;
+  result.point2Bar = -1;
+  result.point3Bar = -1;
+
+  result.retracement = EMPTY_VALUE;
+
+  //==================================================
+  // Need at least 3 segments
+  //==================================================
+  if (!HasEnoughSegments(3)) return;
+
+  //==================================================
+  // Get S0 / S1 / S2
+  //
+  // S0 = Latest
+  // S1 = Previous
+  // S2 = Previous of Previous
+  //==================================================
+  Segment s0, s1, s2;
+  if (!(GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)))
+    return;
+
+  //==================================================
+  // Pattern:
+  //
+  // S2 = Green
+  // S1 = Red
+  // S0 = Green
+  //==================================================
+  bool correctSequence = s2.isGreen && !s1.isGreen && s0.isGreen;
+  if (!correctSequence) return;
+
+  //==================================================
+  // SELL Points
+  //
+  // H1 = S2 Highest
+  // L1 = S1 Lowest
+  // H2 = S0 Highest
+  //==================================================
+  double high1 = s2.highest;
+  double low1 = s1.lowest;
+  double high2 = s0.highest;
+
+  int high1Bar = s2.highestBar;
+  int low1Bar = s1.lowestBar;
+  int high2Bar = s0.highestBar;
+
+  //==================================================
+  // Lower High
+  //==================================================
+  bool lowerHigh = high2 < high1;
+
+  //==================================================
+  // Range
+  //==================================================
+  double H1L1Range = high1 - low1;
+  if (H1L1Range <= 0.0) return;
+
+  //==================================================
+  // Retracement
+  //==================================================
+  double retracement = (high2 - low1) / H1L1Range * 100.0;
+
+  //==================================================
+  // Valid Pattern
+  //==================================================
+  bool valid =
+    lowerHigh &&
+    retracement >= RetracementMin &&
+    retracement <= RetracementMax;
+
+  //==================================================
+  // Save Result
+  //==================================================
+  result.valid = valid;
+  result.isBuy = false;
+
+  result.point1 = high1;
+  result.point2 = low1;
+  result.point3 = high2;
+
+  result.point1Bar = high1Bar;
+  result.point2Bar = low1Bar;
+  result.point3Bar = high2Bar;
+
+  result.retracement = retracement;
+}
 
 //+------------------------------------------------------------------+
 //| Confirm that a pending target still agrees with the last closed  |
