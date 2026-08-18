@@ -1,8 +1,8 @@
 //+------------------------------------------------------------------+
 //|                                                      Segment.mqh  |
 //+------------------------------------------------------------------+
-#ifndef __SEGMENT_MQH__
-#define __SEGMENT_MQH__
+#ifndef __CDCLOOKACC2_SEGMENT_MQH__
+#define __CDCLOOKACC2_SEGMENT_MQH__
 
 struct Segment {
   int startBar;
@@ -19,4 +19,3 @@ struct Segment {
 };
 
 #endif
-
