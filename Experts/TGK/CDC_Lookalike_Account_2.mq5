@@ -61,6 +61,8 @@ bool greenCross = false;
 bool redCross = false;
 bool crossHappened = false;
 
+Pattern currentPattern;
+
 //==================================================
 // CURRENT SEGMENT
 //==================================================
@@ -100,16 +102,31 @@ int OnInit() {
 
   double emaFast;
   double emaSlow;
-  if(!GetEMAByHandle(fastHandle, 0, emaFast) ||
-     !GetEMAByHandle(slowHandle, 0, emaSlow))
-    return(INIT_FAILED);
+  bool isGreen = false;
+
+  if (GetEMAByHandle(fastHandle, 0, emaFast) && GetEMAByHandle(slowHandle, 0, emaSlow)) {
+    isGreen = emaFast > emaSlow;
+  }
 
   InitializeSegment(
     currentBarIndex,
     iHigh(_Symbol, PERIOD_CURRENT, 0),
     iLow(_Symbol, PERIOD_CURRENT, 0),
-    emaFast > emaSlow
+    isGreen
   );
+
+  currentPattern.valid = false;
+  currentPattern.isBuy = true;
+
+  currentPattern.point1 = EMPTY_VALUE;
+  currentPattern.point2 = EMPTY_VALUE;
+  currentPattern.point3 = EMPTY_VALUE;
+
+  currentPattern.point1Bar = -1;
+  currentPattern.point2Bar = -1;
+  currentPattern.point3Bar = -1;
+
+  currentPattern.retracement = EMPTY_VALUE;
 
   return(INIT_SUCCEEDED);
 }
@@ -154,19 +171,30 @@ void OnTick() {
         barLow
       );
 
-      Pattern testBuyPattern, testSellPattern;
-      BuildBuyPattern(testBuyPattern);
-      BuildSellPattern(testSellPattern);
+      if (greenCross) BuildBuyPattern(currentPattern);
+      if (redCross) BuildSellPattern(currentPattern);
 
-      Segment s0;
-      Segment s1;
-      Segment s2;
+      // =======================
+      // DEBUG
+      // =======================
+      if (greenCross) {
+        Print("BUY Pattern Check");
+        Print("L1 : ", currentPattern.point1);
+        Print("H1 : ", currentPattern.point2);
+        Print("L2 : ", currentPattern.point3);
+        Print("Retracement : ", currentPattern.retracement);
+        Print("Higher Low : ", currentPattern.point3 > currentPattern.point1);
+        Print("Result : ", currentPattern.valid);
+      }
 
-      if (GetSegment(0, s0) && GetSegment(1, s1) && GetSegment(2, s2)) {
-        // print log there enough segments
-        Print("Segment 0: StartBar=", s0.startBar, ", EndBar=", s0.endBar, ", CrossBar=", s0.crossBar, ", Highest=", s0.highest, ", HighestBar=", s0.highestBar, ", Lowest=", s0.lowest, ", LowestBar=", s0.lowestBar, ", IsGreen=", s0.isGreen);
-        Print("Segment 1: StartBar=", s1.startBar, ", EndBar=", s1.endBar, ", CrossBar=", s1.crossBar, ", Highest=", s1.highest, ", HighestBar=", s1.highestBar, ", Lowest=", s1.lowest, ", LowestBar=", s1.lowestBar, ", IsGreen=", s1.isGreen);
-        Print("Segment 2: StartBar=", s2.startBar, ", EndBar=", s2.endBar, ", CrossBar=", s2.crossBar, ", Highest=", s2.highest, ", HighestBar=", s2.highestBar, ", Lowest=", s2.lowest, ", LowestBar=", s2.lowestBar, ", IsGreen=", s2.isGreen);
+      if (redCross) {
+        Print("SELL Pattern Check");
+        Print("H1 : ", currentPattern.point1);
+        Print("L1 : ", currentPattern.point2);
+        Print("H2 : ", currentPattern.point3);
+        Print("Retracement : ", currentPattern.retracement);
+        Print("Lower High : ", currentPattern.point3 < currentPattern.point1);
+        Print("Result : ", currentPattern.valid);
       }
 
       CheckSignal(iTime(_Symbol, PERIOD_CURRENT, 1));
