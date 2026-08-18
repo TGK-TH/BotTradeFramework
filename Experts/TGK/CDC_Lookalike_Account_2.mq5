@@ -267,6 +267,10 @@ bool GetSegment(int offset, Segment &result) {
    return true;
 }
 
+bool HasEnoughSegments(int count) {
+   return ArraySize(segments) >= count;
+}
+
 //+------------------------------------------------------------------+
 //| Confirm that a pending target still agrees with the last closed  |
 //| candle. This runs on every tick so a target retained through a   |
