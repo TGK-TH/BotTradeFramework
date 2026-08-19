@@ -32,9 +32,6 @@ input int    SlowEMA = 26;
 input double RetracementMin = 61.8;
 input double RetracementMax = 100.0;
 
-input bool IsFixedLot = true;
-input double FixedLotValue = 0.10;
-
 input double RiskUSD = 1000;
 input double MaxLot = 100.0;
 input double SLBuffer = 1.5;
@@ -544,23 +541,31 @@ void ReconcilePosition() {
     return;
 
   bool isBuy = target == DESIRED_POSITION_BUY;
-  double tradeSL = isBuy
-                   ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
-                   : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+
+  double tradeSL = 0.0;
+  if (isBuy) {
+    tradeSL = currentPattern.valid
+      ? currentPattern.point3 - SLBuffer
+      : LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer;
+  } else {
+    tradeSL = currentPattern.valid
+      ? currentPattern.point3 + SLBuffer
+      : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+  }
+
   double price = SymbolInfoDouble(
     _Symbol,
     isBuy ? SYMBOL_ASK : SYMBOL_BID
   );
-  double lot = IsFixedLot
-               ? FixedLotValue
-               : CalcLot(
-                    _Symbol,
-                    isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
-                    price,
-                    tradeSL,
-                    RiskUSD,
-                    MaxLot
-                 );
+
+  double lot = CalcLot(
+    _Symbol,
+    isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
+    price,
+    tradeSL,
+    RiskUSD,
+    MaxLot
+  );
 
   positionReconciler.Reconcile(
     trade,
