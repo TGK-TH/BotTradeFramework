@@ -21,3 +21,6 @@ Experts/*
 # ignore all Include folders except Include/BotTrade
 Include/*
 !Include/BotTrade/
+
+# Freebuff
+.freebuff/
