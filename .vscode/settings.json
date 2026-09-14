@@ -33,5 +33,12 @@
     "*.mqh": "cpp",
     "*.mq4": "cpp",
     "*.mq5": "cpp"
-  }
+  },
+  "python-envs.pythonProjects": [
+    {
+      "path": ".",
+      "envManager": "ms-python.python:pyenv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ]
 }
