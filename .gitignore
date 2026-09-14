@@ -24,3 +24,8 @@ Include/*
 
 # Freebuff
 .freebuff/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
