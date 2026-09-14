@@ -27,3 +27,6 @@ class CandleSeries:
       return None
 
     return self._candles[-1 - index]
+
+  def count(self) -> int:
+    return len(self._candles)
