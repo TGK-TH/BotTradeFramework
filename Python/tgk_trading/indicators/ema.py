@@ -11,17 +11,17 @@ class EMA:
 
     alpha = 2 / (self._period + 1)
 
-    start_index = self._period - 1
+    oldest_index = data.count() - 1
 
     total = 0.0
 
     for i in range(self._period):
-      candle = data.get(start_index - i)
+      candle = data.get(oldest_index - i)
       total += candle.close
 
     ema = total / self._period
 
-    for i in range(start_index - 1, -1, -1):
+    for i in range(oldest_index - self._period, -1, -1):
       candle = data.get(i)
 
       ema = candle.close * alpha + ema * (1 - alpha)
