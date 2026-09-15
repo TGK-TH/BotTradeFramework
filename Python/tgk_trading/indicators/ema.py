@@ -1,3 +1,6 @@
+import pandas as pd
+import pandas_ta_classic as ta
+
 from tgk_trading.domain.market_data import CandleSeries
 
 class EMA:
@@ -9,21 +12,16 @@ class EMA:
     if data.count() < self._period:
       return None
 
-    alpha = 2 / (self._period + 1)
-
+    closes = []
     oldest_index = data.count() - 1
-
-    total = 0.0
-
-    for i in range(self._period):
-      candle = data.get(oldest_index - i)
-      total += candle.close
-
-    ema = total / self._period
-
-    for i in range(oldest_index - self._period, -1, -1):
+    for i in range(oldest_index, -1, -1):
       candle = data.get(i)
 
-      ema = candle.close * alpha + ema * (1 - alpha)
+      if candle is None:
+        raise RuntimeError("Unexpected missing candle")
 
-    return ema
+      closes.append(candle.close)
+
+    ema = ta.ema(pd.Series(closes), length=self._period)
+
+    return ema.iloc[-1]
