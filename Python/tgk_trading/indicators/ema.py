@@ -8,12 +8,15 @@ class EMA:
   def __init__(self, period: int):
     self._period = period
 
-  def calculate(self, data: CandleSeries) -> float | None:
-    if data.count() < self._period:
+  def calculate(self, data: CandleSeries, shift: int = 0) -> float | None:
+    dataSize: int = data.count()
+    if dataSize < self._period \
+      or shift >= dataSize \
+      or shift < 0:
       return None
 
     closes = []
-    oldest_index = data.count() - 1
+    oldest_index = dataSize - 1
     for i in range(oldest_index, -1, -1):
       candle = data.get(i)
 
@@ -23,5 +26,6 @@ class EMA:
       closes.append(candle.close)
 
     ema = ta.ema(pd.Series(closes), length=self._period)
+    value = ema.iloc[-1 - shift]
 
-    return ema.iloc[-1]
+    return None if pd.isna(value) else value
