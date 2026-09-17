@@ -9,14 +9,14 @@ class EMA:
     self._period = period
 
   def calculate(self, data: CandleSeries, shift: int = 0) -> float | None:
-    dataSize: int = data.count()
-    if dataSize < self._period \
-      or shift >= dataSize \
+    data_size: int = data.count()
+    if data_size < self._period \
+      or shift >= data_size \
       or shift < 0:
       return None
 
     closes = []
-    oldest_index = dataSize - 1
+    oldest_index = data_size - 1
     for i in range(oldest_index, -1, -1):
       candle = data.get(i)
 
