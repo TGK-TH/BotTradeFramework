@@ -1,0 +1,113 @@
+from tgk_trading.backtest.simulated_broker import SimulatedBroker
+from tgk_trading.backtest.result import BacktestResult
+from tgk_trading.domain.account import Account
+from tgk_trading.domain.market_data import CandleSeries
+from tgk_trading.domain.order import Order, OrderSide, OrderType
+from tgk_trading.domain.position import Position
+from tgk_trading.domain.signal import SignalType
+from tgk_trading.strategies.base import Strategy
+
+
+class BacktestEngine:
+
+  def __init__(
+    self,
+    strategy: Strategy,
+    initial_balance: float
+  ):
+    self._strategy = strategy
+    self._account = Account(initial_balance)
+    self._broker = SimulatedBroker()
+    self._data = CandleSeries()
+    self._initial_balance = initial_balance
+    self._realized_pnl = 0.0
+
+  def run(self, candles) -> BacktestResult:
+    for candle in candles:
+      self._data.append(candle)
+
+      signal = self._strategy.on_candle(self._data)
+
+      self._process_signal(
+        signal_type=signal.type,
+        price=candle.close
+      )
+
+    return BacktestResult(
+      initial_balance=self._initial_balance,
+      final_balance=self._account.balance(),
+      realized_pnl=self._realized_pnl
+    )
+
+  def _process_signal(
+    self,
+    signal_type: SignalType,
+    price: float
+  ):
+    if signal_type == SignalType.NONE:
+      return
+
+    current_position = self._get_current_position()
+
+    if current_position is not None:
+
+      if (
+        signal_type == SignalType.BUY
+        and current_position.side.value == "BUY"
+      ):
+        return
+
+      if (
+        signal_type == SignalType.SELL
+        and current_position.side.value == "SELL"
+      ):
+        return
+
+      closed = self._broker.close_position(
+        position=current_position,
+        price=price
+      )
+
+      self._account.remove_position(current_position)
+      self._account.apply_realized_pnl(closed.pnl)
+
+      self._realized_pnl += closed.pnl
+
+    order = self._create_order(signal_type)
+
+    position = self._broker.execute_order(
+      order=order,
+      price=price
+    )
+
+    self._account.add_position(position)
+
+  def _create_order(
+    self,
+    signal_type: SignalType
+  ) -> Order:
+
+    if signal_type == SignalType.BUY:
+      side = OrderSide.BUY
+
+    elif signal_type == SignalType.SELL:
+      side = OrderSide.SELL
+
+    else:
+      raise ValueError(
+        f"Cannot create order from signal: {signal_type}"
+      )
+
+    return Order(
+      type=OrderType.MARKET,
+      side=side,
+      quantity=1.0
+    )
+
+  def _get_current_position(self) -> Position | None:
+    positions = self._account.positions()
+
+    if not positions:
+      return None
+
+    return positions[0]
