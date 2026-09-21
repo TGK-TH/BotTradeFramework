@@ -1,11 +1,13 @@
 from tgk_trading.domain.account import Account
 from tgk_trading.domain.position import Position, PositionSide
 
+
 def test_initial_balance():
   account = Account(10000.0)
 
   assert account.balance() == 10000.0
   assert account.positions() == []
+
 
 def test_add_position():
   account = Account(10000.0)
@@ -23,6 +25,7 @@ def test_add_position():
   assert positions[0] == position
   assert account.balance() == 10000.0
 
+
 def test_remove_position():
   account = Account(10000.0)
 
@@ -36,6 +39,7 @@ def test_remove_position():
   account.remove_position(position)
 
   assert account.positions() == []
+
 
 def test_positions_returns_copy():
   account = Account(10000.0)
@@ -52,6 +56,17 @@ def test_positions_returns_copy():
 
   assert len(account.positions()) == 1
 
+
+def test_apply_realized_pnl():
+  account = Account(10000.0)
+
+  account.apply_realized_pnl(100.0)
+  assert account.balance() == 10100.0
+
+  account.apply_realized_pnl(-25.0)
+  assert account.balance() == 10075.0
+
+
 def run_tests():
   test_initial_balance()
   print("PASS: initial balance")
@@ -65,8 +80,12 @@ def run_tests():
   test_positions_returns_copy()
   print("PASS: positions returns copy")
 
+  test_apply_realized_pnl()
+  print("PASS: apply realized P&L")
+
   print()
   print("All Account tests passed")
+
 
 if __name__ == "__main__":
   run_tests()

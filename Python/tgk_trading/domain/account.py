@@ -17,3 +17,6 @@ class Account:
 
   def remove_position(self, position: Position):
     self._positions.remove(position)
+
+  def apply_realized_pnl(self, pnl: float):
+    self._balance += pnl
