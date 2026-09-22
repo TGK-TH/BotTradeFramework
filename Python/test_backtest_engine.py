@@ -65,6 +65,15 @@ def test_backtest_engine():
   assert result.unrealized_pnl == 10.0
   assert result.equity == 10020.0
 
+  assert len(result.equity_curve) == 4
+  assert result.equity_curve == [
+    10000.0,
+    10005.0,
+    10010.0,
+    10020.0
+  ]
+  assert result.equity_curve[-1] == result.equity
+
 
 def run_tests():
   test_backtest_engine()
