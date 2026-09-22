@@ -6,3 +6,5 @@ class BacktestResult:
   initial_balance: float
   final_balance: float
   realized_pnl: float
+  unrealized_pnl: float
+  equity: float

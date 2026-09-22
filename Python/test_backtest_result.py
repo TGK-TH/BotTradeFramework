@@ -7,19 +7,25 @@ def test_backtest_result():
   result = BacktestResult(
     initial_balance=10000.0,
     final_balance=10150.0,
-    realized_pnl=150.0
+    realized_pnl=150.0,
+    unrealized_pnl=0.0,
+    equity=10150.0,
   )
 
   assert result.initial_balance == 10000.0
   assert result.final_balance == 10150.0
   assert result.realized_pnl == 150.0
+  assert result.unrealized_pnl == 0.0
+  assert result.equity == 10150.0
 
 
 def test_backtest_result_is_immutable():
   result = BacktestResult(
     initial_balance=10000.0,
     final_balance=10150.0,
-    realized_pnl=150.0
+    realized_pnl=150.0,
+    unrealized_pnl=0.0,
+    equity=10150.0
   )
 
   try:

@@ -60,10 +60,10 @@ def test_backtest_engine():
   result = engine.run(create_candles())
 
   assert result.initial_balance == 10000.0
-
   assert result.realized_pnl == 10.0
-
   assert result.final_balance == 10010.0
+  assert result.unrealized_pnl == 10.0
+  assert result.equity == 10020.0
 
 
 def run_tests():
