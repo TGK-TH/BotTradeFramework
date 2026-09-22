@@ -51,7 +51,12 @@ class BacktestEngine:
         price=candle.close
       )
 
-    final_price = self._data.current().close
+    current_candle = self._data.current()
+
+    if current_candle is None:
+      raise ValueError("Cannot run backtest with no candles")
+
+    final_price = current_candle.close
 
     unrealized_pnl = self._calculate_unrealized_pnl(
       current_price=final_price
