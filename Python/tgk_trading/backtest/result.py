@@ -10,3 +10,4 @@ class BacktestResult:
   equity: float
   equity_curve: list[float]
   max_drawdown: float
+  max_drawdown_percent: float

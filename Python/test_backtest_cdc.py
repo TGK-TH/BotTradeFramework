@@ -47,6 +47,7 @@ def test_backtest_cdc():
   assert result.unrealized_pnl == 0.0
   assert result.equity == 9950.0
   assert result.max_drawdown == 100.0
+  assert result.max_drawdown_percent == 0.9950248756218906
 
 
 def run_tests():

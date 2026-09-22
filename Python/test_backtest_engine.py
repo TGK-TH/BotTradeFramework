@@ -74,6 +74,7 @@ def test_backtest_engine():
   ]
   assert result.equity_curve[-1] == result.equity
   assert result.max_drawdown == 0.0
+  assert result.max_drawdown_percent == 0.0
 
 
 def run_tests():
