@@ -1,3 +1,4 @@
+from tgk_trading.backtest.drawdown import calculate_max_drawdown
 from tgk_trading.backtest.simulated_broker import SimulatedBroker
 from tgk_trading.backtest.result import BacktestResult
 from tgk_trading.domain.account import Account
@@ -80,13 +81,16 @@ class BacktestEngine:
       + unrealized_pnl
     )
 
+    max_drawdown = calculate_max_drawdown(equity_curve)
+
     return BacktestResult(
       initial_balance=self._initial_balance,
       final_balance=self._account.balance(),
       realized_pnl=self._realized_pnl,
       unrealized_pnl=unrealized_pnl,
       equity=equity,
-      equity_curve=equity_curve
+      equity_curve=equity_curve,
+      max_drawdown=max_drawdown
     )
 
   def _process_signal(

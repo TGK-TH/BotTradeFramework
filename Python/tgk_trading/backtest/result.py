@@ -9,3 +9,4 @@ class BacktestResult:
   unrealized_pnl: float
   equity: float
   equity_curve: list[float]
+  max_drawdown: float

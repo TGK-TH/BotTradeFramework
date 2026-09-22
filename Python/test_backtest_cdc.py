@@ -46,6 +46,7 @@ def test_backtest_cdc():
   assert result.final_balance == 9950.0
   assert result.unrealized_pnl == 0.0
   assert result.equity == 9950.0
+  assert result.max_drawdown == 100.0
 
 
 def run_tests():
