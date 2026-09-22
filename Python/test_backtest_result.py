@@ -10,6 +10,7 @@ def test_backtest_result():
     realized_pnl=150.0,
     unrealized_pnl=0.0,
     equity=10150.0,
+    equity_curve=[10000.0, 10050.0, 10100.0, 10150.0]
   )
 
   assert result.initial_balance == 10000.0
@@ -17,6 +18,7 @@ def test_backtest_result():
   assert result.realized_pnl == 150.0
   assert result.unrealized_pnl == 0.0
   assert result.equity == 10150.0
+  assert result.equity_curve == [10000.0, 10050.0, 10100.0, 10150.0]
 
 
 def test_backtest_result_is_immutable():
@@ -25,7 +27,8 @@ def test_backtest_result_is_immutable():
     final_balance=10150.0,
     realized_pnl=150.0,
     unrealized_pnl=0.0,
-    equity=10150.0
+    equity=10150.0,
+    equity_curve=[10000.0, 10050.0, 10100.0, 10150.0]
   )
 
   try:

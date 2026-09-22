@@ -8,3 +8,4 @@ class BacktestResult:
   realized_pnl: float
   unrealized_pnl: float
   equity: float
+  equity_curve: list[float]

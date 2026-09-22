@@ -41,6 +41,8 @@ class BacktestEngine:
     return total_pnl
 
   def run(self, candles) -> BacktestResult:
+    equity_curve: list[float] = []
+
     for candle in candles:
       self._data.append(candle)
 
@@ -50,6 +52,17 @@ class BacktestEngine:
         signal_type=signal.type,
         price=candle.close
       )
+
+      unrealized_pnl = self._calculate_unrealized_pnl(
+        current_price=candle.close
+      )
+
+      equity = (
+        self._account.balance()
+        + unrealized_pnl
+      )
+
+      equity_curve.append(equity)
 
     current_candle = self._data.current()
 
@@ -72,7 +85,8 @@ class BacktestEngine:
       final_balance=self._account.balance(),
       realized_pnl=self._realized_pnl,
       unrealized_pnl=unrealized_pnl,
-      equity=equity
+      equity=equity,
+      equity_curve=equity_curve
     )
 
   def _process_signal(
