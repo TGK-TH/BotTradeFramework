@@ -9,6 +9,7 @@ from tgk_trading.domain.market_data import CandleSeries
 from tgk_trading.domain.order import Order, OrderSide, OrderType
 from tgk_trading.domain.position import Position
 from tgk_trading.domain.signal import SignalType
+from tgk_trading.domain.trade import Trade
 from tgk_trading.domain.pnl import calculate_unrealized_pnl
 from tgk_trading.strategies.base import Strategy
 
@@ -26,6 +27,7 @@ class BacktestEngine:
     self._data = CandleSeries()
     self._initial_balance = initial_balance
     self._realized_pnl = 0.0
+    self._trades: list[Trade] = []
 
   def _calculate_unrealized_pnl(
     self,
@@ -95,7 +97,8 @@ class BacktestEngine:
       equity=equity,
       equity_curve=equity_curve,
       max_drawdown=max_drawdown,
-      max_drawdown_percent=max_drawdown_percent
+      max_drawdown_percent=max_drawdown_percent,
+      trades=list(self._trades)
     )
 
   def _process_signal(
@@ -131,6 +134,11 @@ class BacktestEngine:
       self._account.apply_realized_pnl(closed.pnl)
 
       self._realized_pnl += closed.pnl
+      self._trades.append(Trade(
+        position=closed.position,
+        exit_price=closed.exit_price,
+        pnl=closed.pnl
+      ))
 
     order = self._create_order(signal_type)
 

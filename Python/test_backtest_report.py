@@ -11,7 +11,8 @@ def test_format_backtest_report():
     equity=9950.0,
     equity_curve=[10000.0, 10050.0, 9950.0],
     max_drawdown=100.0,
-    max_drawdown_percent=0.9950248756218906
+    max_drawdown_percent=0.9950248756218906,
+    trades=[]
   )
 
   report = format_backtest_report(result)

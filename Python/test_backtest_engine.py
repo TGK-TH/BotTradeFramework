@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from tgk_trading.backtest.engine import BacktestEngine
+from tgk_trading.domain.position import PositionSide
 from tgk_trading.domain.candle import Candle
 from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.strategies.base import Strategy
@@ -75,6 +76,11 @@ def test_backtest_engine():
   assert result.equity_curve[-1] == result.equity
   assert result.max_drawdown == 0.0
   assert result.max_drawdown_percent == 0.0
+  assert len(result.trades) == 1
+  assert result.trades[0].position.side == PositionSide.BUY
+  assert result.trades[0].position.entry_price == 2500.0
+  assert result.trades[0].exit_price == 2510.0
+  assert result.trades[0].pnl == 10.0
 
 
 def run_tests():

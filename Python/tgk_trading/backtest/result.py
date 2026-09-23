@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from tgk_trading.domain.trade import Trade
+
 
 @dataclass(frozen=True)
 class BacktestResult:
@@ -11,3 +13,4 @@ class BacktestResult:
   equity_curve: list[float]
   max_drawdown: float
   max_drawdown_percent: float
+  trades: list[Trade]

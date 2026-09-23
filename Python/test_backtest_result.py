@@ -1,6 +1,8 @@
 from dataclasses import FrozenInstanceError
 
 from tgk_trading.backtest.result import BacktestResult
+from tgk_trading.domain.trade import Trade
+from tgk_trading.domain.position import Position, PositionSide
 
 
 def test_backtest_result():
@@ -12,7 +14,8 @@ def test_backtest_result():
     equity=10150.0,
     equity_curve=[10000.0, 10050.0, 10100.0, 10150.0],
     max_drawdown=0.0,
-    max_drawdown_percent=0.0
+    max_drawdown_percent=0.0,
+    trades=[]
   )
 
   assert result.initial_balance == 10000.0
@@ -23,6 +26,7 @@ def test_backtest_result():
   assert result.equity_curve == [10000.0, 10050.0, 10100.0, 10150.0]
   assert result.max_drawdown == 0.0
   assert result.max_drawdown_percent == 0.0
+  assert result.trades == []
 
 
 def test_backtest_result_is_immutable():
@@ -34,7 +38,8 @@ def test_backtest_result_is_immutable():
     equity=10150.0,
     equity_curve=[10000.0, 10050.0, 10100.0, 10150.0],
     max_drawdown=0.0,
-    max_drawdown_percent=0.0
+    max_drawdown_percent=0.0,
+    trades=[]
   )
 
   try:
