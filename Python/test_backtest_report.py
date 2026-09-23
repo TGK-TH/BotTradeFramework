@@ -24,6 +24,8 @@ def test_format_backtest_report():
     "Realized P&L: -50.00\n"
     "Unrealized P&L: 0.00\n"
     "Equity: 9950.00\n"
+    "Total P&L: -50.00\n"
+    "Return: -0.50%\n"
     "Max Drawdown: 100.00\n"
     "Max Drawdown %: 1.00%"
   )
