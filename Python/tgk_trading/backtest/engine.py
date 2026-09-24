@@ -145,8 +145,10 @@ class BacktestEngine:
       )
 
       self._trades.append(Trade(
-        position=closed.position,
+        side=closed.position.side,
+        quantity=closed.position.quantity,
         entry_time=entry_time,
+        entry_price=closed.position.entry_price,
         exit_time=self._data.current().time,
         exit_price=closed.exit_price,
         pnl=closed.pnl

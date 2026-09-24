@@ -1,7 +1,7 @@
 from datetime import datetime
 from tgk_trading.backtest.report import format_backtest_report
 from tgk_trading.backtest.trade_statistics import TradeStatistics
-from tgk_trading.domain.position import Position, PositionSide
+from tgk_trading.domain.position import PositionSide
 from tgk_trading.domain.trade import Trade
 from tgk_trading.backtest.result import BacktestResult
 
@@ -63,23 +63,19 @@ def test_format_backtest_report():
 def test_format_backtest_report_with_trade_history():
   trades = [
     Trade(
-      position=Position(
-        side=PositionSide.BUY,
-        quantity=1.0,
-        entry_price=2500.0
-      ),
+      side=PositionSide.BUY,
+      quantity=1.0,
       entry_time=datetime(2026, 1, 1, 10, 0),
+      entry_price=2500.0,
       exit_time=datetime(2026, 1, 1, 11, 0),
       exit_price=2510.0,
       pnl=10.0
     ),
     Trade(
-      position=Position(
-        side=PositionSide.SELL,
-        quantity=2.0,
-        entry_price=2520.0
-      ),
+      side=PositionSide.SELL,
+      quantity=2.0,
       entry_time=datetime(2026, 1, 2, 10, 0),
+      entry_price=2520.0,
       exit_time=datetime(2026, 1, 2, 11, 0),
       exit_price=2530.0,
       pnl=-20.0
