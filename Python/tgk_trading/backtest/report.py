@@ -33,5 +33,16 @@ def format_backtest_report(result: BacktestResult) -> str:
     f"Gross Profit: {stats.gross_profit:.2f}\n"
     f"Gross Loss: {stats.gross_loss:.2f}\n"
     f"Profit Factor: {stats.profit_factor:.2f}\n"
-    f"Average Trade: {stats.average_trade:.2f}"
+    f"Average Trade: {stats.average_trade:.2f}\n"
+    "\n"
+    "Trade History\n"
+    "------------"
+    + ("" if not result.trades else "\n" + "\n".join(
+      f"Trade #{index}: {trade.position.side.value} "
+      f"Entry={trade.position.entry_price:.2f} "
+      f"Exit={trade.exit_price:.2f} "
+      f"Quantity={trade.position.quantity:.2f} "
+      f"P&L={trade.pnl:.2f}"
+      for index, trade in enumerate(result.trades, start=1)
+    ))
   )
