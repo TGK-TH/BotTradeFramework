@@ -39,8 +39,8 @@ def format_backtest_report(result: BacktestResult) -> str:
     "------------"
     + ("" if not result.trades else "\n" + "\n".join(
       f"Trade #{index}: {trade.position.side.value} "
-      f"Entry={trade.position.entry_price:.2f} "
-      f"Exit={trade.exit_price:.2f} "
+      f"Entry={trade.entry_time} @ {trade.position.entry_price:.2f} "
+      f"Exit={trade.exit_time} @ {trade.exit_price:.2f} "
       f"Quantity={trade.position.quantity:.2f} "
       f"P&L={trade.pnl:.2f}"
       for index, trade in enumerate(result.trades, start=1)

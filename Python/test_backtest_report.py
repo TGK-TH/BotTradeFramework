@@ -136,8 +136,8 @@ def test_format_backtest_report_with_trade_history():
     "\n"
     "Trade History\n"
     "------------\n"
-    "Trade #1: BUY Entry=2500.00 Exit=2510.00 Quantity=1.00 P&L=10.00\n"
-    "Trade #2: SELL Entry=2520.00 Exit=2530.00 Quantity=2.00 P&L=-20.00"
+    "Trade #1: BUY Entry=2026-01-01 10:00:00 @ 2500.00 Exit=2026-01-01 11:00:00 @ 2510.00 Quantity=1.00 P&L=10.00\n"
+    "Trade #2: SELL Entry=2026-01-02 10:00:00 @ 2520.00 Exit=2026-01-02 11:00:00 @ 2530.00 Quantity=2.00 P&L=-20.00"
   )
 
 
