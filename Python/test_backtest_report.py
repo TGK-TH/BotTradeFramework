@@ -1,4 +1,5 @@
 from tgk_trading.backtest.report import format_backtest_report
+from tgk_trading.backtest.trade_statistics import TradeStatistics
 from tgk_trading.backtest.result import BacktestResult
 
 
@@ -12,7 +13,17 @@ def test_format_backtest_report():
     equity_curve=[10000.0, 10050.0, 9950.0],
     max_drawdown=100.0,
     max_drawdown_percent=0.9950248756218906,
-    trades=[]
+    trades=[],
+    trade_statistics=TradeStatistics(
+      total_trades=0,
+      winning_trades=0,
+      losing_trades=0,
+      win_rate=0.0,
+      gross_profit=0.0,
+      gross_loss=0.0,
+      profit_factor=0.0,
+      average_trade=0.0
+    )
   )
 
   report = format_backtest_report(result)

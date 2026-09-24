@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from tgk_trading.backtest.trade_statistics import TradeStatistics
 from tgk_trading.domain.trade import Trade
 
 
@@ -14,3 +15,4 @@ class BacktestResult:
   max_drawdown: float
   max_drawdown_percent: float
   trades: list[Trade]
+  trade_statistics: TradeStatistics

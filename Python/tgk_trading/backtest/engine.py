@@ -3,6 +3,7 @@ from tgk_trading.backtest.drawdown import (
   calculate_max_drawdown_percent
 )
 from tgk_trading.backtest.simulated_broker import SimulatedBroker
+from tgk_trading.backtest.trade_statistics import calculate_trade_statistics
 from tgk_trading.backtest.result import BacktestResult
 from tgk_trading.domain.account import Account
 from tgk_trading.domain.market_data import CandleSeries
@@ -98,7 +99,8 @@ class BacktestEngine:
       equity_curve=equity_curve,
       max_drawdown=max_drawdown,
       max_drawdown_percent=max_drawdown_percent,
-      trades=list(self._trades)
+      trades=list(self._trades),
+      trade_statistics=calculate_trade_statistics(self._trades)
     )
 
   def _process_signal(
