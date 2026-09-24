@@ -7,7 +7,7 @@ from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.strategies.base import Strategy
 
 
-class TestStrategy(Strategy):
+class AlwaysSignalStrategy(Strategy):
 
   def __init__(self):
     self._count = 0
@@ -51,7 +51,7 @@ def create_candles():
 
 
 def test_backtest_engine():
-  strategy = TestStrategy()
+  strategy = AlwaysSignalStrategy()
 
   engine = BacktestEngine(
     strategy=strategy,
