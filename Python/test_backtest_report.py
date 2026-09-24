@@ -39,7 +39,18 @@ def test_format_backtest_report():
     "Total P&L: -50.00\n"
     "Return: -0.50%\n"
     "Max Drawdown: 100.00\n"
-    "Max Drawdown %: 1.00%"
+    "Max Drawdown %: 1.00%\n"
+    "\n"
+    "Trade Statistics\n"
+    "-----------------\n"
+    "Total Trades: 0\n"
+    "Winning Trades: 0\n"
+    "Losing Trades: 0\n"
+    "Win Rate: 0.00%\n"
+    "Gross Profit: 0.00\n"
+    "Gross Loss: 0.00\n"
+    "Profit Factor: 0.00\n"
+    "Average Trade: 0.00"
   )
 
 
