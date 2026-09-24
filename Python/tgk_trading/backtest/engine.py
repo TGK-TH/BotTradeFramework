@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from tgk_trading.backtest.drawdown import (
   calculate_max_drawdown,
   calculate_max_drawdown_percent
@@ -28,6 +30,7 @@ class BacktestEngine:
     self._data = CandleSeries()
     self._initial_balance = initial_balance
     self._realized_pnl = 0.0
+    self._position_entry_times: dict[Position, datetime] = {}
     self._trades: list[Trade] = []
 
   def _calculate_unrealized_pnl(
@@ -136,8 +139,15 @@ class BacktestEngine:
       self._account.apply_realized_pnl(closed.pnl)
 
       self._realized_pnl += closed.pnl
+
+      entry_time = self._position_entry_times.pop(
+        current_position
+      )
+
       self._trades.append(Trade(
         position=closed.position,
+        entry_time=entry_time,
+        exit_time=self._data.current().time,
         exit_price=closed.exit_price,
         pnl=closed.pnl
       ))
@@ -150,6 +160,7 @@ class BacktestEngine:
     )
 
     self._account.add_position(position)
+    self._position_entry_times[position] = self._data.current().time
 
   def _create_order(
     self,

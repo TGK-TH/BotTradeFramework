@@ -1,3 +1,4 @@
+from datetime import datetime
 from tgk_trading.backtest.trade_statistics import calculate_trade_statistics
 from tgk_trading.domain.position import Position, PositionSide
 from tgk_trading.domain.trade import Trade
@@ -10,6 +11,8 @@ def create_trade(pnl: float) -> Trade:
       quantity=1.0,
       entry_price=100.0
     ),
+    entry_time=datetime(2026, 1, 1, 10, 0),
+    exit_time=datetime(2026, 1, 1, 11, 0),
     exit_price=100.0 + pnl,
     pnl=pnl
   )
