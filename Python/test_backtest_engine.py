@@ -79,6 +79,8 @@ def test_backtest_engine():
   assert len(result.trades) == 1
   assert result.trades[0].position.side == PositionSide.BUY
   assert result.trades[0].position.entry_price == 2500.0
+  assert result.trades[0].entry_time == datetime(2026, 1, 1, 0, 0)
+  assert result.trades[0].exit_time == datetime(2026, 1, 1, 0, 2)
   assert result.trades[0].exit_price == 2510.0
   assert result.trades[0].pnl == 10.0
 
