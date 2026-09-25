@@ -61,29 +61,29 @@ def test_backtest_engine():
   result = engine.run(create_candles())
 
   assert result.initial_balance == 10000.0
-  assert result.realized_pnl == 10.0
-  assert result.final_balance == 10010.0
-  assert result.unrealized_pnl == 10.0
-  assert result.equity == 10020.0
+  assert result.realized_pnl == -5.0
+  assert result.final_balance == 9995.0
+  assert result.unrealized_pnl == 0.0
+  assert result.equity == 9995.0
 
   assert len(result.equity_curve) == 4
   assert result.equity_curve == [
     10000.0,
+    10000.0,
     10005.0,
-    10010.0,
-    10020.0
+    9995.0
   ]
   assert result.equity_curve[-1] == result.equity
-  assert result.max_drawdown == 0.0
-  assert result.max_drawdown_percent == 0.0
+  assert result.max_drawdown == 10.0
+  assert result.max_drawdown_percent == 0.09995002498750624
   assert len(result.trades) == 1
   assert result.trades[0].side == PositionSide.BUY
   assert result.trades[0].quantity == 1.0
-  assert result.trades[0].entry_price == 2500.0
-  assert result.trades[0].entry_time == datetime(2026, 1, 1, 0, 0)
-  assert result.trades[0].exit_time == datetime(2026, 1, 1, 0, 2)
-  assert result.trades[0].exit_price == 2510.0
-  assert result.trades[0].pnl == 10.0
+  assert result.trades[0].entry_price == 2505.0
+  assert result.trades[0].entry_time == datetime(2026, 1, 1, 0, 1)
+  assert result.trades[0].exit_time == datetime(2026, 1, 1, 0, 3)
+  assert result.trades[0].exit_price == 2500.0
+  assert result.trades[0].pnl == -5.0
 
 
 def run_tests():
