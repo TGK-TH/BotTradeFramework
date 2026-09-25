@@ -77,6 +77,9 @@ void OnStart()
   FileWrite(
     fileHandle,
     "time",
+    "open",
+    "high",
+    "low",
     "close",
     "ema12",
     "ema26"
@@ -89,6 +92,9 @@ void OnStart()
     FileWrite(
       fileHandle,
       TimeToString(rates[i].time, TIME_DATE | TIME_MINUTES),
+      DoubleToString(rates[i].open, _Digits),
+      DoubleToString(rates[i].high, _Digits),
+      DoubleToString(rates[i].low, _Digits),
       DoubleToString(rates[i].close, _Digits),
       DoubleToString(fastEMA[i], 10),
       DoubleToString(slowEMA[i], 10)
