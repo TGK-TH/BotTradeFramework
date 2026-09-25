@@ -1,0 +1,1 @@
+Current phase: MT5 Historical Data -> Python Candle Loader. Reference CSV is Python/reference/tgk_ema_reference.csv with columns time, close, ema12, ema26. Loader should use time and close to create Candle objects; EMA columns are reference/validation only, not loader inputs.
