@@ -6,6 +6,7 @@ from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 REFERENCE_CSV = "Python/reference/tgk_ema_reference.csv"
 INITIAL_BALANCE = 10000.0
+WARMUP_BARS = 200
 
 
 def main() -> None:
@@ -16,7 +17,7 @@ def main() -> None:
     initial_balance=INITIAL_BALANCE
   )
 
-  result = engine.run(candles)
+  result = engine.run(candles, warmup_bars=WARMUP_BARS)
 
   print(f"Candles: {len(candles)}")
   print(format_backtest_report(result))
