@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from tgk_trading.domain.candle import Candle
+from tgk_trading.domain.timeframe import Timeframe
 
 
 class MT5Adapter:
@@ -41,7 +42,7 @@ class MT5Adapter:
   def get_candles(
     self,
     symbol: str,
-    timeframe: int,
+    timeframe: Timeframe,
     count: int
   ) -> list[Candle]:
     if not self._connected:
@@ -50,9 +51,14 @@ class MT5Adapter:
     if count <= 0:
       raise ValueError("count must be greater than 0")
 
+    mt5_timeframe = getattr(
+      self._mt5,
+      f"TIMEFRAME_{timeframe.value}"
+    )
+
     rates = self._mt5.copy_rates_from_pos(
       symbol,
-      timeframe,
+      mt5_timeframe,
       1,
       count
     )

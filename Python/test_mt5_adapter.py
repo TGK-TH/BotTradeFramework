@@ -1,9 +1,12 @@
 from datetime import datetime, timezone
 
 from tgk_trading.brokers.mt5 import MT5Adapter
+from tgk_trading.domain.timeframe import Timeframe
 
 
 class FakeMT5:
+  TIMEFRAME_M15 = 15
+
   def __init__(self, initialize_result=True, rates=None):
     self.initialize_result = initialize_result
     self.rates = rates
@@ -99,7 +102,7 @@ def test_get_candles_returns_closed_candles():
   adapter = MT5Adapter(mt5)
   adapter.connect()
 
-  candles = adapter.get_candles("XAUUSD", 15, 2)
+  candles = adapter.get_candles("XAUUSD", Timeframe.M15, 2)
 
   assert len(candles) == 2
   assert candles[0].time == datetime.fromtimestamp(1758794400, tz=timezone.utc).replace(tzinfo=None)
@@ -113,7 +116,7 @@ def test_get_candles_requires_connection():
   adapter = MT5Adapter(mt5)
 
   try:
-    adapter.get_candles("XAUUSD", 15, 10)
+    adapter.get_candles("XAUUSD", Timeframe.M15, 10)
     assert False, "Expected RuntimeError"
   except RuntimeError as error:
     assert "MT5 is not connected" in str(error)
@@ -125,7 +128,7 @@ def test_get_candles_requires_positive_count():
   adapter.connect()
 
   try:
-    adapter.get_candles("XAUUSD", 15, 0)
+    adapter.get_candles("XAUUSD", Timeframe.M15, 0)
     assert False, "Expected ValueError"
   except ValueError as error:
     assert "count must be greater than 0" in str(error)
@@ -137,7 +140,7 @@ def test_get_candles_raises_when_mt5_returns_none():
   adapter.connect()
 
   try:
-    adapter.get_candles("XAUUSD", 15, 10)
+    adapter.get_candles("XAUUSD", Timeframe.M15, 10)
     assert False, "Expected RuntimeError"
   except RuntimeError as error:
     assert "MT5 failed to get candles" in str(error)

@@ -1,4 +1,5 @@
 from tgk_trading.brokers.mt5 import MT5Adapter
+from tgk_trading.domain.timeframe import Timeframe
 
 
 def main() -> None:
@@ -7,11 +8,9 @@ def main() -> None:
   try:
     adapter.connect()
 
-    import MetaTrader5 as mt5
-
     candles = adapter.get_candles(
       symbol="XAUUSD",
-      timeframe=mt5.TIMEFRAME_M15,
+      timeframe=Timeframe.M15,
       count=5
     )
 
