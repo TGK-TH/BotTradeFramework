@@ -1,0 +1,1 @@
+User now prefers assistant to read and directly edit code on the machine via Serena, while still explaining the code and changes so the user understands them. This supersedes the earlier preference to manually copy/paste code.
