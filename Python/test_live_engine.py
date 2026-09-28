@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from tgk_trading.domain.candle import Candle
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
+from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 
 class FakeAdapter:
@@ -15,12 +16,23 @@ class FakeAdapter:
     return self.candle_batches.pop(0)
 
 
+class RecordingCDCStrategy:
+  def __init__(self):
+    self.strategy = CDCAccount3Strategy()
+    self.signals = []
+
+  def on_candle(self, data):
+    signal = self.strategy.on_candle(data)
+    self.signals.append(signal)
+    return signal
+
+
 class FakeStrategy:
   def __init__(self):
     self.candles = []
 
-  def on_candle(self, candle):
-    self.candles.append(candle)
+  def on_candle(self, data):
+    self.candles.append(data.current())
 
 
 def candle(minute):
@@ -67,6 +79,49 @@ def test_live_engine_processes_new_candles_only():
     ("XAUUSD", Timeframe.M15, 100),
     ("XAUUSD", Timeframe.M15, 100)
   ]
+
+
+def test_live_engine_passes_candle_series_to_strategy():
+  adapter = FakeAdapter([[candle(0), candle(15)]])
+  strategy = FakeStrategy()
+  engine = LiveEngine(
+    adapter=adapter,
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=strategy
+  )
+
+  engine.poll()
+
+  assert len(strategy.candles) == 2
+  assert strategy.candles[-1].time == datetime(2026, 9, 28, 10, 15)
+
+
+def test_live_engine_can_run_cdc_strategy():
+  prices = [100] * 30 + [200] * 30
+  candles = [
+    Candle(
+      time=datetime(2026, 9, 28, 10) + timedelta(minutes=i),
+      open=price,
+      high=price,
+      low=price,
+      close=price
+    )
+    for i, price in enumerate(prices)
+  ]
+  adapter = FakeAdapter([candles])
+  strategy = RecordingCDCStrategy()
+  engine = LiveEngine(
+    adapter=adapter,
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=strategy
+  )
+
+  engine.poll(count=60)
+
+  assert len(strategy.signals) == 60
+  assert any(signal.type.value == "BUY" for signal in strategy.signals)
 
 
 def test_live_engine_tracks_last_processed_candle():

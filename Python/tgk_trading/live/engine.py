@@ -1,13 +1,25 @@
-from tgk_trading.brokers.mt5 import MT5Adapter
 from tgk_trading.domain.candle import Candle
+from tgk_trading.domain.market_data import CandleSeries
 from tgk_trading.domain.timeframe import Timeframe
+from typing import Protocol
+
 from tgk_trading.live.candle_tracker import ClosedCandleTracker
+
+
+class CandleProvider(Protocol):
+  def get_candles(
+    self,
+    symbol: str,
+    timeframe: Timeframe,
+    count: int
+  ) -> list[Candle]:
+    ...
 
 
 class LiveEngine:
   def __init__(
     self,
-    adapter: MT5Adapter,
+    adapter: CandleProvider,
     symbol: str,
     timeframe: Timeframe,
     strategy
@@ -17,6 +29,7 @@ class LiveEngine:
     self._timeframe = timeframe
     self._strategy = strategy
     self._tracker = ClosedCandleTracker()
+    self._data = CandleSeries()
 
   def poll(self, count: int = 100) -> list[Candle]:
     candles = self._adapter.get_candles(
@@ -28,7 +41,8 @@ class LiveEngine:
     new_candles = self._tracker.new_candles(candles)
 
     for candle in new_candles:
-      self._strategy.on_candle(candle)
+      self._data.append(candle)
+      self._strategy.on_candle(self._data)
 
     return new_candles
 
