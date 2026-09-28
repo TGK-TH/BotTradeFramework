@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 
 from tgk_trading.domain.candle import Candle
+from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
+from tgk_trading.live.order_executor import RecordingOrderExecutor
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 
@@ -33,6 +35,7 @@ class FakeStrategy:
 
   def on_candle(self, data):
     self.candles.append(data.current())
+    return Signal(SignalType.NONE)
 
 
 def candle(minute):
@@ -55,7 +58,8 @@ def test_live_engine_processes_new_candles_only():
     adapter=adapter,
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
-    strategy=strategy
+    strategy=strategy,
+    order_executor=RecordingOrderExecutor()
   )
 
   first = engine.poll()
@@ -88,7 +92,8 @@ def test_live_engine_passes_candle_series_to_strategy():
     adapter=adapter,
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
-    strategy=strategy
+    strategy=strategy,
+    order_executor=RecordingOrderExecutor()
   )
 
   engine.poll()
@@ -115,7 +120,8 @@ def test_live_engine_can_run_cdc_strategy():
     adapter=adapter,
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
-    strategy=strategy
+    strategy=strategy,
+    order_executor=RecordingOrderExecutor()
   )
 
   engine.poll(count=60)
@@ -131,7 +137,8 @@ def test_live_engine_tracks_last_processed_candle():
     adapter=adapter,
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
-    strategy=strategy
+    strategy=strategy,
+    order_executor=RecordingOrderExecutor()
   )
 
   engine.poll()
