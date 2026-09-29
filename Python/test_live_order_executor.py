@@ -231,3 +231,85 @@ def test_mt5_order_request_builder_rejects_invalid_quantity():
     assert False
   except ValueError as error:
     assert str(error) == "Order quantity must be greater than 0"
+
+
+def test_mt5_order_executor_returns_only_owned_positions():
+  class Position:
+    def __init__(self, ticket, symbol, magic, comment):
+      self.ticket = ticket
+      self.symbol = symbol
+      self.magic = magic
+      self.comment = comment
+
+  class FakeMT5:
+    def positions_get(self, symbol):
+      assert symbol == "XAUUSD"
+      return [
+        Position(101, "XAUUSD", 4001, "TGK_PYTHON"),
+        Position(102, "XAUUSD", 3003, "SELL"),
+        Position(103, "EURUSD", 4001, "TGK_PYTHON"),
+      ]
+
+  executor = MT5OrderExecutor(
+    FakeMT5(),
+    "XAUUSD",
+    magic=4001,
+    comment="TGK_PYTHON"
+  )
+
+  positions = executor.get_owned_positions()
+
+  assert [position.ticket for position in positions] == [101]
+
+
+def test_mt5_order_executor_finds_owned_position_by_ticket():
+  class Position:
+    def __init__(self, ticket, symbol, magic, comment):
+      self.ticket = ticket
+      self.symbol = symbol
+      self.magic = magic
+      self.comment = comment
+
+  class FakeMT5:
+    def positions_get(self, symbol):
+      return [
+        Position(101, "XAUUSD", 4001, "TGK_PYTHON"),
+        Position(102, "XAUUSD", 3003, "SELL"),
+      ]
+
+  executor = MT5OrderExecutor(
+    FakeMT5(),
+    "XAUUSD",
+    magic=4001,
+    comment="TGK_PYTHON"
+  )
+
+  position = executor.get_owned_position(101)
+
+  assert position is not None
+  assert position.ticket == 101
+
+
+def test_mt5_order_executor_does_not_find_other_bot_position():
+  class Position:
+    def __init__(self, ticket, symbol, magic, comment):
+      self.ticket = ticket
+      self.symbol = symbol
+      self.magic = magic
+      self.comment = comment
+
+  class FakeMT5:
+    def positions_get(self, symbol):
+      return [
+        Position(101, "XAUUSD", 4001, "TGK_PYTHON"),
+        Position(102, "XAUUSD", 3003, "SELL"),
+      ]
+
+  executor = MT5OrderExecutor(
+    FakeMT5(),
+    "XAUUSD",
+    magic=4001,
+    comment="TGK_PYTHON"
+  )
+
+  assert executor.get_owned_position(102) is None

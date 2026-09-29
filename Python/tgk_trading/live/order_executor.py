@@ -117,3 +117,30 @@ class MT5OrderExecutor:
 
   def get_last_result(self):
     return self.last_result
+
+  
+  def get_owned_positions(self):
+    positions = self._mt5.positions_get(symbol=self._symbol)
+
+    if positions is None:
+      raise RuntimeError(
+        f"MT5 positions_get failed: {self._mt5.last_error()}"
+      )
+
+    return [
+      position
+      for position in positions
+      if position.symbol == self._symbol
+      and position.magic == self._magic
+      and position.comment == self._comment
+    ]
+
+  def get_owned_position(self, ticket: int):
+    if ticket <= 0:
+      raise ValueError("Position ticket must be greater than 0")
+
+    for position in self.get_owned_positions():
+      if position.ticket == ticket:
+        return position
+
+    return None
