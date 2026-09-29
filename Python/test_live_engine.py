@@ -151,7 +151,7 @@ def test_live_engine_end_to_end_creates_mt5_request():
       return Signal(SignalType.BUY)
 
   adapter = FakeAdapter([[candle(0)]])
-  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD")
+  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD", magic=4001, comment="TGK_PYTHON")
   engine = LiveEngine(
     adapter=adapter,
     symbol="XAUUSD",
@@ -169,6 +169,8 @@ def test_live_engine_end_to_end_creates_mt5_request():
     "type": 2,
     "price": 4050.25,
     "deviation": 20,
+    "magic": 4001,
+    "comment": "TGK_PYTHON",
     "type_time": 4,
     "type_filling": 5
   }

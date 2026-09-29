@@ -24,13 +24,21 @@ class MT5OrderRequestBuilder:
     self,
     order: Order,
     symbol: str,
-    price: float
+    price: float,
+    magic: int,
+    comment: str
   ) -> dict:
     if order.type != OrderType.MARKET:
       raise ValueError(f"Unsupported order type: {order.type}")
 
     if order.quantity <= 0:
       raise ValueError("Order quantity must be greater than 0")
+
+    if magic <= 0:
+      raise ValueError("Magic number must be greater than 0")
+
+    if not comment:
+      raise ValueError("Order comment must not be empty")
 
     if order.side == OrderSide.BUY:
       order_type = self._mt5.ORDER_TYPE_BUY
@@ -46,15 +54,26 @@ class MT5OrderRequestBuilder:
       "type": order_type,
       "price": price,
       "deviation": 20,
+      "magic": magic,
+      "comment": comment,
       "type_time": self._mt5.ORDER_TIME_GTC,
       "type_filling": self._mt5.ORDER_FILLING_IOC
     }
 
 
 class MT5OrderExecutor:
-  def __init__(self, mt5_module, symbol: str, live_trading: bool = False):
+  def __init__(
+    self,
+    mt5_module,
+    symbol: str,
+    magic: int,
+    comment: str,
+    live_trading: bool = False
+  ):
     self._mt5 = mt5_module
     self._symbol = symbol
+    self._magic = magic
+    self._comment = comment
     self._builder = MT5OrderRequestBuilder(mt5_module)
     self._live_trading = live_trading
     self.last_request = None
@@ -73,7 +92,9 @@ class MT5OrderExecutor:
     self.last_request = self._builder.build_market_request(
       order=order,
       symbol=self._symbol,
-      price=price
+      price=price,
+      magic=self._magic,
+      comment=self._comment
     )
 
     if not self._live_trading:

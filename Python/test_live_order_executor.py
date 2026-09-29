@@ -52,7 +52,7 @@ def test_mt5_order_executor_builds_request_without_sending():
     def order_send(self, request):
       raise AssertionError("order_send must not be called in safe mode")
 
-  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD")
+  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD", magic=4001, comment="TGK_PYTHON")
   order = Order(
     type=OrderType.MARKET,
     side=OrderSide.BUY,
@@ -68,6 +68,8 @@ def test_mt5_order_executor_builds_request_without_sending():
     "type": 2,
     "price": 4050.25,
     "deviation": 20,
+    "magic": 4001,
+    "comment": "TGK_PYTHON",
     "type_time": 4,
     "type_filling": 5
   }
@@ -104,7 +106,7 @@ def test_mt5_order_executor_sends_when_live_trading_enabled():
       return "fake error"
 
   mt5 = FakeMT5()
-  executor = MT5OrderExecutor(mt5, "XAUUSD", live_trading=True)
+  executor = MT5OrderExecutor(mt5, "XAUUSD", magic=4001, comment="TGK_PYTHON", live_trading=True)
   order = Order(
     type=OrderType.MARKET,
     side=OrderSide.SELL,
@@ -143,7 +145,7 @@ def test_mt5_order_executor_rejects_failed_result():
     def last_error(self):
       return "fake error"
 
-  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD", live_trading=True)
+  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD", magic=4001, comment="TGK_PYTHON", live_trading=True)
   order = Order(
     type=OrderType.MARKET,
     side=OrderSide.BUY,
@@ -168,7 +170,9 @@ def test_mt5_order_request_builder_maps_buy_order():
   request = builder.build_market_request(
     order,
     symbol="XAUUSD",
-    price=4000.50
+    price=4000.50,
+    magic=4001,
+    comment="TGK_PYTHON"
   )
 
   assert request == {
@@ -178,6 +182,8 @@ def test_mt5_order_request_builder_maps_buy_order():
     "type": FakeMT5.ORDER_TYPE_BUY,
     "price": 4000.50,
     "deviation": 20,
+    "magic": 4001,
+    "comment": "TGK_PYTHON",
     "type_time": FakeMT5.ORDER_TIME_GTC,
     "type_filling": FakeMT5.ORDER_FILLING_IOC
   }
@@ -194,12 +200,16 @@ def test_mt5_order_request_builder_maps_sell_order():
   request = builder.build_market_request(
     order,
     symbol="XAUUSD",
-    price=4000.50
+    price=4000.50,
+    magic=4001,
+    comment="TGK_PYTHON"
   )
 
   assert request["type"] == FakeMT5.ORDER_TYPE_SELL
   assert request["volume"] == 0.01
   assert request["symbol"] == "XAUUSD"
+  assert request["magic"] == 4001
+  assert request["comment"] == "TGK_PYTHON"
 
 
 def test_mt5_order_request_builder_rejects_invalid_quantity():
@@ -211,7 +221,13 @@ def test_mt5_order_request_builder_rejects_invalid_quantity():
   )
 
   try:
-    builder.build_market_request(order, "XAUUSD", 4000.50)
+    builder.build_market_request(
+      order,
+      "XAUUSD",
+      4000.50,
+      magic=4001,
+      comment="TGK_PYTHON"
+    )
     assert False
   except ValueError as error:
     assert str(error) == "Order quantity must be greater than 0"
