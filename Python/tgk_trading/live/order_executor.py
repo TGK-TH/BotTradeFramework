@@ -52,11 +52,13 @@ class MT5OrderRequestBuilder:
 
 
 class MT5OrderExecutor:
-  def __init__(self, mt5_module, symbol: str):
+  def __init__(self, mt5_module, symbol: str, live_trading: bool = False):
     self._mt5 = mt5_module
     self._symbol = symbol
     self._builder = MT5OrderRequestBuilder(mt5_module)
+    self._live_trading = live_trading
     self.last_request = None
+    self.last_result = None
 
   def submit_order(self, order: Order) -> None:
     tick = self._mt5.symbol_info_tick(self._symbol)
@@ -74,5 +76,23 @@ class MT5OrderExecutor:
       price=price
     )
 
+    if not self._live_trading:
+      return
+
+    self.last_result = self._mt5.order_send(self.last_request)
+
+    if self.last_result is None:
+      raise RuntimeError(
+        f"MT5 order_send failed: {self._mt5.last_error()}"
+      )
+
+    if self.last_result.retcode != self._mt5.TRADE_RETCODE_DONE:
+      raise RuntimeError(
+        f"MT5 order rejected: retcode={self.last_result.retcode}"
+      )
+
   def get_last_request(self):
     return self.last_request
+
+  def get_last_result(self):
+    return self.last_result
