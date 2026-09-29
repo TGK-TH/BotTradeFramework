@@ -4,7 +4,7 @@ from tgk_trading.domain.candle import Candle
 from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
-from tgk_trading.live.order_executor import RecordingOrderExecutor
+from tgk_trading.live.order_executor import MT5OrderExecutor, RecordingOrderExecutor
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 
@@ -128,6 +128,50 @@ def test_live_engine_can_run_cdc_strategy():
 
   assert len(strategy.signals) == 60
   assert any(signal.type.value == "BUY" for signal in strategy.signals)
+
+
+def test_live_engine_end_to_end_creates_mt5_request():
+  class FakeMT5:
+    TRADE_ACTION_DEAL = 1
+    ORDER_TYPE_BUY = 2
+    ORDER_TYPE_SELL = 3
+    ORDER_TIME_GTC = 4
+    ORDER_FILLING_IOC = 5
+
+    class Tick:
+      ask = 4050.25
+      bid = 4050.05
+
+    def symbol_info_tick(self, symbol):
+      assert symbol == "XAUUSD"
+      return self.Tick()
+
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  adapter = FakeAdapter([[candle(0)]])
+  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD")
+  engine = LiveEngine(
+    adapter=adapter,
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.get_last_request() == {
+    "action": 1,
+    "symbol": "XAUUSD",
+    "volume": 1.0,
+    "type": 2,
+    "price": 4050.25,
+    "deviation": 20,
+    "type_time": 4,
+    "type_filling": 5
+  }
 
 
 def test_live_engine_tracks_last_processed_candle():
