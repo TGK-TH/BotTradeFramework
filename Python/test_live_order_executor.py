@@ -1,6 +1,23 @@
 from tgk_trading.domain.order import Order, OrderSide, OrderType
 from tgk_trading.live.order_executor import RecordingOrderExecutor
-from tgk_trading.live.order_executor import MT5OrderRequestBuilder
+from tgk_trading.live.order_executor import MT5OrderRequestBuilder, MT5OrderExecutor
+
+
+class FakeMT5:
+  TRADE_ACTION_DEAL = 1
+  ORDER_TYPE_BUY = 2
+  ORDER_TYPE_SELL = 3
+  ORDER_TIME_GTC = 4
+  ORDER_FILLING_IOC = 5
+
+  class Tick:
+    ask = 4050.25
+    bid = 4050.05
+
+  def symbol_info_tick(self, symbol):
+    assert symbol == "XAUUSD"
+    return self.Tick()
+
 
 def test_recording_order_executor_records_orders():
   executor = RecordingOrderExecutor()
@@ -15,12 +32,26 @@ def test_recording_order_executor_records_orders():
   assert executor.orders == [order]
 
 
-class FakeMT5:
-  TRADE_ACTION_DEAL = 1
-  ORDER_TYPE_BUY = 2
-  ORDER_TYPE_SELL = 3
-  ORDER_TIME_GTC = 4
-  ORDER_FILLING_IOC = 5
+def test_mt5_order_executor_builds_request_without_sending():
+  executor = MT5OrderExecutor(FakeMT5(), "XAUUSD")
+  order = Order(
+    type=OrderType.MARKET,
+    side=OrderSide.BUY,
+    quantity=0.01
+  )
+
+  executor.submit_order(order)
+
+  assert executor.get_last_request() == {
+    "action": 1,
+    "symbol": "XAUUSD",
+    "volume": 0.01,
+    "type": 2,
+    "price": 4050.25,
+    "deviation": 20,
+    "type_time": 4,
+    "type_filling": 5
+  }
 
 
 def test_mt5_order_request_builder_maps_buy_order():

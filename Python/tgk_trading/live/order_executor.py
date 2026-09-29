@@ -49,3 +49,30 @@ class MT5OrderRequestBuilder:
       "type_time": self._mt5.ORDER_TIME_GTC,
       "type_filling": self._mt5.ORDER_FILLING_IOC
     }
+
+
+class MT5OrderExecutor:
+  def __init__(self, mt5_module, symbol: str):
+    self._mt5 = mt5_module
+    self._symbol = symbol
+    self._builder = MT5OrderRequestBuilder(mt5_module)
+    self.last_request = None
+
+  def submit_order(self, order: Order) -> None:
+    tick = self._mt5.symbol_info_tick(self._symbol)
+
+    if tick is None:
+      raise RuntimeError(
+        f"Cannot get current tick for {self._symbol}: "
+        f"{self._mt5.last_error()}"
+      )
+
+    price = tick.ask if order.side == OrderSide.BUY else tick.bid
+    self.last_request = self._builder.build_market_request(
+      order=order,
+      symbol=self._symbol,
+      price=price
+    )
+
+  def get_last_request(self):
+    return self.last_request
