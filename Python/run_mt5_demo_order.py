@@ -57,6 +57,11 @@ def main() -> None:
       live_trading=live_trading
     )
 
+    owned_before = {
+      position.ticket
+      for position in executor.get_owned_positions()
+    }
+
     order = Order(
       type=OrderType.MARKET,
       side=OrderSide.BUY,
@@ -78,6 +83,28 @@ def main() -> None:
     result = executor.get_last_result()
     print("\nOrder sent successfully.")
     print("MT5 retcode:", result.retcode)
+
+    owned_after = executor.get_owned_positions()
+    new_positions = [
+      position
+      for position in owned_after
+      if position.ticket not in owned_before
+    ]
+
+    if not new_positions:
+      raise RuntimeError(
+        "Order was accepted, but no new owned position was found."
+      )
+
+    print("\nNew owned position:")
+    for position in new_positions:
+      print(f"  ticket: {position.ticket}")
+      print(f"  symbol: {position.symbol}")
+      print(f"  magic: {position.magic}")
+      print(f"  comment: {position.comment}")
+      print(f"  type: {position.type}")
+      print(f"  volume: {position.volume}")
+      print(f"  price_open: {position.price_open}")
   finally:
     adapter.disconnect()
     print("\nMT5 disconnected:", not adapter.is_connected())
