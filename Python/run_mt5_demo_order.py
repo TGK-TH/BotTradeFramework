@@ -22,15 +22,31 @@ def main() -> None:
     "--confirm",
     help="Exact confirmation text required for live mode"
   )
+  parser.add_argument(
+    "--close-ticket",
+    type=int,
+    help="Close one owned position by ticket"
+  )
   args = parser.parse_args()
 
   confirmation = "BUY XAUUSD 0.01"
-  live_trading = args.live and args.confirm == confirmation
+  close_confirmation = f"CLOSE XAUUSD {args.close_ticket}"
+  live_trading = args.confirm == confirmation or args.confirm == close_confirmation
 
-  if args.live and not live_trading:
+  if args.close_ticket is not None and args.close_ticket <= 0:
+    raise SystemExit("--close-ticket must be greater than 0")
+
+  if args.close_ticket is not None:
+    if args.confirm != close_confirmation:
+      raise SystemExit(
+        f'Close mode requires: --confirm "{close_confirmation}"'
+      )
+  elif args.live and args.confirm != confirmation:
     raise SystemExit(
       f'Live mode requires: --confirm "{confirmation}"'
     )
+  elif not args.live:
+    live_trading = False
 
   adapter = MT5Adapter()
 
@@ -56,6 +72,43 @@ def main() -> None:
       comment=COMMENT,
       live_trading=live_trading
     )
+
+    if args.close_ticket is not None:
+      position = executor.get_owned_position(args.close_ticket)
+
+      if position is None:
+        raise RuntimeError(
+          f"Position {args.close_ticket} is not owned by this executor"
+        )
+
+      print("\nPosition to close:")
+      print(f"  ticket: {position.ticket}")
+      print(f"  symbol: {position.symbol}")
+      print(f"  magic: {position.magic}")
+      print(f"  comment: {position.comment}")
+      print(f"  type: {position.type}")
+      print(f"  volume: {position.volume}")
+      print(f"  price_open: {position.price_open}")
+
+      executor.close_position(args.close_ticket)
+      request = executor.get_last_request()
+
+      print("\nClose request:")
+      for key, value in request.items():
+        print(f"  {key}: {value}")
+
+      result = executor.get_last_result()
+      print("\nPosition close sent successfully.")
+      print("MT5 retcode:", result.retcode)
+
+      remaining = executor.get_owned_position(args.close_ticket)
+      if remaining is not None:
+        raise RuntimeError(
+          f"Position {args.close_ticket} is still open after close request"
+        )
+
+      print("Position closed and no longer owned by this executor.")
+      return
 
     owned_before = {
       position.ticket
