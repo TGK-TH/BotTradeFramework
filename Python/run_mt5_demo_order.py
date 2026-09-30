@@ -1,3 +1,5 @@
+import argparse
+
 from tgk_trading.brokers.mt5 import MT5Adapter
 from tgk_trading.domain.order import Order, OrderSide, OrderType
 from tgk_trading.live.order_executor import MT5OrderExecutor
@@ -10,6 +12,26 @@ VOLUME = 0.01
 
 
 def main() -> None:
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    "--live",
+    action="store_true",
+    help="Allow sending the demo order to MT5"
+  )
+  parser.add_argument(
+    "--confirm",
+    help="Exact confirmation text required for live mode"
+  )
+  args = parser.parse_args()
+
+  confirmation = "BUY XAUUSD 0.01"
+  live_trading = args.live and args.confirm == confirmation
+
+  if args.live and not live_trading:
+    raise SystemExit(
+      f'Live mode requires: --confirm "{confirmation}"'
+    )
+
   adapter = MT5Adapter()
 
   try:
@@ -25,14 +47,14 @@ def main() -> None:
     print("MT5 connected:", adapter.is_connected())
     print("Account server:", account.server)
     print("Trade allowed:", account.trade_allowed)
-    print("Mode: SAFE PREVIEW")
+    print("Mode:", "LIVE" if live_trading else "SAFE PREVIEW")
 
     executor = MT5OrderExecutor(
       mt5,
       SYMBOL,
       magic=MAGIC,
       comment=COMMENT,
-      live_trading=False
+      live_trading=live_trading
     )
 
     order = Order(
@@ -44,12 +66,18 @@ def main() -> None:
     executor.submit_order(order)
     request = executor.get_last_request()
 
-    print("\nOrder request that would be sent:")
+    print("\nOrder request:")
     for key, value in request.items():
       print(f"  {key}: {value}")
 
-    print("\nNo order was sent.")
-    print("This preview verifies the final request before any live action.")
+    if not live_trading:
+      print("\nNo order was sent.")
+      print("This preview verifies the final request before any live action.")
+      return
+
+    result = executor.get_last_result()
+    print("\nOrder sent successfully.")
+    print("MT5 retcode:", result.retcode)
   finally:
     adapter.disconnect()
     print("\nMT5 disconnected:", not adapter.is_connected())
