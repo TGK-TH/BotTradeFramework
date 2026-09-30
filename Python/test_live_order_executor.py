@@ -290,6 +290,8 @@ def test_mt5_order_executor_finds_owned_position_by_ticket():
   assert position.ticket == 101
 
 
+
+
 def test_mt5_order_executor_does_not_find_other_bot_position():
   class Position:
     def __init__(self, ticket, symbol, magic, comment):

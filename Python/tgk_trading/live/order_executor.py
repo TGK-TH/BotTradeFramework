@@ -60,6 +60,51 @@ class MT5OrderRequestBuilder:
       "type_filling": self._mt5.ORDER_FILLING_IOC
     }
 
+  def build_close_request(
+    self,
+    position,
+    price: float,
+    magic: int,
+    comment: str
+  ) -> dict:
+    if position.volume <= 0:
+      raise ValueError("Position volume must be greater than 0")
+
+    if magic <= 0:
+      raise ValueError("Magic number must be greater than 0")
+
+    if not comment:
+      raise ValueError("Order comment must not be empty")
+
+    if position.type == self._mt5.POSITION_TYPE_BUY:
+      order_type = self._mt5.ORDER_TYPE_SELL
+    elif position.type == self._mt5.POSITION_TYPE_SELL:
+      order_type = self._mt5.ORDER_TYPE_BUY
+    else:
+      raise ValueError(f"Unsupported position type: {position.type}")
+
+    return {
+      "action": self._mt5.TRADE_ACTION_DEAL,
+      "symbol": position.symbol,
+      "volume": position.volume,
+      "type": order_type,
+      "position": position.ticket,
+      "price": price,
+      "deviation": 20,
+      "magic": magic,
+      "comment": comment,
+      "type_time": self._mt5.ORDER_TIME_GTC,
+      "type_filling": self._mt5.ORDER_FILLING_IOC
+    }
+
+
+
+
+
+
+
+
+
 
 class MT5OrderExecutor:
   def __init__(
@@ -144,3 +189,48 @@ class MT5OrderExecutor:
         return position
 
     return None
+
+  def close_position(self, ticket: int) -> None:
+    position = self.get_owned_position(ticket)
+
+    if position is None:
+      raise RuntimeError(
+        f"Position {ticket} is not owned by this executor"
+      )
+
+    tick = self._mt5.symbol_info_tick(self._symbol)
+
+    if tick is None:
+      raise RuntimeError(
+        f"Cannot get current tick for {self._symbol}: "
+        f"{self._mt5.last_error()}"
+      )
+
+    if position.type == self._mt5.POSITION_TYPE_BUY:
+      price = tick.bid
+    elif position.type == self._mt5.POSITION_TYPE_SELL:
+      price = tick.ask
+    else:
+      raise RuntimeError(f"Unsupported position type: {position.type}")
+
+    self.last_request = self._builder.build_close_request(
+      position=position,
+      price=price,
+      magic=self._magic,
+      comment=self._comment
+    )
+
+    if not self._live_trading:
+      return
+
+    self.last_result = self._mt5.order_send(self.last_request)
+
+    if self.last_result is None:
+      raise RuntimeError(
+        f"MT5 close order failed: {self._mt5.last_error()}"
+      )
+
+    if self.last_result.retcode != self._mt5.TRADE_RETCODE_DONE:
+      raise RuntimeError(
+        f"MT5 close order rejected: retcode={self.last_result.retcode}"
+      )
