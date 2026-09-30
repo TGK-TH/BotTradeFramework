@@ -27,6 +27,6 @@ case "$1" in
     exec /usr/local/bin/wine \
       'C:\Python312\python.exe' \
       -c "import runpy, sys; sys.path.insert(0, r'$PYTHON_ROOT_WIN'); sys.argv = [r'$SCRIPT_WIN'] + sys.argv[1:]; runpy.run_path(r'$SCRIPT_WIN', run_name='__main__')" \
-      "$SCRIPT_WIN" "$@"
+      "$@"
     ;;
 esac
