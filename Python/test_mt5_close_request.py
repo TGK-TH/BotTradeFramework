@@ -94,6 +94,32 @@ def test_executor_builds_close_request_only_for_owned_position():
   assert executor.get_last_request()["price"] == 4143.05
 
 
+def test_executor_closes_all_owned_positions_only():
+  class MT5(FakeMT5):
+    class Tick:
+      bid = 4143.05
+      ask = 4143.41
+
+    def symbol_info_tick(self, symbol):
+      return self.Tick()
+
+    def positions_get(self, symbol):
+      return [
+        Position(1001, "XAUUSD", self.POSITION_TYPE_BUY, 0.10, 4001, "TGK_PYTHON"),
+        Position(1002, "XAUUSD", self.POSITION_TYPE_SELL, 0.26, 3003, "SELL"),
+        Position(1003, "XAUUSD", self.POSITION_TYPE_SELL, 0.20, 4001, "TGK_PYTHON"),
+      ]
+
+  executor = MT5OrderExecutor(
+    MT5(),
+    "XAUUSD",
+    magic=4001,
+    comment="TGK_PYTHON"
+  )
+
+  assert executor.close_owned_positions() == 2
+  assert executor.get_last_request()["position"] == 1003
+
 def test_executor_refuses_other_bot_position():
   class MT5(FakeMT5):
     def positions_get(self, symbol):

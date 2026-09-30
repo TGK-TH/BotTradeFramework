@@ -130,6 +130,36 @@ def test_live_engine_can_run_cdc_strategy():
   assert any(signal.type.value == "BUY" for signal in strategy.signals)
 
 
+
+def test_live_engine_closes_owned_positions_before_new_entry():
+  class RecordingExecutor:
+    def __init__(self):
+      self.events = []
+
+    def close_owned_positions(self):
+      self.events.append("close")
+      return 1
+
+    def submit_order(self, order):
+      self.events.append("submit")
+
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  executor = RecordingExecutor()
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.events == ["close", "submit"]
+
 def test_live_engine_end_to_end_creates_mt5_request():
   class FakeMT5:
     TRADE_ACTION_DEAL = 1
@@ -145,6 +175,9 @@ def test_live_engine_end_to_end_creates_mt5_request():
     def symbol_info_tick(self, symbol):
       assert symbol == "XAUUSD"
       return self.Tick()
+
+    def positions_get(self, symbol):
+      return []
 
   class BuyStrategy:
     def on_candle(self, data):

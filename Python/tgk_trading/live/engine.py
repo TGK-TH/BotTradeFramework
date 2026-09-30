@@ -51,6 +51,7 @@ class LiveEngine:
       order = self._create_order(signal)
 
       if order is not None:
+        self._order_executor.close_owned_positions()
         self._order_executor.submit_order(order)
 
     return new_candles

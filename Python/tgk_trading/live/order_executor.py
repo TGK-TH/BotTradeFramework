@@ -7,6 +7,9 @@ class OrderExecutor(Protocol):
   def submit_order(self, order: Order) -> None:
     ...
 
+  def close_owned_positions(self) -> int:
+    ...
+
 
 class RecordingOrderExecutor:
   def __init__(self):
@@ -14,6 +17,9 @@ class RecordingOrderExecutor:
 
   def submit_order(self, order: Order) -> None:
     self.orders.append(order)
+
+  def close_owned_positions(self) -> int:
+    return 0
 
 
 class MT5OrderRequestBuilder:
@@ -163,7 +169,6 @@ class MT5OrderExecutor:
   def get_last_result(self):
     return self.last_result
 
-  
   def get_owned_positions(self):
     positions = self._mt5.positions_get(symbol=self._symbol)
 
@@ -234,3 +239,11 @@ class MT5OrderExecutor:
       raise RuntimeError(
         f"MT5 close order rejected: retcode={self.last_result.retcode}"
       )
+
+  def close_owned_positions(self) -> int:
+    positions = self.get_owned_positions()
+
+    for position in positions:
+      self.close_position(position.ticket)
+
+    return len(positions)
