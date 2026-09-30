@@ -104,14 +104,6 @@ class MT5OrderRequestBuilder:
     }
 
 
-
-
-
-
-
-
-
-
 class MT5OrderExecutor:
   def __init__(
     self,
