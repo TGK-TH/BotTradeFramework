@@ -120,6 +120,7 @@ def test_executor_closes_all_owned_positions_only():
   assert executor.close_owned_positions() == 2
   assert executor.get_last_request()["position"] == 1003
 
+
 def test_executor_refuses_other_bot_position():
   class MT5(FakeMT5):
     def positions_get(self, symbol):

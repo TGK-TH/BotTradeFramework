@@ -1,6 +1,9 @@
 from tgk_trading.domain.order import Order, OrderSide, OrderType
-from tgk_trading.live.order_executor import RecordingOrderExecutor
-from tgk_trading.live.order_executor import MT5OrderRequestBuilder, MT5OrderExecutor
+from tgk_trading.live.order_executor import (
+  MT5OrderExecutor,
+  MT5OrderRequestBuilder,
+  RecordingOrderExecutor,
+)
 
 
 class FakeMT5:
@@ -288,8 +291,6 @@ def test_mt5_order_executor_finds_owned_position_by_ticket():
 
   assert position is not None
   assert position.ticket == 101
-
-
 
 
 def test_mt5_order_executor_does_not_find_other_bot_position():
