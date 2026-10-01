@@ -47,7 +47,9 @@ class RecordingPositionExecutor:
 
   def close_owned_positions(self):
     self.events.append("close")
-    return len(self.positions)
+    count = len(self.positions)
+    self.positions = []
+    return count
 
   def submit_order(self, order):
     self.events.append("submit")
@@ -226,12 +228,17 @@ def test_live_engine_flips_buy_position_to_sell():
     )
   ])
   engine = LiveEngine(
-    adapter=FakeAdapter([[candle(0)]]),
+    adapter=FakeAdapter([[candle(0)], []]),
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
     strategy=SellStrategy(),
     order_executor=executor
   )
+
+  engine.poll()
+
+  assert executor.events == ["close"]
+  assert executor.orders == []
 
   engine.poll()
 
@@ -276,12 +283,17 @@ def test_live_engine_flips_sell_position_to_buy():
     )
   ])
   engine = LiveEngine(
-    adapter=FakeAdapter([[candle(0)]]),
+    adapter=FakeAdapter([[candle(0)], []]),
     symbol="XAUUSD",
     timeframe=Timeframe.M15,
     strategy=BuyStrategy(),
     order_executor=executor
   )
+
+  engine.poll()
+
+  assert executor.events == ["close"]
+  assert executor.orders == []
 
   engine.poll()
 

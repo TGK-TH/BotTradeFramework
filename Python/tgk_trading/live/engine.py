@@ -7,6 +7,7 @@ from tgk_trading.domain.signal import SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.candle_tracker import ClosedCandleTracker
 from tgk_trading.live.order_executor import OrderExecutor
+from tgk_trading.live.position_reconciler import PositionReconciler, ReconciliationAction
 
 from tgk_trading.domain.position import PositionSide
 
@@ -40,6 +41,7 @@ class LiveEngine:
     self._order_quantity = order_quantity
     self._tracker = ClosedCandleTracker()
     self._data = CandleSeries()
+    self._position_reconciler = PositionReconciler()
 
   def warmup(self, count: int = 100) -> list[Candle]:
     candles = self._adapter.get_candles(
@@ -67,40 +69,43 @@ class LiveEngine:
     for candle in new_candles:
       self._data.append(candle)
       signal = self._strategy.on_candle(self._data)
-      positions = self._order_executor.get_owned_positions()
-      order = self._create_order(signal, positions)
+      self._position_reconciler.set_target(signal.type)
 
-      if order is not None:
-        if positions:
-          self._order_executor.close_owned_positions()
-        self._order_executor.submit_order(order)
+    self._reconcile_position()
 
     return new_candles
 
-  def _create_order(self, signal, positions):
-    if signal.type == SignalType.BUY:
-      if any(position.side == PositionSide.BUY for position in positions):
-        if not any(position.side == PositionSide.SELL for position in positions):
-          return None
+  def _reconcile_position(self):
+    positions = self._order_executor.get_owned_positions()
+    action = self._position_reconciler.reconcile(positions)
 
-      return Order(
-        type=OrderType.MARKET,
-        side=OrderSide.BUY,
-        quantity=self._order_quantity
+    if action == ReconciliationAction.CLOSE_AND_OPEN_BUY:
+      self._order_executor.close_owned_positions()
+      return
+
+    if action == ReconciliationAction.CLOSE_AND_OPEN_SELL:
+      self._order_executor.close_owned_positions()
+      return
+
+    if action == ReconciliationAction.OPEN_BUY:
+      self._order_executor.submit_order(
+        Order(
+          type=OrderType.MARKET,
+          side=OrderSide.BUY,
+          quantity=self._order_quantity
+        )
+      )
+      return
+
+    if action == ReconciliationAction.OPEN_SELL:
+      self._order_executor.submit_order(
+        Order(
+          type=OrderType.MARKET,
+          side=OrderSide.SELL,
+          quantity=self._order_quantity
+        )
       )
 
-    if signal.type == SignalType.SELL:
-      if any(position.side == PositionSide.SELL for position in positions):
-        if not any(position.side == PositionSide.BUY for position in positions):
-          return None
-
-      return Order(
-        type=OrderType.MARKET,
-        side=OrderSide.SELL,
-        quantity=self._order_quantity
-      )
-
-    return None
 
   def positions(self):
     return self._order_executor.get_owned_positions()
