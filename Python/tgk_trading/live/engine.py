@@ -8,7 +8,6 @@ from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.candle_tracker import ClosedCandleTracker
 from tgk_trading.live.order_executor import OrderExecutor
 
-
 class CandleProvider(Protocol):
   def get_candles(
     self,
@@ -17,7 +16,6 @@ class CandleProvider(Protocol):
     count: int
   ) -> list[Candle]:
     ...
-
 
 class LiveEngine:
   def __init__(

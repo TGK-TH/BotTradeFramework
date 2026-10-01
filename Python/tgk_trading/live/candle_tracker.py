@@ -1,6 +1,5 @@
 from tgk_trading.domain.candle import Candle
 
-
 class ClosedCandleTracker:
 
   def __init__(self):

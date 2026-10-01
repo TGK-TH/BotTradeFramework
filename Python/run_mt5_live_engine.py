@@ -4,14 +4,12 @@ from tgk_trading.live.order_executor import MT5OrderExecutor
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 from tgk_trading.domain.timeframe import Timeframe
 
-
 SYMBOL = "XAUUSD"
 TIMEFRAME = Timeframe.M15
 MAGIC = 4001
 COMMENT = "TGK_PYTHON"
 ORDER_QUANTITY = 0.01
 CANDLE_COUNT = 100
-
 
 def main() -> None:
   adapter = MT5Adapter()
@@ -60,7 +58,6 @@ def main() -> None:
   finally:
     adapter.disconnect()
     print("MT5 disconnected:", not adapter.is_connected())
-
 
 if __name__ == "__main__":
   main()

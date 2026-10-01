@@ -2,14 +2,12 @@ from typing import Protocol
 
 from tgk_trading.domain.order import Order, OrderSide, OrderType
 
-
 class OrderExecutor(Protocol):
   def submit_order(self, order: Order) -> None:
     ...
 
   def close_owned_positions(self) -> int:
     ...
-
 
 class RecordingOrderExecutor:
   def __init__(self):
@@ -20,7 +18,6 @@ class RecordingOrderExecutor:
 
   def close_owned_positions(self) -> int:
     return 0
-
 
 class MT5OrderRequestBuilder:
   def __init__(self, mt5_module):
@@ -102,7 +99,6 @@ class MT5OrderRequestBuilder:
       "type_time": self._mt5.ORDER_TIME_GTC,
       "type_filling": self._mt5.ORDER_FILLING_IOC
     }
-
 
 class MT5OrderExecutor:
   def __init__(

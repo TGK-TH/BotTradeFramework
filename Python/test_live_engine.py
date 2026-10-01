@@ -7,7 +7,6 @@ from tgk_trading.live.engine import LiveEngine
 from tgk_trading.live.order_executor import MT5OrderExecutor, RecordingOrderExecutor
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
-
 class FakeAdapter:
   def __init__(self, candle_batches):
     self.candle_batches = candle_batches
@@ -16,7 +15,6 @@ class FakeAdapter:
   def get_candles(self, symbol, timeframe, count):
     self.calls.append((symbol, timeframe, count))
     return self.candle_batches.pop(0)
-
 
 class RecordingCDCStrategy:
   def __init__(self):
@@ -28,7 +26,6 @@ class RecordingCDCStrategy:
     self.signals.append(signal)
     return signal
 
-
 class FakeStrategy:
   def __init__(self):
     self.candles = []
@@ -36,7 +33,6 @@ class FakeStrategy:
   def on_candle(self, data):
     self.candles.append(data.current())
     return Signal(SignalType.NONE)
-
 
 def candle(minute):
   return Candle(
@@ -46,7 +42,6 @@ def candle(minute):
     low=99.0,
     close=100.5
   )
-
 
 def test_live_engine_processes_new_candles_only():
   adapter = FakeAdapter([
@@ -84,7 +79,6 @@ def test_live_engine_processes_new_candles_only():
     ("XAUUSD", Timeframe.M15, 100)
   ]
 
-
 def test_live_engine_passes_candle_series_to_strategy():
   adapter = FakeAdapter([[candle(0), candle(15)]])
   strategy = FakeStrategy()
@@ -100,7 +94,6 @@ def test_live_engine_passes_candle_series_to_strategy():
 
   assert len(strategy.candles) == 2
   assert strategy.candles[-1].time == datetime(2026, 9, 28, 10, 15)
-
 
 def test_live_engine_can_run_cdc_strategy():
   prices = [100] * 30 + [200] * 30
@@ -128,8 +121,6 @@ def test_live_engine_can_run_cdc_strategy():
 
   assert len(strategy.signals) == 60
   assert any(signal.type.value == "BUY" for signal in strategy.signals)
-
-
 
 def test_live_engine_closes_owned_positions_before_new_entry():
   class RecordingExecutor:
@@ -207,11 +198,6 @@ def test_live_engine_end_to_end_creates_mt5_request():
     "type_time": 4,
     "type_filling": 5
   }
-
-
-
-
-
 
 def test_live_engine_warmup_does_not_create_orders():
   class BuyStrategy:
