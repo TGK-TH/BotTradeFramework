@@ -5,7 +5,16 @@ from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
 from tgk_trading.live.position_reconciler import PositionReconciler
-from tgk_trading.live.target_store import JsonTargetPositionStore
+from tgk_trading.live.target_store import (
+  JsonTargetPositionStore,
+  TargetPositionIdentity
+)
+
+IDENTITY = TargetPositionIdentity(
+  symbol="XAUUSD",
+  magic=4001,
+  strategy_id="CDC_ACCOUNT_3"
+)
 
 class FakeStrategy:
   def on_candle(self, data):
@@ -37,7 +46,7 @@ class RecordingOwnedPositionExecutor(RecordingRestartExecutor):
 
 def test_json_target_store_round_trip(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
   signal_bar_time = datetime(2026, 9, 28, 10, 15)
 
   store.save(PositionSide.BUY, signal_bar_time)
@@ -49,16 +58,41 @@ def test_json_target_store_round_trip(tmp_path):
 
 def test_json_target_store_clear(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
 
   store.save(PositionSide.SELL, datetime(2026, 9, 28, 10, 30))
   store.clear()
 
   assert store.load() == (None, None)
 
+
+def test_json_target_store_rejects_different_identity(tmp_path):
+  path = tmp_path / "target.json"
+  store = JsonTargetPositionStore(path, IDENTITY)
+  store.save(
+    PositionSide.BUY,
+    datetime(2026, 9, 28, 10, 30)
+  )
+
+  other_identity = TargetPositionIdentity(
+    symbol="XAUUSD",
+    magic=4002,
+    strategy_id="CDC_ACCOUNT_3"
+  )
+  other_store = JsonTargetPositionStore(path, other_identity)
+
+  error = None
+  try:
+    other_store.load()
+  except RuntimeError as exception:
+    error = exception
+
+  assert error is not None
+  assert "identity mismatch" in str(error)
+
 def test_position_reconciler_restores_target_after_restart(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
   signal_bar_time = datetime(2026, 9, 28, 10, 45)
 
   first = PositionReconciler(store)
@@ -74,7 +108,7 @@ def test_position_reconciler_restores_target_after_restart(tmp_path):
 
 def test_position_reconciler_clears_persisted_target_when_position_exists(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
   reconciler = PositionReconciler(store)
   reconciler.set_target(
     SignalType.BUY,
@@ -95,7 +129,7 @@ def test_position_reconciler_clears_persisted_target_when_position_exists(tmp_pa
 
 def test_live_engine_restores_target_and_reconciles_after_restart(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
   signal_bar_time = datetime(2026, 9, 28, 11, 15)
 
   first_reconciler = PositionReconciler(store)
@@ -125,7 +159,7 @@ def test_live_engine_restores_target_and_reconciles_after_restart(tmp_path):
 
 def test_live_engine_clears_restored_target_when_owned_position_already_exists(tmp_path):
   path = tmp_path / "target.json"
-  store = JsonTargetPositionStore(path)
+  store = JsonTargetPositionStore(path, IDENTITY)
   store.save(
     PositionSide.BUY,
     datetime(2026, 9, 28, 11, 30)

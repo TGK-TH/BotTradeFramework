@@ -7,13 +7,17 @@ from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
 from tgk_trading.live.order_executor import MT5OrderExecutor
 from tgk_trading.live.position_reconciler import PositionReconciler
-from tgk_trading.live.target_store import JsonTargetPositionStore
+from tgk_trading.live.target_store import (
+  JsonTargetPositionStore,
+  TargetPositionIdentity
+)
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 SYMBOL = "XAUUSD"
 TIMEFRAME = Timeframe.M15
 MAGIC = 4001
 COMMENT = "TGK_PYTHON"
+STRATEGY_ID = "CDC_ACCOUNT_3"
 ORDER_QUANTITY = 0.01
 CANDLE_COUNT = 100
 POLL_SECONDS = 5
@@ -59,7 +63,12 @@ def main() -> None:
       live_trading=args.live
     )
     target_store = JsonTargetPositionStore(
-      Path("Python/data/live_target.json")
+      Path("Python/data/live_target.json"),
+      TargetPositionIdentity(
+        symbol=SYMBOL,
+        magic=MAGIC,
+        strategy_id=STRATEGY_ID
+      )
     )
     position_reconciler = PositionReconciler(target_store)
     engine = LiveEngine(
