@@ -26,5 +26,11 @@ class ClosedCandleTracker:
 
     return new_candles
 
+  def mark_processed(self, candles: list[Candle]) -> None:
+    if not candles:
+      return
+
+    self._last_processed_time = candles[-1].time
+
   def last_processed_time(self):
     return self._last_processed_time

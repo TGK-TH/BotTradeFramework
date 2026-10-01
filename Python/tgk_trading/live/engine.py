@@ -26,15 +26,34 @@ class LiveEngine:
     symbol: str,
     timeframe: Timeframe,
     strategy,
-    order_executor: OrderExecutor
+    order_executor: OrderExecutor,
+    order_quantity: float = 1.0
   ):
     self._adapter = adapter
     self._symbol = symbol
     self._timeframe = timeframe
     self._strategy = strategy
+    if order_quantity <= 0:
+      raise ValueError("order_quantity must be greater than 0")
+
     self._order_executor = order_executor
+    self._order_quantity = order_quantity
     self._tracker = ClosedCandleTracker()
     self._data = CandleSeries()
+
+  def warmup(self, count: int = 100) -> list[Candle]:
+    candles = self._adapter.get_candles(
+      symbol=self._symbol,
+      timeframe=self._timeframe,
+      count=count
+    )
+
+    for candle in candles:
+      self._data.append(candle)
+      self._strategy.on_candle(self._data)
+
+    self._tracker.mark_processed(candles)
+    return candles
 
   def poll(self, count: int = 100) -> list[Candle]:
     candles = self._adapter.get_candles(
@@ -61,14 +80,14 @@ class LiveEngine:
       return Order(
         type=OrderType.MARKET,
         side=OrderSide.BUY,
-        quantity=1.0
+        quantity=self._order_quantity
       )
 
     if signal.type == SignalType.SELL:
       return Order(
         type=OrderType.MARKET,
         side=OrderSide.SELL,
-        quantity=1.0
+        quantity=self._order_quantity
       )
 
     return None

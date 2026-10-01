@@ -209,6 +209,51 @@ def test_live_engine_end_to_end_creates_mt5_request():
   }
 
 
+
+
+
+
+def test_live_engine_warmup_does_not_create_orders():
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  executor = RecordingOrderExecutor()
+  adapter = FakeAdapter([[candle(0), candle(15)]])
+  engine = LiveEngine(
+    adapter=adapter,
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor,
+    order_quantity=0.01
+  )
+
+  warmup_candles = engine.warmup(count=2)
+
+  assert len(warmup_candles) == 2
+  assert executor.orders == []
+  assert engine.last_processed_time() == datetime(2026, 9, 28, 10, 15)
+
+def test_live_engine_uses_configured_order_quantity():
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  executor = RecordingOrderExecutor()
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor,
+    order_quantity=0.01
+  )
+
+  engine.poll()
+
+  assert executor.orders[0].quantity == 0.01
+
 def test_live_engine_tracks_last_processed_candle():
   adapter = FakeAdapter([[candle(0), candle(15)]])
   strategy = FakeStrategy()
