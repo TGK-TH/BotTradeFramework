@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime
 import time
 from pathlib import Path
 
@@ -97,7 +98,10 @@ def main() -> None:
 
     while True:
       new_candles = engine.poll(count=CANDLE_COUNT)
-      print("New closed candles:", len(new_candles))
+      timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+      print(
+        f"[{timestamp}] New closed candles: {len(new_candles)}"
+      )
 
       if new_candles:
         print("Latest closed candle:", new_candles[-1].time)
