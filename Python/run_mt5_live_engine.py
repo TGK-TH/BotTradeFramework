@@ -1,10 +1,13 @@
 import argparse
 import time
+from pathlib import Path
 
 from tgk_trading.brokers.mt5 import MT5Adapter
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
 from tgk_trading.live.order_executor import MT5OrderExecutor
+from tgk_trading.live.position_reconciler import PositionReconciler
+from tgk_trading.live.target_store import JsonTargetPositionStore
 from tgk_trading.strategies.cdc_account_3 import CDCAccount3Strategy
 
 SYMBOL = "XAUUSD"
@@ -55,13 +58,18 @@ def main() -> None:
       comment=COMMENT,
       live_trading=args.live
     )
+    target_store = JsonTargetPositionStore(
+      Path("Python/data/live_target.json")
+    )
+    position_reconciler = PositionReconciler(target_store)
     engine = LiveEngine(
       adapter=adapter,
       symbol=SYMBOL,
       timeframe=TIMEFRAME,
       strategy=CDCAccount3Strategy(),
       order_executor=executor,
-      order_quantity=ORDER_QUANTITY
+      order_quantity=ORDER_QUANTITY,
+      position_reconciler=position_reconciler
     )
 
     warmup_candles = engine.warmup(count=CANDLE_COUNT)

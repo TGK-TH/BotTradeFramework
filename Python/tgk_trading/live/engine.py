@@ -28,7 +28,8 @@ class LiveEngine:
     timeframe: Timeframe,
     strategy,
     order_executor: OrderExecutor,
-    order_quantity: float = 1.0
+    order_quantity: float = 1.0,
+    position_reconciler: PositionReconciler | None = None
   ):
     self._adapter = adapter
     self._symbol = symbol
@@ -41,7 +42,7 @@ class LiveEngine:
     self._order_quantity = order_quantity
     self._tracker = ClosedCandleTracker()
     self._data = CandleSeries()
-    self._position_reconciler = PositionReconciler()
+    self._position_reconciler = position_reconciler or PositionReconciler()
 
   def warmup(self, count: int = 100) -> list[Candle]:
     candles = self._adapter.get_candles(
@@ -69,7 +70,10 @@ class LiveEngine:
     for candle in new_candles:
       self._data.append(candle)
       signal = self._strategy.on_candle(self._data)
-      self._position_reconciler.set_target(signal.type)
+      self._position_reconciler.set_target(
+        signal.type,
+        signal_bar_time=candle.time
+      )
 
     self._reconcile_position()
 
