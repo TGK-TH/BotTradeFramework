@@ -23,7 +23,26 @@ def main() -> None:
     action="store_true",
     help="Run one poll cycle and exit"
   )
+  parser.add_argument(
+    "--live",
+    action="store_true",
+    help="Enable real MT5 order sending"
+  )
+  parser.add_argument(
+    "--confirm",
+    default="",
+    help="Required confirmation for live trading"
+  )
   args = parser.parse_args()
+
+  expected_confirmation = (
+    f"LIVE {SYMBOL} {TIMEFRAME.value} {ORDER_QUANTITY}"
+  )
+
+  if args.live and args.confirm != expected_confirmation:
+    raise SystemExit(
+      f'Live trading requires --confirm "{expected_confirmation}"'
+    )
 
   adapter = MT5Adapter()
   adapter.connect()
@@ -34,7 +53,7 @@ def main() -> None:
       SYMBOL,
       magic=MAGIC,
       comment=COMMENT,
-      live_trading=False
+      live_trading=args.live
     )
     engine = LiveEngine(
       adapter=adapter,
@@ -48,7 +67,7 @@ def main() -> None:
     warmup_candles = engine.warmup(count=CANDLE_COUNT)
     print("Warmup candles:", len(warmup_candles))
     print("MT5 connected:", adapter.is_connected())
-    print("Mode: SAFE PREVIEW")
+    print("Mode:", "LIVE" if args.live else "SAFE PREVIEW")
 
     while True:
       new_candles = engine.poll(count=CANDLE_COUNT)
@@ -62,7 +81,8 @@ def main() -> None:
         print("Signal produced an order request:")
         for key, value in request.items():
           print(f"  {key}: {value}")
-        print("No order was sent.")
+        if not args.live:
+          print("No order was sent.")
 
       if args.once:
         break
