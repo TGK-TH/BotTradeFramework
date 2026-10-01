@@ -69,6 +69,15 @@ def main() -> None:
     print("MT5 connected:", adapter.is_connected())
     print("Mode:", "LIVE" if args.live else "SAFE PREVIEW")
 
+    positions = engine.positions()
+    print("Owned positions:", len(positions))
+    for position in positions:
+      print(
+        f"  {position.side.value} "
+        f"volume={position.quantity} "
+        f"entry={position.entry_price}"
+      )
+
     while True:
       new_candles = engine.poll(count=CANDLE_COUNT)
       print("New closed candles:", len(new_candles))

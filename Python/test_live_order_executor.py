@@ -280,6 +280,9 @@ def test_mt5_order_executor_finds_owned_position_by_ticket():
       self.symbol = symbol
       self.magic = magic
       self.comment = comment
+      self.type = 0
+      self.volume = 0.01
+      self.price_open = 4050.25
 
   class FakeMT5:
     def positions_get(self, symbol):
@@ -308,6 +311,9 @@ def test_mt5_order_executor_does_not_find_other_bot_position():
       self.symbol = symbol
       self.magic = magic
       self.comment = comment
+      self.type = 0
+      self.volume = 0.01
+      self.price_open = 4050.25
 
   class FakeMT5:
     def positions_get(self, symbol):
