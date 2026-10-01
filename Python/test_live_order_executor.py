@@ -238,19 +238,24 @@ def test_mt5_order_request_builder_rejects_invalid_quantity():
 
 def test_mt5_order_executor_returns_only_owned_positions():
   class Position:
-    def __init__(self, ticket, symbol, magic, comment):
+    def __init__(self, ticket, symbol, magic, comment, position_type):
       self.ticket = ticket
       self.symbol = symbol
       self.magic = magic
       self.comment = comment
+      self.type = position_type
+      self.volume = 0.01
+      self.price_open = 4050.25
 
   class FakeMT5:
+    POSITION_TYPE_BUY = 0
+
     def positions_get(self, symbol):
       assert symbol == "XAUUSD"
       return [
-        Position(101, "XAUUSD", 4001, "TGK_PYTHON"),
-        Position(102, "XAUUSD", 3003, "SELL"),
-        Position(103, "EURUSD", 4001, "TGK_PYTHON"),
+        Position(101, "XAUUSD", 4001, "TGK_PYTHON", self.POSITION_TYPE_BUY),
+        Position(102, "XAUUSD", 3003, "SELL", self.POSITION_TYPE_BUY),
+        Position(103, "EURUSD", 4001, "TGK_PYTHON", self.POSITION_TYPE_BUY),
       ]
 
   executor = MT5OrderExecutor(
@@ -262,7 +267,10 @@ def test_mt5_order_executor_returns_only_owned_positions():
 
   positions = executor.get_owned_positions()
 
-  assert [position.ticket for position in positions] == [101]
+  assert positions[0].side.value == "BUY"
+  assert positions[0].quantity == 0.01
+  assert positions[0].entry_price == 4050.25
+  assert len(positions) == 1
 
 
 def test_mt5_order_executor_finds_owned_position_by_ticket():

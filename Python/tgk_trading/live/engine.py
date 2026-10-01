@@ -90,5 +90,8 @@ class LiveEngine:
 
     return None
 
+  def positions(self):
+    return self._order_executor.get_owned_positions()
+
   def last_processed_time(self):
     return self._tracker.last_processed_time()

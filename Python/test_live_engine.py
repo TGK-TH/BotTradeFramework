@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from tgk_trading.domain.candle import Candle
+from tgk_trading.domain.position import Position, PositionSide
 from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
@@ -179,6 +180,41 @@ def test_live_engine_closes_owned_positions_before_new_entry():
 
   assert executor.events == ["close", "submit"]
 
+def test_mt5_executor_returns_owned_positions_as_domain_positions():
+  class FakeMT5:
+    POSITION_TYPE_BUY = 0
+    POSITION_TYPE_SELL = 1
+
+    class Position:
+      symbol = "XAUUSD"
+      magic = 4001
+      comment = "TGK_PYTHON"
+      type = 0
+      volume = 0.01
+      price_open = 4050.25
+
+    def positions_get(self, symbol):
+      assert symbol == "XAUUSD"
+      return [self.Position()]
+
+    def last_error(self):
+      return "unexpected error"
+
+  executor = MT5OrderExecutor(
+    FakeMT5(),
+    "XAUUSD",
+    magic=4001,
+    comment="TGK_PYTHON"
+  )
+
+  assert executor.get_owned_positions() == [
+    Position(
+      side=PositionSide.BUY,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ]
+
 def test_live_engine_end_to_end_creates_mt5_request():
   class FakeMT5:
     TRADE_ACTION_DEAL = 1
@@ -267,6 +303,39 @@ def test_live_engine_uses_configured_order_quantity():
   engine.poll()
 
   assert executor.orders[0].quantity == 0.01
+
+def test_live_engine_reads_owned_positions():
+  class PositionExecutor:
+    def submit_order(self, order):
+      pass
+
+    def get_owned_positions(self):
+      return [
+        Position(
+          side=PositionSide.BUY,
+          quantity=0.01,
+          entry_price=4050.25
+        )
+      ]
+
+    def close_owned_positions(self):
+      return 0
+
+  engine = LiveEngine(
+    adapter=FakeAdapter([[]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=FakeStrategy(),
+    order_executor=PositionExecutor()
+  )
+
+  assert engine.positions() == [
+    Position(
+      side=PositionSide.BUY,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ]
 
 def test_live_engine_tracks_last_processed_candle():
   adapter = FakeAdapter([[candle(0), candle(15)]])

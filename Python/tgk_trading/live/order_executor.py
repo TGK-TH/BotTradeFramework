@@ -1,9 +1,13 @@
 from typing import Protocol
 
 from tgk_trading.domain.order import Order, OrderSide, OrderType
+from tgk_trading.domain.position import Position, PositionSide
 
 class OrderExecutor(Protocol):
   def submit_order(self, order: Order) -> None:
+    ...
+
+  def get_owned_positions(self) -> list[Position]:
     ...
 
   def close_owned_positions(self) -> int:
@@ -15,6 +19,9 @@ class RecordingOrderExecutor:
 
   def submit_order(self, order: Order) -> None:
     self.orders.append(order)
+
+  def get_owned_positions(self) -> list[Position]:
+    return []
 
   def close_owned_positions(self) -> int:
     return 0
@@ -157,7 +164,7 @@ class MT5OrderExecutor:
   def get_last_result(self):
     return self.last_result
 
-  def get_owned_positions(self):
+  def _get_owned_mt5_positions(self):
     positions = self._mt5.positions_get(symbol=self._symbol)
 
     if positions is None:
@@ -168,16 +175,40 @@ class MT5OrderExecutor:
     return [
       position
       for position in positions
-      if position.symbol == self._symbol
-      and position.magic == self._magic
-      and position.comment == self._comment
+      if (
+        position.symbol == self._symbol
+        and position.magic == self._magic
+        and position.comment == self._comment
+      )
     ]
+
+  def get_owned_positions(self) -> list[Position]:
+    positions = self._get_owned_mt5_positions()
+    owned_positions = []
+
+    for position in positions:
+      if position.type == self._mt5.POSITION_TYPE_BUY:
+        side = PositionSide.BUY
+      elif position.type == self._mt5.POSITION_TYPE_SELL:
+        side = PositionSide.SELL
+      else:
+        raise RuntimeError(
+          f"Unsupported MT5 position type: {position.type}"
+        )
+
+      owned_positions.append(Position(
+        side=side,
+        quantity=float(position.volume),
+        entry_price=float(position.price_open)
+      ))
+
+    return owned_positions
 
   def get_owned_position(self, ticket: int):
     if ticket <= 0:
       raise ValueError("Position ticket must be greater than 0")
 
-    for position in self.get_owned_positions():
+    for position in self._get_owned_mt5_positions():
       if position.ticket == ticket:
         return position
 
@@ -229,7 +260,7 @@ class MT5OrderExecutor:
       )
 
   def close_owned_positions(self) -> int:
-    positions = self.get_owned_positions()
+    positions = self._get_owned_mt5_positions()
 
     for position in positions:
       self.close_position(position.ticket)
