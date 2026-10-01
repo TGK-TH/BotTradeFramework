@@ -79,6 +79,34 @@ def test_live_engine_processes_new_candles_only():
     ("XAUUSD", Timeframe.M15, 100)
   ]
 
+def test_live_engine_calls_strategy_once_per_new_candle():
+  adapter = FakeAdapter([
+    [candle(0), candle(15), candle(30)],
+    [candle(15), candle(30)],
+    [candle(15), candle(30), candle(45)],
+    [candle(30), candle(45)]
+  ])
+  strategy = FakeStrategy()
+  engine = LiveEngine(
+    adapter=adapter,
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=strategy,
+    order_executor=RecordingOrderExecutor()
+  )
+
+  engine.poll()
+  engine.poll()
+  engine.poll()
+  engine.poll()
+
+  assert [item.time for item in strategy.candles] == [
+    datetime(2026, 9, 28, 10, 0),
+    datetime(2026, 9, 28, 10, 15),
+    datetime(2026, 9, 28, 10, 30),
+    datetime(2026, 9, 28, 10, 45)
+  ]
+
 def test_live_engine_passes_candle_series_to_strategy():
   adapter = FakeAdapter([[candle(0), candle(15)]])
   strategy = FakeStrategy()
