@@ -8,6 +8,8 @@ from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.candle_tracker import ClosedCandleTracker
 from tgk_trading.live.order_executor import OrderExecutor
 
+from tgk_trading.domain.position import PositionSide
+
 class CandleProvider(Protocol):
   def get_candles(
     self,
@@ -65,16 +67,22 @@ class LiveEngine:
     for candle in new_candles:
       self._data.append(candle)
       signal = self._strategy.on_candle(self._data)
-      order = self._create_order(signal)
+      positions = self._order_executor.get_owned_positions()
+      order = self._create_order(signal, positions)
 
       if order is not None:
-        self._order_executor.close_owned_positions()
+        if positions:
+          self._order_executor.close_owned_positions()
         self._order_executor.submit_order(order)
 
     return new_candles
 
-  def _create_order(self, signal):
+  def _create_order(self, signal, positions):
     if signal.type == SignalType.BUY:
+      if any(position.side == PositionSide.BUY for position in positions):
+        if not any(position.side == PositionSide.SELL for position in positions):
+          return None
+
       return Order(
         type=OrderType.MARKET,
         side=OrderSide.BUY,
@@ -82,6 +90,10 @@ class LiveEngine:
       )
 
     if signal.type == SignalType.SELL:
+      if any(position.side == PositionSide.SELL for position in positions):
+        if not any(position.side == PositionSide.BUY for position in positions):
+          return None
+
       return Order(
         type=OrderType.MARKET,
         side=OrderSide.SELL,

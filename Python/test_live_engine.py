@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from tgk_trading.domain.candle import Candle
 from tgk_trading.domain.position import Position, PositionSide
+from tgk_trading.domain.order import OrderSide
 from tgk_trading.domain.signal import Signal, SignalType
 from tgk_trading.domain.timeframe import Timeframe
 from tgk_trading.live.engine import LiveEngine
@@ -34,6 +35,23 @@ class FakeStrategy:
   def on_candle(self, data):
     self.candles.append(data.current())
     return Signal(SignalType.NONE)
+
+class RecordingPositionExecutor:
+  def __init__(self, positions=None):
+    self.positions = positions or []
+    self.events = []
+    self.orders = []
+
+  def get_owned_positions(self):
+    return self.positions
+
+  def close_owned_positions(self):
+    self.events.append("close")
+    return len(self.positions)
+
+  def submit_order(self, order):
+    self.events.append("submit")
+    self.orders.append(order)
 
 def candle(minute):
   return Candle(
@@ -151,23 +169,112 @@ def test_live_engine_can_run_cdc_strategy():
   assert len(strategy.signals) == 60
   assert any(signal.type.value == "BUY" for signal in strategy.signals)
 
-def test_live_engine_closes_owned_positions_before_new_entry():
-  class RecordingExecutor:
-    def __init__(self):
-      self.events = []
-
-    def close_owned_positions(self):
-      self.events.append("close")
-      return 1
-
-    def submit_order(self, order):
-      self.events.append("submit")
-
+def test_live_engine_opens_buy_when_no_owned_position():
   class BuyStrategy:
     def on_candle(self, data):
       return Signal(SignalType.BUY)
 
-  executor = RecordingExecutor()
+  executor = RecordingPositionExecutor()
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.events == ["submit"]
+  assert executor.orders[0].side == OrderSide.BUY
+
+def test_live_engine_does_nothing_when_buy_position_exists():
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  executor = RecordingPositionExecutor([
+    Position(
+      side=PositionSide.BUY,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ])
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=BuyStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.events == []
+  assert executor.orders == []
+
+def test_live_engine_flips_buy_position_to_sell():
+  class SellStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.SELL)
+
+  executor = RecordingPositionExecutor([
+    Position(
+      side=PositionSide.BUY,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ])
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=SellStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.events == ["close", "submit"]
+  assert executor.orders[0].side == OrderSide.SELL
+
+def test_live_engine_does_nothing_when_sell_position_exists():
+  class SellStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.SELL)
+
+  executor = RecordingPositionExecutor([
+    Position(
+      side=PositionSide.SELL,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ])
+  engine = LiveEngine(
+    adapter=FakeAdapter([[candle(0)]]),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=SellStrategy(),
+    order_executor=executor
+  )
+
+  engine.poll()
+
+  assert executor.events == []
+  assert executor.orders == []
+
+def test_live_engine_flips_sell_position_to_buy():
+  class BuyStrategy:
+    def on_candle(self, data):
+      return Signal(SignalType.BUY)
+
+  executor = RecordingPositionExecutor([
+    Position(
+      side=PositionSide.SELL,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ])
   engine = LiveEngine(
     adapter=FakeAdapter([[candle(0)]]),
     symbol="XAUUSD",
@@ -179,6 +286,7 @@ def test_live_engine_closes_owned_positions_before_new_entry():
   engine.poll()
 
   assert executor.events == ["close", "submit"]
+  assert executor.orders[0].side == OrderSide.BUY
 
 def test_mt5_executor_returns_owned_positions_as_domain_positions():
   class FakeMT5:
