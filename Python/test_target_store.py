@@ -27,6 +27,14 @@ class RecordingRestartExecutor:
     self.events.append("submit")
     self.orders.append(order)
 
+class RecordingOwnedPositionExecutor(RecordingRestartExecutor):
+  def __init__(self, positions):
+    super().__init__()
+    self.positions = positions
+
+  def get_owned_positions(self):
+    return self.positions
+
 def test_json_target_store_round_trip(tmp_path):
   path = tmp_path / "target.json"
   store = JsonTargetPositionStore(path)
@@ -113,3 +121,40 @@ def test_live_engine_restores_target_and_reconciles_after_restart(tmp_path):
 
   assert executor.events == ["submit"]
   assert executor.orders[0].side.value == "SELL"
+
+
+def test_live_engine_clears_restored_target_when_owned_position_already_exists(tmp_path):
+  path = tmp_path / "target.json"
+  store = JsonTargetPositionStore(path)
+  store.save(
+    PositionSide.BUY,
+    datetime(2026, 9, 28, 11, 30)
+  )
+
+  reconciler = PositionReconciler(store)
+
+  class FakeAdapter:
+    def get_candles(self, symbol, timeframe, count):
+      return []
+
+  executor = RecordingOwnedPositionExecutor([
+    Position(
+      side=PositionSide.BUY,
+      quantity=0.01,
+      entry_price=4050.25
+    )
+  ])
+  engine = LiveEngine(
+    adapter=FakeAdapter(),
+    symbol="XAUUSD",
+    timeframe=Timeframe.M15,
+    strategy=FakeStrategy(),
+    order_executor=executor,
+    position_reconciler=reconciler
+  )
+
+  engine.poll()
+
+  assert executor.events == []
+  assert reconciler.target() is None
+  assert store.load() == (None, None)
