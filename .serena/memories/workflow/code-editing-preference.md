@@ -1,1 +1,1 @@
-User now prefers assistant to read and directly edit code on the machine via Serena, while still explaining the code and changes so the user understands them. This supersedes the earlier preference to manually copy/paste code.
+User currently allows assistant to edit the project directly via Serena and expects the assistant to proceed with implementation when they say 'ไปต่อ' or 'ทำต่อ'. Keep explaining what was changed and run tests. User prefers incremental learning and does not want real MT5 orders sent until explicitly ready.
