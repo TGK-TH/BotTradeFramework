@@ -3,6 +3,11 @@
 //+------------------------------------------------------------------+
 #property strict
 
+enum ENUM_POSITION_MODE {
+   POSITION_MODE_SINGLE = 0,
+   POSITION_MODE_THREE = 1
+};
+
 #include <Trade/Trade.mqh>
 
 #include <BotTrade/Indicators/EMA.mqh>
@@ -28,6 +33,8 @@ input int    SlowEMA = 26;
 
 input bool IsFixedLot = true;
 input double FixedLotValue = 0.10;
+
+input ENUM_POSITION_MODE PositionMode = POSITION_MODE_SINGLE;
 
 input double RiskUSD = 1000;
 input double MaxLot = 100.0;
