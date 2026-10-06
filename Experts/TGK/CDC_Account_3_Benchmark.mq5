@@ -130,6 +130,50 @@ struct STradeParameters {
    double totalLot;
 };
 
+struct SThreeLotSplit {
+   bool isValid;
+   double lot1;
+   double lot2;
+   double lot3;
+};
+
+bool SplitThreeLots(double totalLot, SThreeLotSplit &split) {
+   split.isValid = false;
+   split.lot1 = 0;
+   split.lot2 = 0;
+   split.lot3 = 0;
+
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+
+   if(minLot <= 0 || lotStep <= 0 || totalLot < minLot * 3)
+      return false;
+
+   double baseLot = MathFloor(totalLot / 3.0 / lotStep) * lotStep;
+   baseLot = NormalizeDouble(baseLot, 2);
+
+   if(baseLot < minLot)
+      return false;
+
+   double lot1 = totalLot - baseLot * 2.0;
+   lot1 = NormalizeDouble(lot1, 2);
+
+   if(lot1 < minLot)
+      return false;
+
+   double reconstructedTotal = NormalizeDouble(lot1 + baseLot + baseLot, 2);
+   double totalDifference = MathAbs(reconstructedTotal - NormalizeDouble(totalLot, 2));
+
+   if(totalDifference > lotStep / 2.0)
+      return false;
+
+   split.isValid = true;
+   split.lot1 = lot1;
+   split.lot2 = baseLot;
+   split.lot3 = baseLot;
+   return true;
+}
+
 bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parameters) {
    parameters.isBuy = target == DESIRED_POSITION_BUY;
    parameters.entryPrice = SymbolInfoDouble(_Symbol, parameters.isBuy ? SYMBOL_ASK : SYMBOL_BID);
