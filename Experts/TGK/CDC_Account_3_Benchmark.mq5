@@ -122,6 +122,42 @@ void ValidatePendingTrend() {
 //| Build order parameters using current price immediately before    |
 //| execution, then ask the common reconciler to reach the target.   |
 //+------------------------------------------------------------------+
+struct STradeParameters {
+   bool isBuy;
+   double entryPrice;
+   double tradeSL;
+   double riskDistance;
+   double totalLot;
+};
+
+bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parameters) {
+   parameters.isBuy = target == DESIRED_POSITION_BUY;
+   parameters.entryPrice = SymbolInfoDouble(_Symbol, parameters.isBuy ? SYMBOL_ASK : SYMBOL_BID);
+   parameters.tradeSL = parameters.isBuy
+                        ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
+                        : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+
+   parameters.riskDistance = parameters.isBuy
+                             ? parameters.entryPrice - parameters.tradeSL
+                             : parameters.tradeSL - parameters.entryPrice;
+
+   if(parameters.riskDistance <= 0)
+      return false;
+
+   parameters.totalLot = IsFixedLot
+                         ? FixedLotValue
+                         : CalcLot(
+                              _Symbol,
+                              parameters.isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
+                              parameters.entryPrice,
+                              parameters.tradeSL,
+                              RiskUSD,
+                              MaxLot
+                           );
+
+   return parameters.totalLot > 0;
+}
+
 void ReconcilePosition() {
    ValidatePendingTrend();
 
@@ -129,28 +165,16 @@ void ReconcilePosition() {
    if(target == DESIRED_POSITION_NONE)
       return;
 
-   bool isBuy = target == DESIRED_POSITION_BUY;
-   double tradeSL = isBuy
-                    ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
-                    : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
-   double price = SymbolInfoDouble(_Symbol, isBuy ? SYMBOL_ASK : SYMBOL_BID);
-   double lot = IsFixedLot
-                ? FixedLotValue
-                : CalcLot(
-                     _Symbol,
-                     isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
-                     price,
-                     tradeSL,
-                     RiskUSD,
-                     MaxLot
-                  );
+   STradeParameters parameters;
+   if(!BuildTradeParameters(target, parameters))
+      return;
 
    positionReconciler.Reconcile(
       trade,
-      lot,
-      SetSlAtLastPivot ? tradeSL : 0,
+      parameters.totalLot,
+      SetSlAtLastPivot ? parameters.tradeSL : 0,
       0,
-      isBuy ? "BUY" : "SELL"
+      parameters.isBuy ? "BUY" : "SELL"
    );
 }
 
