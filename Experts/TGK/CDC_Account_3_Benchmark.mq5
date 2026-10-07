@@ -50,6 +50,8 @@ input int  RetrySeconds = 5;
 //======================
 datetime lastBarTime = 0;
 
+ENUM_DESIRED_POSITION threeTarget = DESIRED_POSITION_NONE;
+
 int fastHandle;
 int slowHandle;
 
@@ -229,6 +231,61 @@ bool BuildThreeTradePlan(ENUM_DESIRED_POSITION target, SThreeTradePlan &plan) {
    return true;
 }
 
+bool HasPositionWithComment(string comment) {
+   for(int index = PositionsTotal() - 1; index >= 0; index--) {
+      ulong ticket = PositionGetTicket(index);
+      if(ticket == 0 || !PositionSelectByTicket(ticket))
+         continue;
+
+      if(PositionGetString(POSITION_SYMBOL) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == MagicNumber &&
+         PositionGetString(POSITION_COMMENT) == comment)
+         return true;
+   }
+
+   return false;
+}
+
+bool ExecuteThreeTradePlan(const SThreeTradePlan &plan) {
+   if(!plan.isValid)
+      return false;
+
+   if(plan.isBuy && HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL))
+      return false;
+
+   if(!plan.isBuy && HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY))
+      return false;
+
+   double sl = SetSlAtLastPivot ? plan.tradeSL : 0;
+   bool allExecuted = true;
+
+   if(!HasPositionWithComment("CDC3-1")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot1, sl, plan.tp1, "CDC3-1")
+                  : ExecuteSell(trade, _Symbol, plan.lot1, sl, plan.tp1, "CDC3-1");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   if(!HasPositionWithComment("CDC3-2")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot2, sl, plan.tp2, "CDC3-2")
+                  : ExecuteSell(trade, _Symbol, plan.lot2, sl, plan.tp2, "CDC3-2");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   if(!HasPositionWithComment("CDC3-3")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot3, sl, 0, "CDC3-3")
+                  : ExecuteSell(trade, _Symbol, plan.lot3, sl, 0, "CDC3-3");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   return allExecuted;
+}
+
 bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parameters) {
    parameters.isBuy = target == DESIRED_POSITION_BUY;
    parameters.entryPrice = SymbolInfoDouble(_Symbol, parameters.isBuy ? SYMBOL_ASK : SYMBOL_BID);
@@ -258,6 +315,21 @@ bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parame
 }
 
 void ReconcilePosition() {
+   if(PositionMode == POSITION_MODE_THREE && !IsFixedLot &&
+      threeTarget != DESIRED_POSITION_NONE) {
+      SThreeTradePlan plan;
+      if(!BuildThreeTradePlan(threeTarget, plan)) {
+         positionReconciler.SetTarget(threeTarget, TimeCurrent());
+         threeTarget = DESIRED_POSITION_NONE;
+         return;
+      }
+
+      if(ExecuteThreeTradePlan(plan))
+         threeTarget = DESIRED_POSITION_NONE;
+
+      return;
+   }
+
    ValidatePendingTrend();
 
    ENUM_DESIRED_POSITION target = positionReconciler.Target();
@@ -281,14 +353,22 @@ void ReconcilePosition() {
 //| Check EMA Cross                                                  |
 //+------------------------------------------------------------------+
 void CheckSignal(datetime signalBarTime) {
+   bool useThreeMode = PositionMode == POSITION_MODE_THREE && !IsFixedLot;
+
    // BUY Signal
    if(IsEmaCrossUpByHandle(fastHandle, slowHandle)) {
-      positionReconciler.SetTarget(DESIRED_POSITION_BUY, signalBarTime);
+      if(useThreeMode)
+         threeTarget = DESIRED_POSITION_BUY;
+      else
+         positionReconciler.SetTarget(DESIRED_POSITION_BUY, signalBarTime);
       return;
    }
 
    // SELL Signal
    if(IsEmaCrossDownByHandle(fastHandle, slowHandle)) {
-      positionReconciler.SetTarget(DESIRED_POSITION_SELL, signalBarTime);
+      if(useThreeMode)
+         threeTarget = DESIRED_POSITION_SELL;
+      else
+         positionReconciler.SetTarget(DESIRED_POSITION_SELL, signalBarTime);
    }
 }
