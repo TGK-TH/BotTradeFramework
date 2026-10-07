@@ -357,18 +357,24 @@ void CheckSignal(datetime signalBarTime) {
 
    // BUY Signal
    if(IsEmaCrossUpByHandle(fastHandle, slowHandle)) {
-      if(useThreeMode)
+      if(useThreeMode) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_SELL);
          threeTarget = DESIRED_POSITION_BUY;
-      else
+      }
+      else {
          positionReconciler.SetTarget(DESIRED_POSITION_BUY, signalBarTime);
+      }
       return;
    }
 
    // SELL Signal
    if(IsEmaCrossDownByHandle(fastHandle, slowHandle)) {
-      if(useThreeMode)
+      if(useThreeMode) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_BUY);
          threeTarget = DESIRED_POSITION_SELL;
-      else
+      }
+      else {
          positionReconciler.SetTarget(DESIRED_POSITION_SELL, signalBarTime);
+      }
    }
 }
