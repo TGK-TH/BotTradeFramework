@@ -137,6 +137,19 @@ struct SThreeLotSplit {
    double lot3;
 };
 
+struct SThreeTradePlan {
+   bool isValid;
+   bool isBuy;
+   double entryPrice;
+   double tradeSL;
+   double riskDistance;
+   double lot1;
+   double lot2;
+   double lot3;
+   double tp1;
+   double tp2;
+};
+
 bool SplitThreeLots(double totalLot, SThreeLotSplit &split) {
    split.isValid = false;
    split.lot1 = 0;
@@ -171,6 +184,48 @@ bool SplitThreeLots(double totalLot, SThreeLotSplit &split) {
    split.lot1 = lot1;
    split.lot2 = baseLot;
    split.lot3 = baseLot;
+   return true;
+}
+
+bool BuildThreeTradePlan(ENUM_DESIRED_POSITION target, SThreeTradePlan &plan) {
+   plan.isValid = false;
+   plan.isBuy = target == DESIRED_POSITION_BUY;
+   plan.entryPrice = 0;
+   plan.tradeSL = 0;
+   plan.riskDistance = 0;
+   plan.lot1 = 0;
+   plan.lot2 = 0;
+   plan.lot3 = 0;
+   plan.tp1 = 0;
+   plan.tp2 = 0;
+
+   if(PositionMode != POSITION_MODE_THREE || IsFixedLot)
+      return false;
+
+   STradeParameters parameters;
+   if(!BuildTradeParameters(target, parameters))
+      return false;
+
+   SThreeLotSplit split;
+   if(!SplitThreeLots(parameters.totalLot, split))
+      return false;
+
+   plan.isBuy = parameters.isBuy;
+   plan.entryPrice = parameters.entryPrice;
+   plan.tradeSL = parameters.tradeSL;
+   plan.riskDistance = parameters.riskDistance;
+   plan.lot1 = split.lot1;
+   plan.lot2 = split.lot2;
+   plan.lot3 = split.lot3;
+
+   plan.tp1 = plan.isBuy
+              ? plan.entryPrice + plan.riskDistance
+              : plan.entryPrice - plan.riskDistance;
+   plan.tp2 = plan.isBuy
+              ? plan.entryPrice + plan.riskDistance * 2.0
+              : plan.entryPrice - plan.riskDistance * 2.0;
+
+   plan.isValid = true;
    return true;
 }
 
