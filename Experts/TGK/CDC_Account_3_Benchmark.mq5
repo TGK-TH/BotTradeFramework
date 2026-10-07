@@ -72,6 +72,7 @@ int OnInit() {
 
    positionReconciler.Initialize(_Symbol, MagicNumber, "CDC3EMA", RetrySeconds);
    positionReconciler.Restore();
+   RestoreThreeTarget();
 
    // Do not execute a historical cross when the EA is attached mid-bar.
    lastBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
@@ -229,6 +230,28 @@ bool BuildThreeTradePlan(ENUM_DESIRED_POSITION target, SThreeTradePlan &plan) {
 
    plan.isValid = true;
    return true;
+}
+
+ENUM_DESIRED_POSITION DetectThreeTarget() {
+   bool hasBuy = HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY);
+   bool hasSell = HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL);
+
+   if(hasBuy && !hasSell)
+      return DESIRED_POSITION_BUY;
+
+   if(hasSell && !hasBuy)
+      return DESIRED_POSITION_SELL;
+
+   return DESIRED_POSITION_NONE;
+}
+
+void RestoreThreeTarget() {
+   threeTarget = DESIRED_POSITION_NONE;
+
+   if(PositionMode != POSITION_MODE_THREE || IsFixedLot)
+      return;
+
+   threeTarget = DetectThreeTarget();
 }
 
 bool HasPositionWithComment(string comment) {
