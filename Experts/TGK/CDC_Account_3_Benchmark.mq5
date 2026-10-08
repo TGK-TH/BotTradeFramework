@@ -254,13 +254,6 @@ void RestoreThreeTarget() {
    threeTarget = DetectThreeTarget();
 }
 
-void RestoreThreeTargetIfNeeded() {
-   if(PositionMode != POSITION_MODE_THREE || IsFixedLot)
-      return;
-
-   if(threeTarget == DESIRED_POSITION_NONE)
-      threeTarget = DetectThreeTarget();
-}
 
 bool HasPositionWithComment(string comment) {
    for(int index = PositionsTotal() - 1; index >= 0; index--) {
@@ -346,8 +339,6 @@ bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parame
 }
 
 void ReconcilePosition() {
-   RestoreThreeTargetIfNeeded();
-
    if(PositionMode == POSITION_MODE_THREE && !IsFixedLot &&
       threeTarget != DESIRED_POSITION_NONE) {
       SThreeTradePlan plan;
