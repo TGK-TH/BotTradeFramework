@@ -341,6 +341,22 @@ bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parame
 void ReconcilePosition() {
    if(PositionMode == POSITION_MODE_THREE && !IsFixedLot &&
       threeTarget != DESIRED_POSITION_NONE) {
+      // Retry closing the opposite side on every tick. The initial close
+      // request can fail when the market is closed or trading is unavailable.
+      if(threeTarget == DESIRED_POSITION_BUY &&
+         HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL)) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_SELL);
+         if(HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL))
+            return;
+      }
+
+      if(threeTarget == DESIRED_POSITION_SELL &&
+         HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY)) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_BUY);
+         if(HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY))
+            return;
+      }
+
       SThreeTradePlan plan;
       if(!BuildThreeTradePlan(threeTarget, plan)) {
          positionReconciler.SetTarget(threeTarget, TimeCurrent());
