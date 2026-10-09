@@ -3,6 +3,11 @@
 //+------------------------------------------------------------------+
 #property strict
 
+enum ENUM_POSITION_MODE {
+   POSITION_MODE_SINGLE = 0,
+   POSITION_MODE_THREE = 1
+};
+
 #include <Trade/Trade.mqh>
 
 #include <BotTrade/Indicators/EMA.mqh>
@@ -29,6 +34,8 @@ input int    SlowEMA = 26;
 input bool IsFixedLot = true;
 input double FixedLotValue = 0.10;
 
+input ENUM_POSITION_MODE PositionMode = POSITION_MODE_SINGLE;
+
 input double RiskUSD = 1000;
 input double MaxLot = 100.0;
 input double SLBuffer = 1.5;
@@ -42,6 +49,8 @@ input int  RetrySeconds = 5;
 // Variables
 //======================
 datetime lastBarTime = 0;
+
+ENUM_DESIRED_POSITION threeTarget = DESIRED_POSITION_NONE;
 
 int fastHandle;
 int slowHandle;
@@ -63,6 +72,7 @@ int OnInit() {
 
    positionReconciler.Initialize(_Symbol, MagicNumber, "CDC3EMA", RetrySeconds);
    positionReconciler.Restore();
+   RestoreThreeTarget();
 
    // Do not execute a historical cross when the EA is attached mid-bar.
    lastBarTime = iTime(_Symbol, PERIOD_CURRENT, 0);
@@ -115,35 +125,267 @@ void ValidatePendingTrend() {
 //| Build order parameters using current price immediately before    |
 //| execution, then ask the common reconciler to reach the target.   |
 //+------------------------------------------------------------------+
+struct STradeParameters {
+   bool isBuy;
+   double entryPrice;
+   double tradeSL;
+   double riskDistance;
+   double totalLot;
+};
+
+struct SThreeLotSplit {
+   bool isValid;
+   double lot1;
+   double lot2;
+   double lot3;
+};
+
+struct SThreeTradePlan {
+   bool isValid;
+   bool isBuy;
+   double entryPrice;
+   double tradeSL;
+   double riskDistance;
+   double lot1;
+   double lot2;
+   double lot3;
+   double tp1;
+   double tp2;
+};
+
+bool SplitThreeLots(double totalLot, SThreeLotSplit &split) {
+   split.isValid = false;
+   split.lot1 = 0;
+   split.lot2 = 0;
+   split.lot3 = 0;
+
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+
+   if(minLot <= 0 || lotStep <= 0 || totalLot < minLot * 3)
+      return false;
+
+   double baseLot = MathFloor(totalLot / 3.0 / lotStep) * lotStep;
+   baseLot = NormalizeDouble(baseLot, 2);
+
+   if(baseLot < minLot)
+      return false;
+
+   double lot1 = totalLot - baseLot * 2.0;
+   lot1 = NormalizeDouble(lot1, 2);
+
+   if(lot1 < minLot)
+      return false;
+
+   double reconstructedTotal = NormalizeDouble(lot1 + baseLot + baseLot, 2);
+   double totalDifference = MathAbs(reconstructedTotal - NormalizeDouble(totalLot, 2));
+
+   if(totalDifference > lotStep / 2.0)
+      return false;
+
+   split.isValid = true;
+   split.lot1 = lot1;
+   split.lot2 = baseLot;
+   split.lot3 = baseLot;
+   return true;
+}
+
+bool BuildThreeTradePlan(ENUM_DESIRED_POSITION target, SThreeTradePlan &plan) {
+   plan.isValid = false;
+   plan.isBuy = target == DESIRED_POSITION_BUY;
+   plan.entryPrice = 0;
+   plan.tradeSL = 0;
+   plan.riskDistance = 0;
+   plan.lot1 = 0;
+   plan.lot2 = 0;
+   plan.lot3 = 0;
+   plan.tp1 = 0;
+   plan.tp2 = 0;
+
+   if(PositionMode != POSITION_MODE_THREE || IsFixedLot)
+      return false;
+
+   STradeParameters parameters;
+   if(!BuildTradeParameters(target, parameters))
+      return false;
+
+   SThreeLotSplit split;
+   if(!SplitThreeLots(parameters.totalLot, split))
+      return false;
+
+   plan.isBuy = parameters.isBuy;
+   plan.entryPrice = parameters.entryPrice;
+   plan.tradeSL = parameters.tradeSL;
+   plan.riskDistance = parameters.riskDistance;
+   plan.lot1 = split.lot1;
+   plan.lot2 = split.lot2;
+   plan.lot3 = split.lot3;
+
+   plan.tp1 = plan.isBuy
+              ? plan.entryPrice + plan.riskDistance
+              : plan.entryPrice - plan.riskDistance;
+   plan.tp2 = plan.isBuy
+              ? plan.entryPrice + plan.riskDistance * 2.0
+              : plan.entryPrice - plan.riskDistance * 2.0;
+
+   plan.isValid = true;
+   return true;
+}
+
+ENUM_DESIRED_POSITION DetectThreeTarget() {
+   bool hasBuy = HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY);
+   bool hasSell = HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL);
+
+   if(hasBuy && !hasSell)
+      return DESIRED_POSITION_BUY;
+
+   if(hasSell && !hasBuy)
+      return DESIRED_POSITION_SELL;
+
+   return DESIRED_POSITION_NONE;
+}
+
+void RestoreThreeTarget() {
+   threeTarget = DESIRED_POSITION_NONE;
+
+   if(PositionMode != POSITION_MODE_THREE || IsFixedLot)
+      return;
+
+   threeTarget = DetectThreeTarget();
+}
+
+
+bool HasPositionWithComment(string comment) {
+   for(int index = PositionsTotal() - 1; index >= 0; index--) {
+      ulong ticket = PositionGetTicket(index);
+      if(ticket == 0 || !PositionSelectByTicket(ticket))
+         continue;
+
+      if(PositionGetString(POSITION_SYMBOL) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == MagicNumber &&
+         PositionGetString(POSITION_COMMENT) == comment)
+         return true;
+   }
+
+   return false;
+}
+
+bool ExecuteThreeTradePlan(const SThreeTradePlan &plan) {
+   if(!plan.isValid)
+      return false;
+
+   if(plan.isBuy && HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL))
+      return false;
+
+   if(!plan.isBuy && HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY))
+      return false;
+
+   double sl = SetSlAtLastPivot ? plan.tradeSL : 0;
+   bool allExecuted = true;
+
+   if(!HasPositionWithComment("CDC3-1")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot1, sl, plan.tp1, "CDC3-1")
+                  : ExecuteSell(trade, _Symbol, plan.lot1, sl, plan.tp1, "CDC3-1");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   if(!HasPositionWithComment("CDC3-2")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot2, sl, plan.tp2, "CDC3-2")
+                  : ExecuteSell(trade, _Symbol, plan.lot2, sl, plan.tp2, "CDC3-2");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   if(!HasPositionWithComment("CDC3-3")) {
+      bool sent = plan.isBuy
+                  ? ExecuteBuy(trade, _Symbol, plan.lot3, sl, 0, "CDC3-3")
+                  : ExecuteSell(trade, _Symbol, plan.lot3, sl, 0, "CDC3-3");
+      if(!sent)
+         allExecuted = false;
+   }
+
+   return allExecuted;
+}
+
+bool BuildTradeParameters(ENUM_DESIRED_POSITION target, STradeParameters &parameters) {
+   parameters.isBuy = target == DESIRED_POSITION_BUY;
+   parameters.entryPrice = SymbolInfoDouble(_Symbol, parameters.isBuy ? SYMBOL_ASK : SYMBOL_BID);
+   parameters.tradeSL = parameters.isBuy
+                        ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
+                        : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
+
+   parameters.riskDistance = parameters.isBuy
+                             ? parameters.entryPrice - parameters.tradeSL
+                             : parameters.tradeSL - parameters.entryPrice;
+
+   if(parameters.riskDistance <= 0)
+      return false;
+
+   parameters.totalLot = IsFixedLot
+                         ? FixedLotValue
+                         : CalcLot(
+                              _Symbol,
+                              parameters.isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
+                              parameters.entryPrice,
+                              parameters.tradeSL,
+                              RiskUSD,
+                              MaxLot
+                           );
+
+   return parameters.totalLot > 0;
+}
+
 void ReconcilePosition() {
+   if(PositionMode == POSITION_MODE_THREE && !IsFixedLot &&
+      threeTarget != DESIRED_POSITION_NONE) {
+      // Retry closing the opposite side on every tick. The initial close
+      // request can fail when the market is closed or trading is unavailable.
+      if(threeTarget == DESIRED_POSITION_BUY &&
+         HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL)) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_SELL);
+         if(HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_SELL))
+            return;
+      }
+
+      if(threeTarget == DESIRED_POSITION_SELL &&
+         HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY)) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_BUY);
+         if(HasPositionOfType(_Symbol, MagicNumber, POSITION_TYPE_BUY))
+            return;
+      }
+
+      SThreeTradePlan plan;
+      if(!BuildThreeTradePlan(threeTarget, plan)) {
+         positionReconciler.SetTarget(threeTarget, TimeCurrent());
+         threeTarget = DESIRED_POSITION_NONE;
+         return;
+      }
+
+      if(ExecuteThreeTradePlan(plan))
+         threeTarget = DESIRED_POSITION_NONE;
+
+      return;
+   }
+
    ValidatePendingTrend();
 
    ENUM_DESIRED_POSITION target = positionReconciler.Target();
    if(target == DESIRED_POSITION_NONE)
       return;
 
-   bool isBuy = target == DESIRED_POSITION_BUY;
-   double tradeSL = isBuy
-                    ? LastPivotLow(_Symbol, PERIOD_CURRENT) - SLBuffer
-                    : LastPivotHigh(_Symbol, PERIOD_CURRENT) + SLBuffer;
-   double price = SymbolInfoDouble(_Symbol, isBuy ? SYMBOL_ASK : SYMBOL_BID);
-   double lot = IsFixedLot
-                ? FixedLotValue
-                : CalcLot(
-                     _Symbol,
-                     isBuy ? ORDER_TYPE_BUY : ORDER_TYPE_SELL,
-                     price,
-                     tradeSL,
-                     RiskUSD,
-                     MaxLot
-                  );
+   STradeParameters parameters;
+   if(!BuildTradeParameters(target, parameters))
+      return;
 
    positionReconciler.Reconcile(
       trade,
-      lot,
-      SetSlAtLastPivot ? tradeSL : 0,
+      parameters.totalLot,
+      SetSlAtLastPivot ? parameters.tradeSL : 0,
       0,
-      isBuy ? "BUY" : "SELL"
+      parameters.isBuy ? "BUY" : "SELL"
    );
 }
 
@@ -151,14 +393,28 @@ void ReconcilePosition() {
 //| Check EMA Cross                                                  |
 //+------------------------------------------------------------------+
 void CheckSignal(datetime signalBarTime) {
+   bool useThreeMode = PositionMode == POSITION_MODE_THREE && !IsFixedLot;
+
    // BUY Signal
    if(IsEmaCrossUpByHandle(fastHandle, slowHandle)) {
-      positionReconciler.SetTarget(DESIRED_POSITION_BUY, signalBarTime);
+      if(useThreeMode) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_SELL);
+         threeTarget = DESIRED_POSITION_BUY;
+      }
+      else {
+         positionReconciler.SetTarget(DESIRED_POSITION_BUY, signalBarTime);
+      }
       return;
    }
 
    // SELL Signal
    if(IsEmaCrossDownByHandle(fastHandle, slowHandle)) {
-      positionReconciler.SetTarget(DESIRED_POSITION_SELL, signalBarTime);
+      if(useThreeMode) {
+         ClosePositions(trade, _Symbol, MagicNumber, POSITION_TYPE_BUY);
+         threeTarget = DESIRED_POSITION_SELL;
+      }
+      else {
+         positionReconciler.SetTarget(DESIRED_POSITION_SELL, signalBarTime);
+      }
    }
 }
