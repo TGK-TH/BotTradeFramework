@@ -6,7 +6,7 @@ Last updated: 2026-10-21
 Create a reusable MQL5 Unit Test framework, then use it to test existing Grid components before resuming Grid State Machine development.
 
 ## Current phase
-**Unit Testing — Phase 2 implementation ready; awaiting user compile/run validation.**
+**Unit Testing — Phase 2 completed successfully; ready to plan Phase 3.**
 
 The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5` compiled and ran successfully.
 
@@ -29,13 +29,15 @@ The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5
 - No trading calls or market-data dependency.
 - Status: code written; user has not yet reported MetaEditor compilation/runtime results. Do not claim Phase 2 passed until user confirms.
 
+## Phase 2 verification
+- User reported on 2026-10-21 that `Experts/TGK/Tests/Framework/test_framework_selftest.mq5` compiled and ran in MetaEditor/MT5 with the expected results.
+- The deliberate assertion failure was detected and counted; the test without assertions was also marked failed; the outer self-test suite passed.
+- Phase 2 is complete based on the user's compile/runtime confirmation.
+
 ## Next steps
-1. User compiles and runs `Experts/TGK/Tests/Framework/test_framework_selftest.mq5` in MetaEditor/MT5.
-2. Acceptance criteria:
-   - The `Expected Failure Probe` prints 1 failed test and 1 failed assertion, ending in `FINAL RESULT: FAIL`.
-   - The `Expected Empty-Test Failure Probe` prints 1 failed test and 0 failed assertions, ending in `FINAL RESULT: FAIL`.
-   - The final `TGK Test Framework Self-Test` suite prints `FINAL RESULT: PASS` with 0 failed tests/assertions.
-3. If Phase 2 passes, update this file to record user-reported results, then agree on Phase 3 tests for GridTypes, GridPersistence, and GridIdentity under `Experts/TGK/Tests/Grids/`.
+1. Plan Unit Testing Phase 3: test `GridTypes.mqh`, `GridPersistence.mqh`, and `GridIdentity.mqh` using dedicated files under `Experts/TGK/Tests/Grids/`.
+2. Distinguish pure unit tests from persistence/terminal-global-variable and chart/account integration or smoke tests.
+3. Wait for the user to authorize Phase 3 before implementation.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.
