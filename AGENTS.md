@@ -13,6 +13,7 @@ TGK BotTradeFramework: MQL5 trading systems and supporting Python tooling.
 - If Serena/MCP access fails, tell the user to check that the MCP Serena server is running.
 
 ## Repository and editing
+- MQL5 formatting preference: for multi-parameter function/method calls, put each parameter on its own line when the call is long or has multiple arguments, use only a modest continuation indent (two spaces beyond the call indentation), and align the closing `);` with the call start. Follow `Experts/TGK/Tests/Grids/test_grid_types.mq5` as the example.
 - Repository root: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`.
 - Treat this repository as the source of truth; do not edit separate MT5-linked copies.
 - Use Serena/MCP tools for repository work when available and authorized.
