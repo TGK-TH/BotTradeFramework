@@ -6,7 +6,7 @@ Last updated: 2026-10-22
 Create a reusable MQL5 Unit Test framework, then use it to test existing Grid components before resuming Grid State Machine development.
 
 ## Current phase
-**Unit Testing — Phase 3 in progress: Grid component tests created; awaiting MetaEditor/MT5 validation.**
+**Unit Testing — Phase 3 complete: all three Grid component test EAs compiled and ran successfully per user report (2026-10-22).**
 
 The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5` compiled and ran successfully.
 
@@ -41,10 +41,12 @@ Created three test EAs under `Experts/TGK/Tests/Grids/`:
 - `test_grid_identity.mq5`: chart integration tests for successful identity initialization and stable Instance ID/Magic Number when initialized repeatedly on the same chart. It does not place trades; it intentionally exercises the persistent chart marker and registry.
 
 ### Phase 3 validation status
-- Files created; MetaEditor compilation and MT5 execution have not yet been reported by the user.
-- Static validation only; do not claim runtime tests passed.
-- After the user compiles/runs each test EA, record actual results and address failures before marking Phase 3 complete.
-- Multi-chart isolation and persistence across chart close/reopen remain manual/integration checks beyond the current same-chart identity test.
+- User reported on 2026-10-22 that all three Phase 3 test EAs compiled and ran successfully in MetaEditor/MT5:
+  - `test_grid_types.mq5`: passed.
+  - `test_grid_persistence.mq5`: passed.
+  - `test_grid_identity.mq5`: passed.
+- Phase 3 is complete based on this user-reported compile/runtime validation.
+- Multi-chart isolation and persistence across chart close/reopen remain manual/integration checks beyond the current same-chart identity test; these are not covered by the reported Phase 3 pass.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.
