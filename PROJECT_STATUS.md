@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Current focus
 Create a reusable MQL5 Unit Test framework, then use it to test existing Grid components before resuming Grid State Machine development.
 
 ## Current phase
-**Unit Testing — Phase 3 complete: all three Grid component test EAs compiled and ran successfully per user report (2026-10-22).**
+**Grid Integration Testing — in progress: multi-chart identity and chart-restart persistence test EAs created; awaiting user compile/run validation.**
 
 The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5` compiled and ran successfully.
 
@@ -47,6 +47,26 @@ Created three test EAs under `Experts/TGK/Tests/Grids/`:
   - `test_grid_identity.mq5`: passed.
 - Phase 3 is complete based on this user-reported compile/runtime validation.
 - Multi-chart isolation and persistence across chart close/reopen remain manual/integration checks beyond the current same-chart identity test; these are not covered by the reported Phase 3 pass.
+
+## Grid Integration Testing — current work
+
+Phase 3 unit tests passed per the user's report. Two additional integration test EAs have now been created; the user has not yet compiled or run them.
+
+- `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`
+  - Opens a temporary chart with the same symbol and timeframe as the current chart.
+  - Initializes Grid identity on both charts and checks that Instance IDs and Magic Numbers differ.
+  - Does not place trades. It closes the temporary chart and removes only that chart's Magic registry entry; the shared Magic allocation sequence is intentionally not decremented, so one sequence value may be consumed by this test.
+- `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`
+  - Two-run manual integration test. Run 1 writes a dedicated snapshot and level-state fixture, then instructs the user to close and reopen the same saved chart/profile and attach the EA again with the same `TestSlot`.
+  - Run 2 checks that ChartID changed, Grid Instance identity/Magic Number were restored, and snapshot fields (including Anchor) and per-level states survived.
+  - Uses a dedicated test slot (1–6 alphanumeric characters; default `R1`) and does not place trades. Use a unique slot per simultaneous test chart. The test cleans up only its own persistence/control Global Variables after the second run.
+- User-reported validation on 2026-10-23:
+  - `test_grid_identity_multichart.mq5` compiled and passed.
+  - `test_grid_restart_persistence.mq5` completed its second run and all persistence/identity checks passed except the assertion that ChartID must change.
+- Diagnosis: ChartID is not a durable Grid identity and MT5 may reuse it when restoring a saved Profile. Requiring a changed ChartID is too strict and can fail despite successful persistence recovery.
+- Updated `test_grid_restart_persistence.mq5` so the saved/current ChartID comparison is printed as diagnostic information rather than counted as a test assertion. The actual acceptance checks remain the restored Instance ID hash, Magic Number, snapshot fields, and level states.
+- Validation status: the adjusted restart test still requires the user's compile/run confirmation. Do not mark this integration phase complete until the user reruns it successfully.
+- After the adjusted restart test passes, review the full result and decide with the user whether to proceed to Grid State Machine development.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.
