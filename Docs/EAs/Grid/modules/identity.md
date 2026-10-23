@@ -36,7 +36,7 @@ Identity แยกจาก Grid Persistence: คลาสนี้ดูแล�
 - `test_grid_identity_multichart.mq5`: กราฟคนละหน้าต่างได้ Instance ID และ Magic Number ต่างกัน
 - `test_grid_restart_persistence.mq5`: การสลับออกจากและกลับเข้า Profile ที่บันทึกไว้ สามารถกู้คืน Identity ได้หลังแก้เงื่อนไข Chart ID
 
-ดูรายละเอียดที่ [คู่มือทดสอบ Grid](../Testing/grid-testing.md)
+ดูรายละเอียดที่ [คู่มือทดสอบ Grid](../Testing/testing.md)
 
 ## ข้อควรระวัง / สิ่งที่ยังไม่สรุป
 

@@ -23,17 +23,11 @@ Each new trading strategy should reuse the framework instead of rewriting common
 
 ## Documentation
 
-เอกสารทางเทคนิคเขียนเป็นภาษาไทยและจัดเก็บไว้ใน [Docs/README.md](Docs/README.md) โดยแยกภาพรวมระบบ รายละเอียด Module คู่มือทดสอบ บันทึกการตัดสินใจ และบันทึก Phase ออกจาก `PROJECT_STATUS.md`
+เอกสารทางเทคนิคเขียนเป็นภาษาไทยและจัดโครงสร้างตามขอบเขต [Framework, EA แต่ละตัว และ Workflow การพัฒนา](Docs/README.md) โดย `PROJECT_STATUS.md` ใช้สรุปสถานะปัจจุบัน ส่วนรายละเอียดระยะยาวอยู่ใน `Docs/`
 
 ## Current Status
 
-Current Development Phase
-
-- ✅ Phase 0 : Initial EA
-- ✅ Phase 0.5 : Development Environment
-- ✅ Phase 1 : Utility Extraction
-- ✅ Phase 2 : Trailing Stop Module
-- 🚧 Phase 3 : State Machine Refactoring
+ดูสถานะ Phase ปัจจุบัน งานที่เสร็จแล้ว ผลการตรวจสอบ และขั้นตอนถัดไปที่ [PROJECT_STATUS.md](PROJECT_STATUS.md) ส่วนเอกสารทางเทคนิคแยกตาม Framework และ EA ใน [Docs/README.md](Docs/README.md)
 
 ---
 

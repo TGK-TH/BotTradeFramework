@@ -1,28 +1,22 @@
 # TGK BotTradeFramework Documentation Workflow
 
-User approved a Hybrid Documentation workflow; all technical Docs must be written in Thai. Preserve actual source identifiers, class/function/enum names, and file paths in their original spelling.
+User approved a multi-EA documentation hierarchy; all technical Docs must be written in Thai. Preserve actual source identifiers, class/function/enum names, and file paths in original spelling.
+
+Structure:
+- `Docs/Framework/`: only architecture/modules with a confirmed shared contract for multiple EAs.
+- `Docs/EAs/<EA-Name>/`: EA-specific architecture, strategy logic, state machine, configuration, tests, decisions, and phase notes.
+- `Docs/Development/`: repository-wide workflow and development standards.
+- `Docs/Decisions/README.md`: central ADR index; every ADR must declare its scope.
+- `PROJECT_STATUS.md`: concise current status and exact next step, not a duplicate technical manual.
+
+Do not promote an EA-specific module to Framework merely because another EA might use it later. Current Grid Identity and Persistence docs remain under `Docs/EAs/Grid/` because the existing APIs/types are Grid-specific. TestAssert/TestRunner docs are under Framework.
 
 When a phase completes:
 1. Update `PROJECT_STATUS.md` with phase state, changed files, checks, user-reported compile/runtime outcomes, known issues, and exact next step.
-2. Update the relevant existing `Docs/` pages; create new docs only when needed.
-3. Update module docs for behavior/architecture changes, testing docs for test/procedure changes, ADRs for important design decisions, and phase notes for the work completed.
-4. Clearly distinguish implemented behavior, user-verified behavior, agreed requirements not yet implemented, and open questions. Never present planned behavior as implemented.
-5. Verify docs match actual source, check local links/paths, and run `git diff --check`.
+2. Update relevant existing Thai Docs; create new docs only when needed.
+3. Update module docs for behavior/architecture changes, testing docs for test/procedure changes, ADRs for important design decisions, and phase notes for completed work.
+4. Clearly distinguish implemented, user-verified, agreed-not-implemented, and open behavior.
+5. Verify docs match source, check local Markdown links, and run `git diff --check`.
+6. Never claim MQL5 compile/runtime passed without user confirmation.
 
-`PROJECT_STATUS.md` is the short current-status/next-step page. `Docs/` stores durable technical explanations.
-
-Created Thai docs on 2026-10-23:
-- `Docs/README.md`
-- `Docs/Architecture/overview.md`
-- `Docs/Modules/grid-identity.md`
-- `Docs/Modules/grid-persistence.md`
-- `Docs/Testing/mql5-test-framework.md`
-- `Docs/Testing/grid-testing.md`
-- `Docs/Decisions/README.md`
-- `Docs/Decisions/ADR-001-grid-identity-and-persistence.md`
-- `Docs/Decisions/ADR-002-chart-id-is-not-persistence-identity.md`
-- `Docs/Phases/phase-grid-integration-testing.md`
-
-Root `README.md` links to `Docs/README.md`. `AGENTS.md` now requires Thai technical docs and the phase documentation workflow.
-
-Grid Integration Testing was marked complete based on user-reported results. Next planned development is Grid State Machine, but do not begin until explicitly authorized. Before Grid feature/refactor, run relevant regression tests first. User performs MQL5 compile/runtime tests; do not claim results without user confirmation.
+Documentation hierarchy was reorganized on 2026-10-23. Grid Integration Testing and Documentation Structure are complete based on user-reported test results and repository checks. Next planned development is Grid State Machine, but do not begin until explicitly authorized. Before any Grid feature/refactor, run relevant Grid regression tests first.

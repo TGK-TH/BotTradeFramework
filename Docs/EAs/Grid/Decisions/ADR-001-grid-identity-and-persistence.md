@@ -1,5 +1,6 @@
 # ADR-001: แยก Grid Identity ออกจาก Grid Persistence
 
+- Scope: Grid EA
 - สถานะ: ยอมรับ
 - วันที่: 2026-10-23
 

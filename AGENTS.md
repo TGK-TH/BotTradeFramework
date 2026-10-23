@@ -28,6 +28,8 @@ TGK BotTradeFramework: MQL5 trading systems and supporting Python tooling.
 - Do not move to a later test phase without the user's report and approval.
 
 ## Documentation workflow
+- Organize technical docs by scope: `Docs/Framework/` for genuinely shared architecture/modules, `Docs/EAs/<EA-Name>/` for EA-specific behavior, `Docs/Development/` for repository-wide workflow, and `Docs/Decisions/` as the ADR index.
+- Do not classify a module as shared merely because another EA might use it in the future; confirm its contract and responsibilities first.
 - Technical documentation under `Docs/` must be written in Thai. Preserve actual source identifiers, class/function names, enum names, and file paths in their original spelling.
 - Keep `PROJECT_STATUS.md` focused on current phase, completed work, user-reported checks, known issues, and the exact next step; use `Docs/` for durable technical explanations.
 - At the end of each completed phase, update both `PROJECT_STATUS.md` and the relevant documentation. Create/update module docs when behavior or architecture changes, test docs when test coverage or procedures change, and ADRs when an important design decision is made.

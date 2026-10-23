@@ -3,12 +3,10 @@
 Last updated: 2026-10-23
 
 ## Current focus
-Create a reusable MQL5 Unit Test framework, then use it to test existing Grid components before resuming Grid State Machine development.
+Documentation structure now separates Framework-wide material from EA-specific documentation. The next planned development phase is Grid State Machine, but it has not been authorized to start yet.
 
 ## Current phase
-**Documentation Foundation — complete.** Thai documentation structure and the first set of Grid architecture, module, testing, decision, and phase documents have been added. The next planned development phase is Grid State Machine, which has not been authorized to start yet.
-
-The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5` compiled and ran successfully.
+**Documentation Structure — complete.** Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -57,22 +55,26 @@ User-reported results on 2026-10-23:
 
 Scope note: restoring a saved chart/Profile and manually opening a fresh chart are different lifecycle scenarios. A fresh chart may receive a new Instance ID/Magic Number; recovery of an existing Grid with open positions from a newly opened chart needs separate design and testing.
 
-## Documentation Foundation — completed
+## Documentation Structure — completed
 
-Created the Thai-language documentation structure under `Docs/`:
-- `Docs/README.md`: documentation index and maintenance rules.
-- `Docs/Architecture/overview.md`: current Grid architecture and scope boundaries.
-- `Docs/Modules/grid-identity.md`: Identity marker, Instance ID, and Magic Number allocation.
-- `Docs/Modules/grid-persistence.md`: Snapshot keys, save/restore validation, and limitations.
-- `Docs/Testing/mql5-test-framework.md`: TestAssert and TestRunner behavior.
-- `Docs/Testing/grid-testing.md`: test inventory, procedures, user-reported outcomes, and regression policy.
-- `Docs/Decisions/ADR-001-grid-identity-and-persistence.md`: separation of Identity and Persistence.
-- `Docs/Decisions/ADR-002-chart-id-is-not-persistence-identity.md`: ChartID is diagnostic, not a restore requirement.
-- `Docs/Phases/phase-grid-integration-testing.md`: integration phase scope and outcomes.
-- Updated root `README.md` to link the Thai documentation index.
-- Updated `AGENTS.md` with the Thai Docs workflow and phase-completion requirements.
+The documentation hierarchy now reflects that BotTradeFramework will contain multiple EAs, not Grid alone:
+- `Docs/README.md`: project-wide documentation index and documentation rules.
+- `Docs/Framework/README.md`: scope and rules for genuinely shared components.
+- `Docs/Framework/Testing/mql5-test-framework.md`: shared `TestAssert` and `TestRunner` documentation.
+- `Docs/EAs/README.md`: index of EAs with documentation and guidance for adding a new EA.
+- `Docs/EAs/Grid/README.md`: Grid-specific index and boundary between agreed requirements and implemented behavior.
+- `Docs/EAs/Grid/architecture.md`: current Grid architecture and scope boundaries.
+- `Docs/EAs/Grid/modules/identity.md`: Grid Identity marker, Instance ID, and Magic Number allocation.
+- `Docs/EAs/Grid/modules/persistence.md`: Grid Snapshot keys, save/restore validation, and limitations.
+- `Docs/EAs/Grid/Testing/testing.md`: test inventory, procedures, user-reported outcomes, and regression policy.
+- `Docs/Decisions/README.md`: central ADR index, separated by scope.
+- `Docs/EAs/Grid/Decisions/`: Grid-specific ADRs; neither ADR is a Framework-wide rule.
+- `Docs/EAs/Grid/Phases/phase-grid-integration-testing.md`: scope and outcomes of Grid Integration Testing.
+- `Docs/Development/workflow.md`: phase workflow and documentation responsibilities.
+- `Docs/Development/phase-documentation-structure.md`: record of this documentation restructuring phase.
+- Updated root `README.md` and `AGENTS.md` to describe the multi-EA documentation model and maintenance rules.
 
-Checks performed for this documentation change: repository content reviewed through Serena; documentation files created/updated; `git diff --check` passed; local Markdown links and referenced paths were reviewed. No MQL5 compile or runtime test was run because this phase changed documentation/workflow only.
+Validation performed for this documentation-only phase: checked the moved/created files and Markdown references, then ran `git diff --check` and a local-link validation script. No MQL5 compile or runtime test was performed because no MQL5 source behavior changed.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.

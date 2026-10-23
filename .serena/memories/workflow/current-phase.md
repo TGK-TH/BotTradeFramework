@@ -1,27 +1,21 @@
 # Current TGK BotTradeFramework Phase
 
-Grid Integration Testing and Documentation Foundation are complete based on user-reported test results and repository checks as of 2026-10-23.
+As of 2026-10-23, Grid Integration Testing and Documentation Structure are complete.
 
 Grid Integration Testing user-reported results:
 - Unit Test Phases 1–3: compile/runtime passed.
 - `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`: passed.
 - `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`: passed after ChartID comparison became diagnostic output. Restoring the saved Profile preserved identity and snapshot data.
-- Manually opening a fresh chart is a different lifecycle from restoring a saved Profile; recovering an existing Grid from a new chart requires separate design/tests.
+- Manually opening a fresh chart is a different lifecycle from restoring a saved chart/Profile; recovery of an existing Grid from a new chart requires separate design/tests.
 
-Thai documentation created:
-- `Docs/README.md`
-- `Docs/Architecture/overview.md`
-- `Docs/Modules/grid-identity.md`
-- `Docs/Modules/grid-persistence.md`
-- `Docs/Testing/mql5-test-framework.md`
-- `Docs/Testing/grid-testing.md`
-- `Docs/Decisions/README.md`
-- `Docs/Decisions/ADR-001-grid-identity-and-persistence.md`
-- `Docs/Decisions/ADR-002-chart-id-is-not-persistence-identity.md`
-- `Docs/Phases/phase-grid-integration-testing.md`
+Documentation hierarchy:
+- `Docs/Framework/`: confirmed shared architecture/modules; currently documents TestAssert/TestRunner.
+- `Docs/EAs/Grid/`: Grid architecture, Identity, Persistence, test guide, Grid-specific ADRs, and Grid Integration Testing phase note.
+- `Docs/EAs/README.md`: EA documentation index and guidance for future EAs.
+- `Docs/Development/`: repository workflow and documentation-structure phase note.
+- `Docs/Decisions/README.md`: central ADR index.
+- Root `README.md` and `AGENTS.md` describe the multi-EA documentation model.
 
-Root `README.md` links to `Docs/README.md`; `AGENTS.md` defines the Thai Docs workflow. Local Markdown links checked; `git diff --check` passed. No MQL5 compile/run was needed or performed for this docs-only phase.
+Current phase: Documentation Structure complete. This was docs-only; no MQL5 source changed and no MetaEditor/MT5 compile/runtime test was performed. Markdown links and `git diff --check` must be validated before handoff.
 
-Permanent workflow: at each completed phase, update `PROJECT_STATUS.md` and relevant Thai Docs, verify docs against code and local links, run `git diff --check`, and record only user-reported MT5 compile/runtime outcomes. Distinguish implemented, user-verified, planned, and undecided behavior. Use ADRs for important design decisions. Do not duplicate existing docs unnecessarily.
-
-Next planned development phase is Grid State Machine, but do not begin until the user explicitly authorizes it. Before any Grid feature/refactor, run relevant Grid Regression Tests first. User compiles/runs MQL5 tests. Use 2-space indentation. If Serena/MCP fails, remind user to check the Serena MCP server.
+Next planned development phase is Grid State Machine, but do not start until the user explicitly authorizes it. Before any Grid feature/refactor, run relevant Grid regression tests first. User compiles/runs MQL5 tests. Use 2-space indentation. If Serena/MCP fails, remind user to check the Serena MCP server.
