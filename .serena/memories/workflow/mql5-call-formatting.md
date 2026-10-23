@@ -1,0 +1,3 @@
+# MQL5 function-call formatting preference
+
+When writing or editing MQL5 code for this user, if a function/method call has multiple parameters (especially calls that would otherwise be long or hard to scan), put each parameter on its own line. Use a modest indentation: indent continuation parameters only two spaces beyond the call's indentation, not deeply. Put the closing `);` aligned with the call's starting indentation. Follow the user's edited example in `Experts/TGK/Tests/Grids/test_grid_types.mq5`. Keep this style consistent across files. Do not compile unless the user asks or reports that they are ready to test.
