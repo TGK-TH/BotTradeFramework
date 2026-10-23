@@ -65,8 +65,10 @@ Phase 3 unit tests passed per the user's report. Two additional integration test
   - `test_grid_restart_persistence.mq5` completed its second run and all persistence/identity checks passed except the assertion that ChartID must change.
 - Diagnosis: ChartID is not a durable Grid identity and MT5 may reuse it when restoring a saved Profile. Requiring a changed ChartID is too strict and can fail despite successful persistence recovery.
 - Updated `test_grid_restart_persistence.mq5` so the saved/current ChartID comparison is printed as diagnostic information rather than counted as a test assertion. The actual acceptance checks remain the restored Instance ID hash, Magic Number, snapshot fields, and level states.
-- Validation status: the adjusted restart test still requires the user's compile/run confirmation. Do not mark this integration phase complete until the user reruns it successfully.
-- After the adjusted restart test passes, review the full result and decide with the user whether to proceed to Grid State Machine development.
+- User-reported validation on 2026-10-23: after the ChartID assertion was changed to diagnostic output, the user repeated the Profile-switch restart procedure and confirmed the restart persistence test passed.
+- Grid Integration Testing is complete for the planned checks: multi-chart identity isolation and persistence recovery when the saved chart/profile is restored. ChartID remains diagnostic only.
+- Scope note: closing a chart and manually opening a fresh chart is a new-chart scenario; different Instance ID/Magic Number can be expected. This is not the same as restoring an existing Grid instance. If Grid V1 needs to recover an old Grid after a fresh chart is opened, that lifecycle must be specified and tested separately before implementing the state machine.
+- Next phase: Grid State Machine development, but do not begin until the user explicitly authorizes it.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.
