@@ -27,5 +27,13 @@ TGK BotTradeFramework: MQL5 trading systems and supporting Python tooling.
 - A smoke test is not the same as a full unit/integration test suite.
 - Do not move to a later test phase without the user's report and approval.
 
+## Documentation workflow
+- Technical documentation under `Docs/` must be written in Thai. Preserve actual source identifiers, class/function names, enum names, and file paths in their original spelling.
+- Keep `PROJECT_STATUS.md` focused on current phase, completed work, user-reported checks, known issues, and the exact next step; use `Docs/` for durable technical explanations.
+- At the end of each completed phase, update both `PROJECT_STATUS.md` and the relevant documentation. Create/update module docs when behavior or architecture changes, test docs when test coverage or procedures change, and ADRs when an important design decision is made.
+- Phase notes should record scope, changed files, checks actually performed, user-reported compile/runtime outcomes, what the phase does not prove, and the next step.
+- Clearly distinguish implemented behavior, user-verified behavior, agreed requirements not yet implemented, and open questions. Never document planned behavior as if it already exists.
+- Avoid duplicate documents: update the most relevant existing document where possible and keep `Docs/README.md` as the index.
+
 ## Current workflow rule
-- After each completed phase, update `PROJECT_STATUS.md` before handing work back to the user.
+- After each completed phase, update `PROJECT_STATUS.md` and relevant `Docs/` pages before handing work back to the user.

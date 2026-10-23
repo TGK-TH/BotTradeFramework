@@ -6,7 +6,7 @@ Last updated: 2026-10-23
 Create a reusable MQL5 Unit Test framework, then use it to test existing Grid components before resuming Grid State Machine development.
 
 ## Current phase
-**Grid Integration Testing — in progress: multi-chart identity and chart-restart persistence test EAs created; awaiting user compile/run validation.**
+**Documentation Foundation — complete.** Thai documentation structure and the first set of Grid architecture, module, testing, decision, and phase documents have been added. The next planned development phase is Grid State Machine, which has not been authorized to start yet.
 
 The user reported that Phase 1's `Experts/TGK/Tests/Framework/test_framework.mq5` compiled and ran successfully.
 
@@ -48,27 +48,31 @@ Created three test EAs under `Experts/TGK/Tests/Grids/`:
 - Phase 3 is complete based on this user-reported compile/runtime validation.
 - Multi-chart isolation and persistence across chart close/reopen remain manual/integration checks beyond the current same-chart identity test; these are not covered by the reported Phase 3 pass.
 
-## Grid Integration Testing — current work
+## Grid Integration Testing — completed
 
-Phase 3 unit tests passed per the user's report. Two additional integration test EAs have now been created; the user has not yet compiled or run them.
+User-reported results on 2026-10-23:
+- `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`: compiled and passed.
+- `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`: passed after changing the ChartID comparison from an assertion to diagnostic output.
+- Unit Test Phases 1–3 had previously been confirmed by the user as passing.
 
-- `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`
-  - Opens a temporary chart with the same symbol and timeframe as the current chart.
-  - Initializes Grid identity on both charts and checks that Instance IDs and Magic Numbers differ.
-  - Does not place trades. It closes the temporary chart and removes only that chart's Magic registry entry; the shared Magic allocation sequence is intentionally not decremented, so one sequence value may be consumed by this test.
-- `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`
-  - Two-run manual integration test. Run 1 writes a dedicated snapshot and level-state fixture, then instructs the user to close and reopen the same saved chart/profile and attach the EA again with the same `TestSlot`.
-  - Run 2 checks that ChartID changed, Grid Instance identity/Magic Number were restored, and snapshot fields (including Anchor) and per-level states survived.
-  - Uses a dedicated test slot (1–6 alphanumeric characters; default `R1`) and does not place trades. Use a unique slot per simultaneous test chart. The test cleans up only its own persistence/control Global Variables after the second run.
-- User-reported validation on 2026-10-23:
-  - `test_grid_identity_multichart.mq5` compiled and passed.
-  - `test_grid_restart_persistence.mq5` completed its second run and all persistence/identity checks passed except the assertion that ChartID must change.
-- Diagnosis: ChartID is not a durable Grid identity and MT5 may reuse it when restoring a saved Profile. Requiring a changed ChartID is too strict and can fail despite successful persistence recovery.
-- Updated `test_grid_restart_persistence.mq5` so the saved/current ChartID comparison is printed as diagnostic information rather than counted as a test assertion. The actual acceptance checks remain the restored Instance ID hash, Magic Number, snapshot fields, and level states.
-- User-reported validation on 2026-10-23: after the ChartID assertion was changed to diagnostic output, the user repeated the Profile-switch restart procedure and confirmed the restart persistence test passed.
-- Grid Integration Testing is complete for the planned checks: multi-chart identity isolation and persistence recovery when the saved chart/profile is restored. ChartID remains diagnostic only.
-- Scope note: closing a chart and manually opening a fresh chart is a new-chart scenario; different Instance ID/Magic Number can be expected. This is not the same as restoring an existing Grid instance. If Grid V1 needs to recover an old Grid after a fresh chart is opened, that lifecycle must be specified and tested separately before implementing the state machine.
-- Next phase: Grid State Machine development, but do not begin until the user explicitly authorizes it.
+Scope note: restoring a saved chart/Profile and manually opening a fresh chart are different lifecycle scenarios. A fresh chart may receive a new Instance ID/Magic Number; recovery of an existing Grid with open positions from a newly opened chart needs separate design and testing.
+
+## Documentation Foundation — completed
+
+Created the Thai-language documentation structure under `Docs/`:
+- `Docs/README.md`: documentation index and maintenance rules.
+- `Docs/Architecture/overview.md`: current Grid architecture and scope boundaries.
+- `Docs/Modules/grid-identity.md`: Identity marker, Instance ID, and Magic Number allocation.
+- `Docs/Modules/grid-persistence.md`: Snapshot keys, save/restore validation, and limitations.
+- `Docs/Testing/mql5-test-framework.md`: TestAssert and TestRunner behavior.
+- `Docs/Testing/grid-testing.md`: test inventory, procedures, user-reported outcomes, and regression policy.
+- `Docs/Decisions/ADR-001-grid-identity-and-persistence.md`: separation of Identity and Persistence.
+- `Docs/Decisions/ADR-002-chart-id-is-not-persistence-identity.md`: ChartID is diagnostic, not a restore requirement.
+- `Docs/Phases/phase-grid-integration-testing.md`: integration phase scope and outcomes.
+- Updated root `README.md` to link the Thai documentation index.
+- Updated `AGENTS.md` with the Thai Docs workflow and phase-completion requirements.
+
+Checks performed for this documentation change: repository content reviewed through Serena; documentation files created/updated; `git diff --check` passed; local Markdown links and referenced paths were reviewed. No MQL5 compile or runtime test was run because this phase changed documentation/workflow only.
 
 ## Grid context and constraints
 - Grid V1 is intended to manage one Grid per EA/chart instance.

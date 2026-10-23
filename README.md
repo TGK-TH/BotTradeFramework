@@ -21,6 +21,10 @@ Each new trading strategy should reuse the framework instead of rewriting common
 
 ---
 
+## Documentation
+
+เอกสารทางเทคนิคเขียนเป็นภาษาไทยและจัดเก็บไว้ใน [Docs/README.md](Docs/README.md) โดยแยกภาพรวมระบบ รายละเอียด Module คู่มือทดสอบ บันทึกการตัดสินใจ และบันทึก Phase ออกจาก `PROJECT_STATUS.md`
+
 ## Current Status
 
 Current Development Phase
@@ -53,7 +57,7 @@ BotTradeFramework/
 │       ├── Types/
 │       └── Utils/
 │
-├── docs/
+├── Docs/
 │
 ├── README.md
 │
