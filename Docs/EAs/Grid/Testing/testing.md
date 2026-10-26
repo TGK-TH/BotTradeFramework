@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-10-23
+อัปเดตล่าสุด: 2026-10-26
 
 ## ก่อนเริ่ม
 
@@ -29,7 +29,19 @@
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
-ผลทั้งหมดข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ณ วันที่ 2026-10-23 ไม่ใช่ผลจากการรันโดย Assistant
+ผลทั้งหมดข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant
+
+## Grid Regression Baseline ก่อน Grid State Machine (2026-10-26)
+
+ผู้ใช้ยืนยันผล Compile/Runtime ว่าผ่านครบทั้ง 5 ไฟล์ก่อนเริ่ม Grid State Machine:
+
+- `test_grid_types.mq5` — ผ่าน
+- `test_grid_persistence.mq5` — ผ่าน
+- `test_grid_identity.mq5` — ผ่าน
+- `test_grid_identity_multichart.mq5` — ผ่าน
+- `test_grid_restart_persistence.mq5` — ผ่าน
+
+ให้ถือผลนี้เป็น Baseline ที่ผู้ใช้รายงานสำหรับ Phase ปัจจุบัน และรัน Regression Test ที่เกี่ยวข้องซ้ำหลังมีการแก้ Source Code
 
 ## ขั้นตอนทดสอบ Multi-chart Identity
 

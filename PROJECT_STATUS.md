@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-23
+Last updated: 2026-10-26
 
 ## Current focus
-Documentation structure now separates Framework-wide material from EA-specific documentation. The next planned development phase is Grid State Machine, but it has not been authorized to start yet.
+The five Grid Regression Baseline tests were reported by the user as passing on 2026-10-26. Grid State Machine is now authorized to proceed. Start with a test-first design for state transitions; keep order execution and live trading out of scope until separately implemented and tested.
 
 ## Current phase
-**Documentation Structure — complete.** Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
+**Grid State Machine — in progress (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -54,6 +54,17 @@ User-reported results on 2026-10-23:
 - Unit Test Phases 1–3 had previously been confirmed by the user as passing.
 
 Scope note: restoring a saved chart/Profile and manually opening a fresh chart are different lifecycle scenarios. A fresh chart may receive a new Instance ID/Magic Number; recovery of an existing Grid with open positions from a newly opened chart needs separate design and testing.
+
+## Grid Regression Baseline — user-reported pass (2026-10-26)
+
+The user explicitly confirmed all five current Grid Regression Tests passed before Grid State Machine work began:
+- `Experts/TGK/Tests/Grids/test_grid_types.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_persistence.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_identity.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`
+
+These are user-reported MetaEditor/MT5 results, not tests executed by the assistant. Treat this as the baseline for the current phase; rerun relevant regression tests after source changes.
 
 ## Documentation Structure — completed
 
