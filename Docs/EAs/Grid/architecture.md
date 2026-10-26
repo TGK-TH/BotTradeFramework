@@ -1,10 +1,10 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-10-23
+อัปเดตล่าสุด: 2026-10-26
 
 ## ขอบเขตของเอกสาร
 
-เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity ระบบ Persistence และ Test framework แต่ยังไม่ได้พัฒนา Grid State Machine/Order Execution ครบตามข้อกำหนด Grid V1
+เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity ระบบ Persistence และ State Machine รอบแรกที่จัดการ Lifecycle transitions โดยยังไม่มี Order Execution และยังไม่ครอบคลุมข้อกำหนด Grid V1 ทั้งหมด
 
 ## ส่วนประกอบปัจจุบัน
 
@@ -16,6 +16,9 @@ EA / Test EA
    |       +--> Terminal Global Variables สำหรับ Magic registry/sequence/lock
    |
    +--> STGKGridInstanceData (ประกาศใน GridTypes.mqh)
+   |
+   +--> CTGKGridStateMachine
+   |       +--> Lifecycle transitions only (no order execution)
    |
    +--> CTGKGridPersistence
            +--> Terminal Global Variables สำหรับ Snapshot
@@ -34,15 +37,16 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridTypes.mqh` | ประกาศ Enum และโครงสร้างข้อมูลที่ใช้แทนสถานะของ Grid |
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
+| `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Testing/TestAssert.mqh` | ฟังก์ชัน Assertion พื้นฐาน |
 | `Include/BotTrade/Testing/TestRunner.mqh` | จัดกลุ่ม Test นับผล และพิมพ์ PASS/FAIL |
 
 ## ขอบเขตที่ยังไม่เสร็จ
 
-- ยังไม่มี Grid State Machine ที่ควบคุม Lifecycle ทั้งหมด
+- Grid State Machine รอบแรกยังไม่เชื่อมกับ EA/Order Execution และยังต้องผ่าน Compile/Runtime Tests
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
 - ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว
-- การกู้คืน Identity เมื่อ Restore กราฟจาก Profile ถูกทดสอบแล้วตามผลที่ผู้ใช้รายงาน แต่การเปิดกราฟใหม่ด้วยตนเองถือเป็นสถานการณ์ต่างหาก และต้องกำหนดพฤติกรรมก่อนนำไปใช้กู้คืน Grid ที่มี Position ค้างอยู่
+- Lifecycle ที่ตกลงแล้ว: การเปิดกราฟใหม่ด้วยตนเองเป็น Grid Instance ใหม่และไม่ Adopt Position ของ Instance เดิม ส่วน Grid เดิมจะกลับมาทำงานเมื่อ Restore กราฟ/โปรไฟล์เดิมและกู้ Identity/Persistence ได้
 
 ## หลักการแยกความรับผิดชอบ
 

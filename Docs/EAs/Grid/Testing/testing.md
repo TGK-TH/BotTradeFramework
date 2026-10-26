@@ -43,6 +43,21 @@
 
 ให้ถือผลนี้เป็น Baseline ที่ผู้ใช้รายงานสำหรับ Phase ปัจจุบัน และรัน Regression Test ที่เกี่ยวข้องซ้ำหลังมีการแก้ Source Code
 
+## Grid State Machine Test (รอผู้ใช้ยืนยันผล)
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5`
+
+ทดสอบ State transitions โดยไม่ส่งคำสั่งซื้อขาย:
+
+- Initialize และรอ Fill แรก
+- ใช้ราคาที่ Fill จริงเป็น Anchor
+- Mode change ต้องรอให้จำนวน Position ที่เหลือเป็นศูนย์ก่อน Apply Configuration และล้าง Anchor
+- Step change ต้องคง Anchor เดิม
+- ปฏิเสธ Configuration/Fill ที่ไม่ถูกต้อง
+- `RECOVERY_ERROR` ต้องปิดกั้นการเปลี่ยน State
+
+ผล Compile/Runtime ยังรอผู้ใช้ยืนยัน จึงยังไม่นับเป็น Test ที่ผ่าน
+
 ## ขั้นตอนทดสอบ Multi-chart Identity
 
 1. Compile `test_grid_identity_multichart.mq5`

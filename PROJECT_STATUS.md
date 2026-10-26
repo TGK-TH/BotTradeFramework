@@ -3,7 +3,7 @@
 Last updated: 2026-10-26
 
 ## Current focus
-The five Grid Regression Baseline tests were reported by the user as passing on 2026-10-26. Grid State Machine is now authorized to proceed. Start with a test-first design for state transitions; keep order execution and live trading out of scope until separately implemented and tested.
+The user-reported Grid Regression Baseline (all five existing tests passed on 2026-10-26) is accepted. Grid State Machine first implementation and its no-trading test EA have been added. Await the user's MetaEditor/MT5 compile and runtime results; do not start Order Execution integration until this test and the five baseline tests are confirmed after the source changes.
 
 ## Current phase
 **Grid State Machine — in progress (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
@@ -54,6 +54,15 @@ User-reported results on 2026-10-23:
 - Unit Test Phases 1–3 had previously been confirmed by the user as passing.
 
 Scope note: restoring a saved chart/Profile and manually opening a fresh chart are different lifecycle scenarios. A fresh chart may receive a new Instance ID/Magic Number; recovery of an existing Grid with open positions from a newly opened chart needs separate design and testing.
+
+## Grid State Machine — implementation round 1 (2026-10-26)
+
+Added:
+- `Include/BotTrade/Grid/GridStateMachine.mqh`: validates initial data, records actual initial fill as Anchor, requests Mode/Step/Magic reset, waits for confirmed zero remaining positions before rebuilding, clears Anchor for Mode changes, retains Anchor for Step changes, and blocks state-changing operations in Recovery Error.
+- `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5`: no-trading tests for initial state, fill/Anchor, Mode reset, Step reset, invalid inputs, and Recovery Error.
+- `Docs/EAs/Grid/Phases/phase-grid-state-machine.md`: lifecycle decision, scope, limitations, and next steps.
+
+Status: source and test files are written, but the user has not yet reported compile/runtime results. Assistant has not run MetaEditor/MT5 compilation. Order execution, bounds, grid level generation, TP handling, and EA integration remain out of scope for this round.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
