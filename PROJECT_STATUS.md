@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 
 ## Current focus
-The user-reported Grid Regression Baseline (all five existing tests passed on 2026-10-26) is accepted. Grid State Machine first implementation and its no-trading test EA have been added. Await the user's MetaEditor/MT5 compile and runtime results; do not start Order Execution integration until this test and the five baseline tests are confirmed after the source changes.
+Grid State Machine implementation round 1 and regression validation are complete based on user-reported MetaEditor/MT5 results. The new State Machine test and all five existing Grid Regression Tests passed after the source changes. Do not start Order Execution integration until the next phase is explicitly authorized and its scope is agreed.
 
 ## Current phase
-**Grid State Machine — in progress (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
+**Grid State Machine — round 1 complete (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -62,7 +62,7 @@ Added:
 - `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5`: no-trading tests for initial state, fill/Anchor, Mode reset, Step reset, invalid inputs, and Recovery Error.
 - `Docs/EAs/Grid/Phases/phase-grid-state-machine.md`: lifecycle decision, scope, limitations, and next steps.
 
-Status: source and test files are written, but the user has not yet reported compile/runtime results. Assistant has not run MetaEditor/MT5 compilation. Order execution, bounds, grid level generation, TP handling, and EA integration remain out of scope for this round.
+Status: user reported on 2026-10-27 that `test_grid_state_machine.mq5` compiled and ran successfully in MetaEditor/MT5. The user also reran all five Grid Regression Tests after the State Machine source changes and reported that all passed. Assistant did not independently run MetaEditor/MT5. Round 1 is complete based on user-reported validation. Order execution, bounds, grid level generation, TP handling, and EA integration remain out of scope for this round.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 

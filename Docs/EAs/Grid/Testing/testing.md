@@ -41,9 +41,22 @@
 - `test_grid_identity_multichart.mq5` — ผ่าน
 - `test_grid_restart_persistence.mq5` — ผ่าน
 
-ให้ถือผลนี้เป็น Baseline ที่ผู้ใช้รายงานสำหรับ Phase ปัจจุบัน และรัน Regression Test ที่เกี่ยวข้องซ้ำหลังมีการแก้ Source Code
+ให้ถือผลนี้เป็น Baseline ที่ผู้ใช้รายงานก่อนเริ่ม State Machine และรัน Regression Test ที่เกี่ยวข้องซ้ำหลังมีการแก้ Source Code
 
-## Grid State Machine Test (รอผู้ใช้ยืนยันผล)
+## Grid Regression หลัง Grid State Machine — ผู้ใช้รายงานว่าผ่าน (2026-10-27)
+
+หลังเพิ่ม `GridStateMachine.mqh` ผู้ใช้ยืนยันว่า Test ใหม่ของ State Machine และ Regression Tests เดิมทั้ง 5 ไฟล์ Compile/Runtime ผ่านทั้งหมด:
+
+- `test_grid_state_machine.mq5` — ผ่าน
+- `test_grid_types.mq5` — ผ่าน
+- `test_grid_persistence.mq5` — ผ่าน
+- `test_grid_identity.mq5` — ผ่าน
+- `test_grid_identity_multichart.mq5` — ผ่าน
+- `test_grid_restart_persistence.mq5` — ผ่าน
+
+ผลนี้เป็นการยืนยันจากผู้ใช้ ไม่ใช่การรัน MetaEditor/MT5 โดย Assistant
+
+## Grid State Machine Test — ผู้ใช้รายงานว่าผ่าน (2026-10-27)
 
 ไฟล์: `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5`
 
@@ -56,7 +69,7 @@
 - ปฏิเสธ Configuration/Fill ที่ไม่ถูกต้อง
 - `RECOVERY_ERROR` ต้องปิดกั้นการเปลี่ยน State
 
-ผล Compile/Runtime ยังรอผู้ใช้ยืนยัน จึงยังไม่นับเป็น Test ที่ผ่าน
+ผู้ใช้ยืนยันว่า Compile และรัน Test นี้ผ่านใน MetaEditor/MT5 เมื่อ 2026-10-27
 
 ## ขั้นตอนทดสอบ Multi-chart Identity
 

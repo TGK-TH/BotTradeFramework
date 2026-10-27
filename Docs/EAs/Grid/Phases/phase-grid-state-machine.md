@@ -1,6 +1,6 @@
 # Phase: Grid State Machine
 
-- สถานะ: Implementation รอบแรกเสร็จ รอผู้ใช้ Compile/Run Test EA ใน MetaEditor/MT5
+- สถานะ: Implementation รอบแรกเสร็จ และผู้ใช้รายงานว่า Test ใหม่กับ Regression Tests เดิมผ่านครบ (2026-10-27)
 - เริ่ม Phase: 2026-10-26
 
 ## เป้าหมาย
@@ -35,15 +35,22 @@
 - ผู้เรียกต้องส่งจำนวน Position ที่เหลือจากการตรวจบัญชี โดยกรองด้วย Symbol และ Magic Number ของ Instance นั้น
 - การส่งคำสั่ง Close สำเร็จยังไม่ถือว่า Position ปิดหมดแล้ว
 - การตรวจ Bounds, การสร้าง Grid Levels, TP, การเปิด Level ซ้ำหลัง TP, Position Reconciler และการเชื่อมเข้ากับ EA ยังอยู่นอก Implementation รอบนี้
-- ยังไม่มีผล Compile/Runtime จากผู้ใช้สำหรับไฟล์ที่เพิ่มใน Phase นี้
+- ผู้ใช้ยืนยันว่า Compile/Runtime ของ Test State Machine ผ่านเมื่อ 2026-10-27
 
 ## Baseline ก่อนแก้ Source
 
 ผู้ใช้ยืนยันเมื่อ 2026-10-26 ว่า Regression Tests เดิมทั้งห้าผ่าน ได้แก่ `test_grid_types.mq5`, `test_grid_persistence.mq5`, `test_grid_identity.mq5`, `test_grid_identity_multichart.mq5` และ `test_grid_restart_persistence.mq5`.
 
-## ขั้นตอนถัดไป
+## ผลการทดสอบและขั้นตอนถัดไป
 
-1. Compile และ Run `test_grid_state_machine.mq5` ใน MetaEditor/MT5
-2. หากพบ Compile/Runtime failure ให้แก้และทดสอบซ้ำก่อน
-3. เมื่อ Test ใหม่ผ่าน ให้รัน Grid Regression Tests เดิมทั้งห้าอีกครั้ง
-4. ยังไม่เชื่อม Order Execution จนกว่าผู้ใช้จะยืนยันผลทดสอบและอนุมัติขั้นถัดไป
+ผู้ใช้รายงานเมื่อ 2026-10-27 ว่า Compile และ Run `test_grid_state_machine.mq5` ผ่านใน MetaEditor/MT5 และรัน Grid Regression Tests เดิมครบทั้งห้าอีกครั้งหลังแก้ Source แล้วผ่านทั้งหมด:
+
+- `test_grid_types.mq5` — PASS
+- `test_grid_persistence.mq5` — PASS
+- `test_grid_identity.mq5` — PASS
+- `test_grid_identity_multichart.mq5` — PASS
+- `test_grid_restart_persistence.mq5` — PASS
+
+ผลนี้เป็นการยืนยันจากผู้ใช้ Assistant ไม่ได้รัน MetaEditor/MT5 เอง
+
+Phase นี้ถือว่าเสร็จแล้ว ขั้นต่อไปต้องรอผู้ใช้อนุมัติขอบเขต Phase ใหม่ โดยยังไม่รวม Order Execution โดยอัตโนมัติ
