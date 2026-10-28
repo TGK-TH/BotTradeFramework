@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-10-26
+อัปเดตล่าสุด: 2026-10-27
 
 ## ก่อนเริ่ม
 
@@ -26,6 +26,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
+| `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | รอ Compile/Runtime |
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
@@ -70,6 +71,21 @@
 - `RECOVERY_ERROR` ต้องปิดกั้นการเปลี่ยน State
 
 ผู้ใช้ยืนยันว่า Compile และรัน Test นี้ผ่านใน MetaEditor/MT5 เมื่อ 2026-10-27
+
+## Grid Lifecycle Integration Test — รอผู้ใช้ยืนยัน
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5`
+
+ทดสอบโดยไม่ส่งคำสั่งซื้อขาย:
+
+- Instance ใหม่ที่ไม่มี Position เริ่มที่ `WAIT_INITIAL_ENTRY`
+- บันทึก Fill จริงและ Restore Anchor/State ได้
+- Mode reset ยังคงอยู่หลัง Restart และไม่ Apply จนจำนวน Position ที่ตรวจยืนยันเป็นศูนย์
+- ไม่มี Snapshot แต่มี Position ให้เข้า `RECOVERY_ERROR`
+- Magic Number ไม่ตรงกับ Snapshot ให้เข้า `RECOVERY_ERROR`
+- Snapshot มี Commit Marker แต่ข้อมูล Mode เสียหาย ให้เข้า `RECOVERY_ERROR`
+
+ข้อกำหนดการรัน: ใช้กราฟ Demo/Test ที่ไม่มีการส่งคำสั่งซื้อขายจาก Test EA นี้ ตัว Test ใช้ Namespace เฉพาะและพยายามลบ Snapshot ที่สร้างหลังจบการทดสอบ หาก Test ถูกหยุดกลางคันอาจมี Global Variables ค้างอยู่ภายใต้ Instance ID ที่ขึ้นต้นด้วย `L` พร้อม timestamp
 
 ## ขั้นตอนทดสอบ Multi-chart Identity
 

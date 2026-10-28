@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-10-26
+อัปเดตล่าสุด: 2026-10-27
 
 ## ขอบเขตของเอกสาร
 
@@ -16,6 +16,10 @@ EA / Test EA
    |       +--> Terminal Global Variables สำหรับ Magic registry/sequence/lock
    |
    +--> STGKGridInstanceData (ประกาศใน GridTypes.mqh)
+   |
+   +--> CTGKGridLifecycle
+   |       +--> Coordinates State Machine + Persistence
+   |       +--> Safe recovery errors (no order execution)
    |
    +--> CTGKGridStateMachine
    |       +--> Lifecycle transitions only (no order execution)
@@ -38,12 +42,13 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
+| `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Testing/TestAssert.mqh` | ฟังก์ชัน Assertion พื้นฐาน |
 | `Include/BotTrade/Testing/TestRunner.mqh` | จัดกลุ่ม Test นับผล และพิมพ์ PASS/FAIL |
 
 ## ขอบเขตที่ยังไม่เสร็จ
 
-- Grid State Machine รอบแรกยังไม่เชื่อมกับ EA/Order Execution และยังต้องผ่าน Compile/Runtime Tests
+- Grid Lifecycle Integration รอบแรกยังรอผู้ใช้ Compile/Runtime Tests; ยังไม่เชื่อมกับ EA/Order Execution จริง
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
 - ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว
 - Lifecycle ที่ตกลงแล้ว: การเปิดกราฟใหม่ด้วยตนเองเป็น Grid Instance ใหม่และไม่ Adopt Position ของ Instance เดิม ส่วน Grid เดิมจะกลับมาทำงานเมื่อ Restore กราฟ/โปรไฟล์เดิมและกู้ Identity/Persistence ได้

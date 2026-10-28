@@ -51,6 +51,8 @@ TGK.G.<account-login>.<symbol>.<instance-id>
 
 ## วิธี Restore
 
+`HasSnapshot()` ใช้ตรวจว่ามี Commit Marker หรือไม่ เพื่อให้ Lifecycle แยกกรณีไม่มี Snapshot ออกจากกรณีมี Snapshot แต่ Restore ไม่สำเร็จได้ โดย `HasSnapshot()` ไม่ได้ยืนยันว่าเนื้อหา Snapshot ถูกต้อง ต้องเรียก `Restore()` เพื่อ Validate อีกครั้ง
+
 Restore ตรวจว่า:
 
 - มี Commit Marker

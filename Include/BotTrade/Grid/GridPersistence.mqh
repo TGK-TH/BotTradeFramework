@@ -81,6 +81,12 @@ public:
     return m_instance_id;
   }
 
+  // Distinguishes a missing snapshot from a present but invalid snapshot.
+  bool HasSnapshot()
+  {
+    return m_prefix != "" && GlobalVariableCheck(Key("commit"));
+  }
+
   // Writes the commit marker last. A failed or interrupted save should not be
   // treated as a complete snapshot by Restore().
   bool Save(const STGKGridInstanceData &data)

@@ -1,27 +1,20 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-10-27, Grid Integration Testing and Documentation Structure are complete. Grid State Machine implementation round 1 is complete based on user-reported MetaEditor/MT5 validation.
+As of 2026-10-27, Grid State Machine round 1 is complete based on user-reported MetaEditor/MT5 validation: `test_grid_state_machine.mq5` and all five previous Grid Regression Tests passed after those changes.
 
-## User-reported validation after State Machine changes
-The user confirmed that `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5` compiled and ran successfully, and all five existing Grid Regression Tests were rerun after the changes and passed:
-- `Experts/TGK/Tests/Grids/test_grid_types.mq5`
-- `Experts/TGK/Tests/Grids/test_grid_persistence.mq5`
-- `Experts/TGK/Tests/Grids/test_grid_identity.mq5`
-- `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5`
-- `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5`
+## Current phase: Grid Lifecycle Integration — round 1 awaiting user compile/runtime validation
+User explicitly authorized this phase on 2026-10-27. Scope: integrate State Machine lifecycle transitions with snapshot persistence for an already-identified Grid Instance, with no trade execution.
 
-These are user-reported MetaEditor/MT5 results, not tests independently executed by the assistant. The testing records were updated in `PROJECT_STATUS.md` and `Docs/EAs/Grid/Testing/testing.md`.
+Added/modified files:
+- `Include/BotTrade/Grid/GridLifecycle.mqh`: `CTGKGridLifecycle` coordinates persistence and state machine. Caller initializes `CTGKGridIdentity` first, then passes Instance ID and Magic Number. It persists after initial fill/configuration/reset transitions; accepts fresh remaining-position counts from caller; does not send open/close requests.
+- `Include/BotTrade/Grid/GridPersistence.mqh`: added `HasSnapshot()` to distinguish missing snapshot from a present snapshot that fails Restore.
+- `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5`: no-trading integration tests for fresh instance, actual fill/Anchor restore, Mode reset across restart, missing snapshot with remaining positions, Magic mismatch, and invalid snapshot enum.
+- `Docs/EAs/Grid/Phases/phase-grid-lifecycle-integration.md` and related docs/status updated.
 
-## Lifecycle decision
-A manually opened new chart with the same symbol is a new Grid Instance with a new Instance ID and Magic Number. It must not manage the previous Grid's positions. An existing Grid resumes when its saved chart/profile and identity/persistence are restored; do not auto-adopt old positions from a fresh chart.
+Safety behavior in this round: a missing snapshot with remaining positions, invalid snapshot, Magic mismatch, Fixed Lot mismatch, or changed inputs during a pending reset leads to `RECOVERY_ERROR`. Fixed Lot changes are not supported in this phase. If snapshot saving fails, lifecycle operations report failure and block state changes in the current instance. `RequestConfiguration` does not close positions; caller must perform order management in a later authorized phase.
 
-## State Machine round 1 scope
-Files:
-- `Include/BotTrade/Grid/GridStateMachine.mqh`
-- `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5`
-- `Docs/EAs/Grid/Phases/phase-grid-state-machine.md`
+Validation by assistant: `git diff --check` passed and local Markdown-link check passed. No MetaEditor/MT5 compilation or runtime execution was performed. User needs to compile/run `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5`, then rerun `test_grid_state_machine.mq5` and all five existing Grid Regression Tests because `GridPersistence.mqh` changed. Do not claim test success until user reports it.
 
-Implemented lifecycle transitions only: validate instance data, record actual initial fill as Anchor, request configuration resets, wait for account-confirmed zero remaining positions before rebuilding, clear Anchor on mode change, retain Anchor on step change, and block state changes in Recovery Error. Caller must provide a fresh count of positions filtered by this Grid's symbol and Magic Number. No order execution, bounds, level generation, TP/re-entry, position reconciliation, or live EA integration is implemented yet.
+Lifecycle decision remains: manually opening a new chart creates a new Grid Instance with new Instance ID/Magic Number and must not manage old Grid positions. Existing Grid resumes only when saved chart/profile and prior identity/persistence are restored. No auto-adoption from a new chart.
 
-## Next step
-State Machine round 1 is complete; do not start the next phase until the user explicitly authorizes it and the scope is agreed. A sensible proposed next phase is design/test-first integration of the State Machine with Grid lifecycle coordination, while keeping actual order execution as a separate explicitly scoped phase. Before any new Grid feature/refactor, run relevant Grid Regression Tests first. User compiles/runs MQL5 tests in MetaEditor/MT5 and reports results. Use 2-space indentation and format multi-parameter calls one argument per line. Never claim compile/runtime success without user confirmation.
+Workflow: phase-by-phase, no later phase without explicit user authorization. Before any Grid feature/refactor run relevant regression tests. User performs MetaEditor/MT5 tests and reports results. Use 2-space indentation; multi-parameter calls one argument per line.

@@ -16,6 +16,7 @@ Grid เป็น EA หนึ่งตัวใน BotTradeFramework ไม่�
 - [ADR-002: Chart ID ไม่ใช่ Persistence Identity](Decisions/ADR-002-chart-id-is-not-persistence-identity.md)
 - [Phase: Grid Integration Testing](Phases/phase-grid-integration-testing.md)
 - [Phase: Grid State Machine](Phases/phase-grid-state-machine.md)
+- [Phase: Grid Lifecycle Integration](Phases/phase-grid-lifecycle-integration.md)
 
 ## ข้อกำหนด Grid V1 ที่ตกลงไว้ แต่ยังไม่เท่ากับการพัฒนาเสร็จ
 

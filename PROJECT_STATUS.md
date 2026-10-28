@@ -3,10 +3,10 @@
 Last updated: 2026-10-27
 
 ## Current focus
-Grid State Machine implementation round 1 and regression validation are complete based on user-reported MetaEditor/MT5 results. The new State Machine test and all five existing Grid Regression Tests passed after the source changes. Do not start Order Execution integration until the next phase is explicitly authorized and its scope is agreed.
+Grid State Machine round 1 and its regression validation are complete based on user-reported MetaEditor/MT5 results. Grid Lifecycle Integration round 1 has been implemented test-first; the new integration test has not yet been compiled/run by the user. Do not start Order Execution integration in this phase.
 
 ## Current phase
-**Grid State Machine — round 1 complete (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
+**Grid Lifecycle Integration — round 1, awaiting user compile/runtime validation.** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -63,6 +63,18 @@ Added:
 - `Docs/EAs/Grid/Phases/phase-grid-state-machine.md`: lifecycle decision, scope, limitations, and next steps.
 
 Status: user reported on 2026-10-27 that `test_grid_state_machine.mq5` compiled and ran successfully in MetaEditor/MT5. The user also reran all five Grid Regression Tests after the State Machine source changes and reported that all passed. Assistant did not independently run MetaEditor/MT5. Round 1 is complete based on user-reported validation. Order execution, bounds, grid level generation, TP handling, and EA integration remain out of scope for this round.
+
+## Grid Lifecycle Integration — implementation round 1 (2026-10-27)
+
+Added/changed:
+- `Include/BotTrade/Grid/GridLifecycle.mqh`: coordinates State Machine transitions with snapshot restore/save for an already-identified Grid Instance; does not execute trades.
+- `Include/BotTrade/Grid/GridPersistence.mqh`: added `HasSnapshot()` to distinguish a missing snapshot from a present snapshot that fails Restore.
+- `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5`: no-trading integration tests for fresh initialization, fill/Anchor restore, pending Mode reset across restart, missing snapshot with remaining positions, and Magic mismatch.
+- `Docs/EAs/Grid/Phases/phase-grid-lifecycle-integration.md`: scope and test plan.
+
+Safety behavior: missing/invalid snapshot with remaining positions, Magic mismatch, Fixed Lot mismatch, or unsupported input changes during a pending reset leads to `RECOVERY_ERROR`. The caller must supply a fresh remaining-position count filtered by this Instance's Symbol and Magic Number. The coordinator does not initialize `CTGKGridIdentity`; the EA must initialize Identity and pass its Instance ID/Magic Number.
+
+Status: implementation is written. Assistant ran `git diff --check` and a local Markdown-link check successfully; these are static checks only. User MetaEditor/MT5 compile/runtime results are pending. No Order Execution or actual close/open requests are included.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
