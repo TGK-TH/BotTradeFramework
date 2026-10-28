@@ -1,6 +1,6 @@
 # Phase: Grid Lifecycle Integration
 
-- สถานะ: Implementation รอบแรกเสร็จ รอผู้ใช้ Compile/Run Test EA ใน MetaEditor/MT5
+- สถานะ: Implementation รอบแรกเสร็จ และผู้ใช้รายงานว่า Integration Test กับ Regression Tests ที่เกี่ยวข้องผ่านครบ (2026-10-28)
 - เริ่ม Phase: 2026-10-27
 
 ## เป้าหมาย
@@ -44,6 +44,18 @@
 
 ก่อนเริ่ม Phase นี้ ผู้ใช้ยืนยันว่า State Machine Test และ Grid Regression Tests เดิมทั้ง 5 ผ่านเมื่อ 2026-10-27 หลังแก้ Source ใน Phase นี้แล้ว ต้อง Compile/Run Integration Test ใหม่และรัน Regression Tests ที่เกี่ยวข้องซ้ำก่อนปิด Phase
 
-## สถานะผลทดสอบ
+## ผลการทดสอบ
 
-ยังรอผู้ใช้ยืนยัน Compile/Runtime จาก MetaEditor/MT5
+ผู้ใช้รายงานเมื่อ 2026-10-28 ว่า Compile และ Run ผ่านครบทั้ง 7 Test EAs ใน MetaEditor/MT5:
+
+- `test_grid_lifecycle.mq5` — PASS
+- `test_grid_state_machine.mq5` — PASS
+- `test_grid_types.mq5` — PASS
+- `test_grid_persistence.mq5` — PASS
+- `test_grid_identity.mq5` — PASS
+- `test_grid_identity_multichart.mq5` — PASS
+- `test_grid_restart_persistence.mq5` — PASS
+
+ผลนี้เป็นการยืนยันจากผู้ใช้ Assistant ไม่ได้รัน MetaEditor/MT5 เอง
+
+Phase นี้ถือว่าเสร็จแล้ว ยังไม่มีการเชื่อม Order Execution หรือส่งคำสั่งเปิด/ปิด Position จริง

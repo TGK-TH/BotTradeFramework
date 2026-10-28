@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 ## Current focus
-Grid State Machine round 1 and its regression validation are complete based on user-reported MetaEditor/MT5 results. Grid Lifecycle Integration round 1 has been implemented test-first; the new integration test has not yet been compiled/run by the user. Do not start Order Execution integration in this phase.
+Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. The Lifecycle Integration Test and all six relevant existing tests passed after the latest source changes. Do not start Order Execution integration until the user explicitly authorizes a new phase and its scope is agreed.
 
 ## Current phase
-**Grid Lifecycle Integration — round 1, awaiting user compile/runtime validation.** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
+**Grid Lifecycle Integration — round 1 complete (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -74,7 +74,7 @@ Added/changed:
 
 Safety behavior: missing/invalid snapshot with remaining positions, Magic mismatch, Fixed Lot mismatch, or unsupported input changes during a pending reset leads to `RECOVERY_ERROR`. The caller must supply a fresh remaining-position count filtered by this Instance's Symbol and Magic Number. The coordinator does not initialize `CTGKGridIdentity`; the EA must initialize Identity and pass its Instance ID/Magic Number.
 
-Status: implementation is written. Assistant ran `git diff --check` and a local Markdown-link check successfully; these are static checks only. User MetaEditor/MT5 compile/runtime results are pending. No Order Execution or actual close/open requests are included.
+Status: user reported on 2026-10-28 that `test_grid_lifecycle.mq5`, `test_grid_state_machine.mq5`, `test_grid_types.mq5`, `test_grid_persistence.mq5`, `test_grid_identity.mq5`, `test_grid_identity_multichart.mq5`, and `test_grid_restart_persistence.mq5` all compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5. Round 1 is complete based on user-reported validation. No Order Execution or actual close/open requests are included.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
