@@ -27,6 +27,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-28) |
+| `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | รอผู้ใช้ Compile/Run |
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
@@ -113,6 +114,21 @@
 - หากหยุดหลังรอบแรก ข้อมูล Global Variables สำหรับทดสอบอาจยังคงอยู่ ต้องกลับมารันให้ครบหรือทำความสะอาดเฉพาะ Namespace ของ Test
 - Chart ID แสดงเป็นข้อมูลวินิจฉัยเท่านั้น ไม่ใช่ Assertion เพราะ MT5 อาจนำ Chart ID เดิมกลับมาใช้ตอน Restore Profile
 - การปิดกราฟเดิมแล้วเปิดกราฟใหม่ด้วยตนเองเป็นคนละกรณีกับการ Restore Profile การได้ Instance ID/Magic Number ใหม่อาจเป็นพฤติกรรมที่คาดหมาย และไม่ได้พิสูจน์การ Restore Grid เดิม
+
+## Grid Runtime & Position Reconciliation Test — รอผู้ใช้ยืนยันผล (2026-10-29)
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5`
+
+Test EA นี้ไม่ส่งคำสั่งซื้อขาย ครอบคลุม:
+
+- Position ต้องตรงทั้ง Symbol และ Magic Number จึงนับเป็นของ Instance นี้
+- นับจาก Snapshot fixture โดยไม่ต้องเปิด Position จริง
+- Close attempt ที่ Accepted ต้องรอตรวจบัญชีใหม่ และถ้ายังมี Position ในการตรวจรอบถัดไปต้องลองใหม่ได้
+- Market Closed หรือ Failed ไม่ถือว่าปิดสำเร็จ
+- Reconciler ที่สร้างใหม่หลัง Restart ต้องตรวจ Position ใหม่
+- Count ที่ไม่ถูกต้องต้องเข้า Recovery Error แทนการตีความว่า Position เป็นศูนย์
+
+ผู้ใช้ต้อง Compile/Run Test นี้และรัน Regression Tests ทั้ง 7 ไฟล์เดิมใน MetaEditor/MT5 ก่อนปิด Phase ผล Compile/Runtime ยังไม่ยืนยัน
 
 ## นโยบาย Regression Test
 

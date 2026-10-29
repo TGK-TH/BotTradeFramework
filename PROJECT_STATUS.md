@@ -3,10 +3,10 @@
 Last updated: 2026-10-28
 
 ## Current focus
-Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. The Lifecycle Integration Test and all six relevant existing tests passed after the latest source changes. Do not start Order Execution integration until the user explicitly authorizes a new phase and its scope is agreed.
+Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. Grid Runtime & Position Reconciliation round 1 is now implemented test-first and awaits user Compile/Runtime validation. Actual order execution remains out of scope until separately authorized.
 
 ## Current phase
-**Grid Lifecycle Integration — round 1 complete (test-first).** Documentation Structure is complete. Existing documentation was reorganized into `Docs/Framework/`, `Docs/EAs/Grid/`, `Docs/Development/`, and the central ADR index. This was a documentation-only phase; no MQL5 source behavior changed and no MetaEditor/MT5 compile or runtime test was performed.
+**Grid Runtime & Position Reconciliation — round 1 implemented; validation pending.** The phase adds a read-only live position scan filtered by Symbol + Magic Number and a policy boundary for accepted/failed/market-closed close attempts. It does not send trade requests or integrate a complete EA runtime.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -75,6 +75,22 @@ Added/changed:
 Safety behavior: missing/invalid snapshot with remaining positions, Magic mismatch, Fixed Lot mismatch, or unsupported input changes during a pending reset leads to `RECOVERY_ERROR`. The caller must supply a fresh remaining-position count filtered by this Instance's Symbol and Magic Number. The coordinator does not initialize `CTGKGridIdentity`; the EA must initialize Identity and pass its Instance ID/Magic Number.
 
 Status: user reported on 2026-10-28 that `test_grid_lifecycle.mq5`, `test_grid_state_machine.mq5`, `test_grid_types.mq5`, `test_grid_persistence.mq5`, `test_grid_identity.mq5`, `test_grid_identity_multichart.mq5`, and `test_grid_restart_persistence.mq5` all compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5. Round 1 is complete based on user-reported validation. No Order Execution or actual close/open requests are included.
+
+## Grid Runtime & Position Reconciliation — round 1 (2026-10-29)
+
+Added:
+- `Include/BotTrade/Grid/GridPositionReconciler.mqh`: exact Symbol + Magic ownership filtering, read-only live position counting, fixture snapshot counting, and close-attempt/reconciliation policy.
+- `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5`: no-trading tests for ownership isolation, close accepted vs actual closure, market closed, failed close, restart behavior, and invalid count recovery.
+- `Docs/EAs/Grid/Phases/phase-grid-runtime-position-reconciliation.md`: scope, test-first coverage, limits, and validation steps.
+
+Safety rules:
+- A close request being accepted does not prove the position has closed.
+- A fresh live position scan must be filtered by both Symbol and Magic Number.
+- A failed live scan returns an invalid count; it must not be treated as zero positions.
+- A newly constructed reconciler does not assume an old close request is still pending after restart.
+- This is only a read-only/policy boundary. It does not send close requests or connect a complete EA runtime.
+
+Status: implementation is ready for user Compile/Runtime validation in MetaEditor/MT5. The seven existing tests were user-reported PASS on 2026-10-28 before this phase. Assistant has not run MetaEditor/MT5; after these source changes, the user should compile/run the new test and all seven existing Grid tests before this phase is marked complete.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
