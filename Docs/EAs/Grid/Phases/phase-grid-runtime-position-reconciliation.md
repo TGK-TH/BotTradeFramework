@@ -1,6 +1,6 @@
 # Phase: Grid Runtime & Position Reconciliation — Round 1
 
-- สถานะ: Implemented; รอผู้ใช้ Compile/Run Test EA ใหม่และ Regression Tests ใน MetaEditor/MT5
+- สถานะ: Complete ตามผลที่ผู้ใช้รายงานว่า Compile/Run ผ่านครบ 8/8 tests ใน MetaEditor/MT5 เมื่อ 2026-10-29
 - เริ่ม Phase: 2026-10-29
 
 ## เป้าหมาย
@@ -48,5 +48,5 @@
 ## การตรวจสอบ
 
 - Baseline ก่อนเริ่ม Phase นี้คือผล 7/7 tests ที่ผู้ใช้รายงานว่าผ่านเมื่อ 2026-10-28
-- หลังแก้ Source ผู้ใช้ต้อง Compile/Run `test_grid_position_reconciler.mq5` และ Regression Tests ทั้ง 7 ไฟล์ใน MetaEditor/MT5
-- Assistant ตรวจ `git diff --check` และ Source/Docs ด้วย Serena; ไม่ได้รัน MetaEditor/MT5 และไม่อ้างว่า MQL5 Compile/Runtime ผ่าน
+- ผู้ใช้รายงานเมื่อ 2026-10-29 ว่า Compile/Run ผ่านครบทั้ง `test_grid_position_reconciler.mq5` และ Regression Tests ทั้ง 7 ไฟล์ใน MetaEditor/MT5
+- ผลผ่านเป็นผลที่ผู้ใช้รายงาน; Assistant ไม่ได้รัน MetaEditor/MT5 ด้วยตนเอง

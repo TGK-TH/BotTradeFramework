@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-28
+Last updated: 2026-10-29
 
 ## Current focus
-Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. Grid Runtime & Position Reconciliation round 1 is now implemented test-first and awaits user Compile/Runtime validation. Actual order execution remains out of scope until separately authorized.
+Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. Grid Runtime & Position Reconciliation round 1 is complete based on the user's report that the new test and all seven existing Grid tests compiled and passed in MetaEditor/MT5 on 2026-10-29. Actual order execution remains out of scope until separately authorized.
 
 ## Current phase
-**Grid Runtime & Position Reconciliation — round 1 implemented; validation pending.** The phase adds a read-only live position scan filtered by Symbol + Magic Number and a policy boundary for accepted/failed/market-closed close attempts. It does not send trade requests or integrate a complete EA runtime.
+**Grid Runtime & Position Reconciliation — round 1 complete (user-reported tests passed).** The phase adds a read-only live position scan filtered by Symbol + Magic Number and a policy boundary for accepted/failed/market-closed close attempts. It does not send trade requests or integrate a complete EA runtime.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -90,7 +90,7 @@ Safety rules:
 - A newly constructed reconciler does not assume an old close request is still pending after restart.
 - This is only a read-only/policy boundary. It does not send close requests or connect a complete EA runtime.
 
-Status: implementation is ready for user Compile/Runtime validation in MetaEditor/MT5. The seven existing tests were user-reported PASS on 2026-10-28 before this phase. Assistant has not run MetaEditor/MT5; after these source changes, the user should compile/run the new test and all seven existing Grid tests before this phase is marked complete.
+Status: user reported Compile/Runtime PASS in MetaEditor/MT5 on 2026-10-29 for the new reconciler test and all seven existing Grid tests. This is user-reported validation; the assistant did not independently run MetaEditor/MT5.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
