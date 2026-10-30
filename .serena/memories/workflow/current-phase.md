@@ -1,36 +1,36 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-10-29, Grid Runtime & Position Reconciliation round 1 is complete based on the user's reported MetaEditor/MT5 results.
+As of 2026-10-30, Grid Runtime Orchestration round 1 has been implemented and is awaiting user MetaEditor/MT5 validation.
 
-## Phase completed
-- Added `Include/BotTrade/Grid/GridPositionReconciler.mqh`.
-  - Ownership requires exact Symbol + Magic Number.
-  - `CountLiveOwnedPositions()` reads live positions without changing them.
-  - If a live scan cannot safely read a position, it returns -1 rather than undercounting and falsely reporting zero.
-  - Snapshot fixture counting supports tests without opening real positions.
-  - Close attempt outcomes: none, accepted, market closed, failed.
-  - An accepted request is not proof of closure; fresh account state is authoritative.
-  - If positions remain on the next observation, return retry required rather than waiting forever.
-  - Negative/invalid observed counts enter Recovery Error.
-  - It does not send trade requests or integrate directly with Lifecycle.
-- Added `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5`, no trading calls.
-- Updated `PROJECT_STATUS.md`, `Docs/EAs/Grid/Phases/phase-grid-runtime-position-reconciliation.md`, `Docs/EAs/Grid/Testing/testing.md`, and `Docs/EAs/Grid/architecture.md`.
+## Current implementation
+- Added `Include/BotTrade/Grid/GridRuntimeOrchestrator.mqh`.
+  - Accepts an already-initialized Instance ID, Symbol, and Magic Number; caller must initialize `CTGKGridIdentity` first.
+  - Initializes/restores `CTGKGridLifecycle` using a fresh position count filtered by exact Symbol + Magic Number.
+  - Provides live account methods and deterministic Snapshot fixture methods.
+  - Coordinates `CTGKGridPositionReconciler` with Lifecycle reset transitions.
+  - Reports runtime statuses: ERROR, WAIT_INITIAL_ENTRY, ACTIVE, CLOSE_REQUIRED, WAIT_CLOSE_CONFIRMATION.
+  - Signals that an execution adapter should close positions; it never sends trade requests.
+  - Recounts positions on each update; accepted close requests are not treated as proof of closure.
+  - When zero owned positions are confirmed, advances RESET_CLOSE_OLD -> RESET_REBUILD -> applies pending configuration.
+- Added `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5`.
+  - Snapshot tests for fresh initialization, actual fill, mode reset close/retry/rebuild, restart during pending reset, failed close, market closed, and orphan positions.
+  - No trading calls.
+- Added `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md` and updated Grid architecture/testing docs plus `PROJECT_STATUS.md`.
 
-## User-reported validation on 2026-10-29
-All 8 tests compiled and ran PASS in MetaEditor/MT5:
-- `test_grid_position_reconciler.mq5`
-- `test_grid_lifecycle.mq5`
-- `test_grid_state_machine.mq5`
-- `test_grid_types.mq5`
-- `test_grid_persistence.mq5`
-- `test_grid_identity.mq5`
-- `test_grid_identity_multichart.mq5`
-- `test_grid_restart_persistence.mq5`
+## Checks and validation status
+- `git diff --check`: PASS.
+- Trailing-whitespace check for new files: PASS.
+- Local Markdown link check for changed docs: PASS.
+- User reported on 2026-10-29 that all 8 prior Grid tests passed in MetaEditor/MT5.
+- New test and all 8 existing Grid tests still require user Compile/Runtime validation. Assistant has not run MetaEditor/MT5.
+- Do not mark this phase validated until user reports the results.
 
-These are user-reported results; assistant did not independently run MetaEditor/MT5.
+## Safety / boundaries
+- No real open/close orders; no CTrade dependency.
+- No EA OnInit/OnTick/OnTimer adapter yet.
+- No pending-order management, Grid levels, Bounds, TP, re-entry, or actual entry execution.
+- Order Execution remains a separately scoped future phase requiring explicit authorization.
+- If Serena/MCP fails during coding, remind user to check the MCP Serena server.
 
-## Boundaries / next phase
-Actual order open/close execution, grid levels, bounds, TP, and re-entry are not implemented in this phase. Do not start another phase without explicit user authorization. The next useful design/test-first step may be Grid Runtime orchestration that connects Identity, Lifecycle, fresh position scans, and reset-close retry policy; actual order execution should remain separately scoped.
-
-## Completed earlier
-Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported tests.
+## Next action
+Ask user to compile/run `test_grid_runtime_orchestrator.mq5` and all eight existing Grid regression tests in MetaEditor/MT5, then report PASS/FAIL before proceeding.

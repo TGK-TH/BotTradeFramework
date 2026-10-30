@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-10-29
+อัปเดตล่าสุด: 2026-10-30
 
 ## ขอบเขตของเอกสาร
 
@@ -20,6 +20,11 @@ EA / Test EA
    +--> CTGKGridLifecycle
    |       +--> Coordinates State Machine + Persistence
    |       +--> Safe recovery errors (no order execution)
+   |
+   +--> CTGKGridRuntimeOrchestrator
+   |       +--> Coordinates Lifecycle + Position Reconciler
+   |       +--> Reports close-required / wait / active / error status
+   |       +--> No order execution
    |
    +--> CTGKGridPositionReconciler
    |       +--> Read-only position scan filtered by Symbol + Magic
@@ -48,13 +53,14 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
+| `Include/BotTrade/Grid/GridRuntimeOrchestrator.mqh` | ประสาน Lifecycle, Persistence และ Position Reconciler; แจ้งความต้องการ Close แต่ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Testing/TestAssert.mqh` | ฟังก์ชัน Assertion พื้นฐาน |
 | `Include/BotTrade/Testing/TestRunner.mqh` | จัดกลุ่ม Test นับผล และพิมพ์ PASS/FAIL |
 
 ## ขอบเขตที่ยังไม่เสร็จ
 
-- Grid Lifecycle Integration รอบแรกยังรอผู้ใช้ Compile/Runtime Tests; ยังไม่เชื่อมกับ EA/Order Execution จริง
-- Grid Position Reconciler รอบแรกเป็นเพียง read-only/policy boundary; ยังไม่มี EA Runtime ที่ส่ง Close request แล้วประสานผลกลับเข้ากับ Lifecycle แบบครบวงจร
+- Grid Runtime Orchestration รอบแรกเพิ่มตัวประสาน Lifecycle + Position Reconciler แล้ว แต่ยังรอผู้ใช้ Compile/Runtime Tests
+- ยังไม่มี EA adapter ที่เรียก Orchestrator จาก Event handlers และไม่มี Order Execution; Orchestrator เพียงรายงานว่าต้อง Close/รอผล/พร้อมทำงาน
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
 - ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว
 - Lifecycle ที่ตกลงแล้ว: การเปิดกราฟใหม่ด้วยตนเองเป็น Grid Instance ใหม่และไม่ Adopt Position ของ Instance เดิม ส่วน Grid เดิมจะกลับมาทำงานเมื่อ Restore กราฟ/โปรไฟล์เดิมและกู้ Identity/Persistence ได้

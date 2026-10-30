@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-29
+Last updated: 2026-10-30
 
 ## Current focus
-Grid State Machine round 1 and Grid Lifecycle Integration round 1 are complete based on user-reported MetaEditor/MT5 results. Grid Runtime & Position Reconciliation round 1 is complete based on the user's report that the new test and all seven existing Grid tests compiled and passed in MetaEditor/MT5 on 2026-10-29. Actual order execution remains out of scope until separately authorized.
+Grid Runtime Orchestration round 1 is implemented and awaiting user MetaEditor/MT5 validation. The prior eight Grid tests were reported PASS by the user on 2026-10-29. Actual order execution remains out of scope.
 
 ## Current phase
-**Grid Runtime & Position Reconciliation — round 1 complete (user-reported tests passed).** The phase adds a read-only live position scan filtered by Symbol + Magic Number and a policy boundary for accepted/failed/market-closed close attempts. It does not send trade requests or integrate a complete EA runtime.
+**Grid Runtime Orchestration — round 1 implementation complete; awaiting user tests.** Adds a coordinator for Lifecycle + Position Reconciler, including reset close-required/retry/wait/rebuild flow. It does not send trade requests. See `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md`.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
@@ -91,6 +91,21 @@ Safety rules:
 - This is only a read-only/policy boundary. It does not send close requests or connect a complete EA runtime.
 
 Status: user reported Compile/Runtime PASS in MetaEditor/MT5 on 2026-10-29 for the new reconciler test and all seven existing Grid tests. This is user-reported validation; the assistant did not independently run MetaEditor/MT5.
+
+## Grid Runtime Orchestration — implementation round 1 (2026-10-30)
+
+Added:
+- `Include/BotTrade/Grid/GridRuntimeOrchestrator.mqh`: accepts an already-initialized Instance ID/Symbol/Magic Number; initializes/restores Lifecycle from a fresh Symbol + Magic position count; coordinates reset state with Position Reconciler; reports `CLOSE_REQUIRED`, `WAIT_CLOSE_CONFIRMATION`, `WAIT_INITIAL_ENTRY`, `ACTIVE`, or `ERROR`.
+- `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5`: no-trading Snapshot tests for initialization, fill, reset/retry/rebuild, restart during reset, market closed, and orphan positions.
+- `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md`: implementation scope and validation procedure.
+
+Safety boundaries:
+- The caller must initialize `CTGKGridIdentity` first; Orchestrator does not allocate identity.
+- The Orchestrator never opens or closes positions. `CLOSE_REQUIRED` is a signal for a future Execution adapter.
+- Each update re-counts positions; accepted close requests are not treated as proof of closure.
+- Position ownership is exact Symbol + Magic Number. This phase does not manage pending orders.
+
+Checks performed: source review and `git diff --check` completed successfully; no MetaEditor/MT5 compiler or runtime was run through this workflow. User must compile/run the new test and all eight existing Grid tests before this phase can be marked validated. Do not begin Order Execution until separately scoped and authorized.
 
 ## Grid Regression Baseline — user-reported pass (2026-10-26)
 
