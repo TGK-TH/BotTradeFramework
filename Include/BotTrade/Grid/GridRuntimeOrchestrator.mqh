@@ -112,9 +112,11 @@ private:
 
       if(reconcile_status == TGK_GRID_RECONCILE_COMPLETE)
       {
+        // First transition: RESET_CLOSE_OLD -> RESET_REBUILD.
         if(!m_lifecycle.AdvanceReset(0))
           return TGK_GRID_RUNTIME_ERROR;
 
+        // Second transition: RESET_REBUILD -> apply pending configuration.
         if(!m_lifecycle.AdvanceReset(0))
           return TGK_GRID_RUNTIME_ERROR;
 
