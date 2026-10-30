@@ -3,10 +3,10 @@
 Last updated: 2026-10-30
 
 ## Current focus
-Grid Runtime Orchestration round 1 is implemented and awaiting user MetaEditor/MT5 validation. The prior eight Grid tests were reported PASS by the user on 2026-10-29. Actual order execution remains out of scope.
+Grid Runtime Orchestration Round 1 is **Completed**. On 2026-10-30, the user reported that the new orchestrator test and all eight existing Grid Regression Tests compiled and passed in MetaEditor/MT5 (9 tests total). Actual order execution remains out of scope and requires a separately agreed phase.
 
 ## Current phase
-**Grid Runtime Orchestration — round 1 implementation complete; awaiting user tests.** Adds a coordinator for Lifecycle + Position Reconciler, including reset close-required/retry/wait/rebuild flow. It does not send trade requests. See `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md`.
+**Grid Runtime Orchestration — Round 1: Completed (user-reported MetaEditor/MT5 PASS, 2026-10-30).** Adds a coordinator for Lifecycle + Position Reconciler, including reset close-required/retry/wait/rebuild flow. It does not send trade requests. See `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md`.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`

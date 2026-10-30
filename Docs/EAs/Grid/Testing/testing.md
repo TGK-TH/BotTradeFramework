@@ -27,7 +27,8 @@
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
-| `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |\n| `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5` | ประสาน Lifecycle/Position Reconciler, reset-close retry, restart ระหว่าง reset และ safe recovery | รอผู้ใช้ Compile/Runtime |
+| `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
+| `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5` | ประสาน Lifecycle/Position Reconciler, reset-close retry, restart ระหว่าง reset และ safe recovery | ผ่าน (ผู้ใช้รายงาน 2026-10-30) |
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
@@ -130,7 +131,7 @@ Test EA นี้ไม่ส่งคำสั่งซื้อขาย ค�
 
 ผู้ใช้รายงานว่า Compile/Run Test นี้และ Regression Tests ทั้ง 7 ไฟล์เดิมผ่านครบทั้งหมดใน MetaEditor/MT5 เมื่อ 2026-10-29
 
-## Grid Runtime Orchestration Test — รอผลผู้ใช้
+## Grid Runtime Orchestration Test — ผ่านตามผลผู้ใช้รายงาน (2026-10-30)
 
 ไฟล์: `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5`
 
@@ -144,7 +145,7 @@ Test EA นี้ใช้ Snapshot fixture และไม่ส่งคำส
 - Close failure และ Market Closed ต้องคงความสามารถในการ Retry
 - ไม่มี Snapshot แต่มี Position ต้องไม่ Adopt และต้องรายงาน `ERROR`
 
-**ก่อน Compile/Run:** ใช้ `test_grid_runtime_orchestrator.mq5` ร่วมกับ Grid Regression Tests ทั้ง 8 ไฟล์เดิม ตรวจว่า Experts Log ของแต่ละ Suite จบด้วย PASS ผู้ใช้เป็นผู้ยืนยันผล MetaEditor/MT5; Static checks ไม่ถือเป็นผล Compile/Runtime
+**ผลการทดสอบ:** ผู้ใช้รายงานเมื่อ 2026-10-30 ว่า Compile/Run `test_grid_runtime_orchestrator.mq5` และ Grid Regression Tests เดิมทั้ง 8 ไฟล์ใน MetaEditor/MT5 ผ่านทั้งหมด รวม 9 ไฟล์ จึงถือว่า Grid Runtime Orchestration Round 1 เสร็จสมบูรณ์ ผลนี้เป็นการยืนยันจากผู้ใช้ ไม่ใช่การรัน MetaEditor/MT5 โดย Assistant
 
 ## นโยบาย Regression Test
 

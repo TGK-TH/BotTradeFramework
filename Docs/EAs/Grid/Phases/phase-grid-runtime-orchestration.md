@@ -45,12 +45,26 @@
 - การจัดการ Grid levels, Bounds, TP, re-entry และการเปิด Position ยังไม่อยู่ในขอบเขต
 - Snapshot test path ตรวจ filtering ด้วย Symbol + Magic แต่ไม่ได้แทนการทดสอบ Live account scan ใน MT5
 
-## การตรวจสอบ
+## การตรวจสอบและผลการทดสอบ
 
-- `git diff --check` และ static review: ดำเนินการใน Repository
-- MetaEditor compile/runtime: ต้องรอผู้ใช้ Compile และรัน `test_grid_runtime_orchestrator.mq5` พร้อม Grid Regression Tests ทั้ง 8 ไฟล์
-- ห้ามถือว่า .ex5 ที่มีอยู่หรือ Static checks เป็นหลักฐานว่า MQL5 Compile/Runtime ผ่าน
+- `git diff --check` และ Static review: PASS จากการตรวจใน Repository
+- ผู้ใช้รายงานเมื่อ 2026-10-30 ว่า Compile และรัน `test_grid_runtime_orchestrator.mq5` พร้อม Grid Regression Tests เดิมทั้ง 8 ไฟล์ใน MetaEditor/MT5 แล้วผ่านทั้งหมด รวม 9 ไฟล์
+- ผล Compile/Runtime เป็นผลที่ผู้ใช้รายงาน Assistant ไม่ได้รัน MetaEditor/MT5 เอง
+
+### รายการ Test ที่ผู้ใช้ยืนยันว่าผ่าน
+
+1. `test_grid_runtime_orchestrator.mq5`
+2. `test_grid_position_reconciler.mq5`
+3. `test_grid_lifecycle.mq5`
+4. `test_grid_state_machine.mq5`
+5. `test_grid_types.mq5`
+6. `test_grid_persistence.mq5`
+7. `test_grid_identity.mq5`
+8. `test_grid_identity_multichart.mq5`
+9. `test_grid_restart_persistence.mq5`
+
+**สถานะ: Completed** — Grid Runtime Orchestration Round 1 ผ่านการตรวจสอบตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-30
 
 ## ขั้นตอนถัดไป
 
-รอผล Compile/Runtime จากผู้ใช้ก่อนปิด Phase นี้ จากนั้นจึงวางแผน EA Runtime adapter หรือ Order Execution เป็น Phase แยก โดยต้องตกลง Scope ก่อนเริ่ม
+Phase นี้เสร็จสมบูรณ์แล้ว งาน EA Runtime adapter หรือ Order Execution ต้องแยกเป็น Phase ใหม่ กำหนด Scope และได้รับการยืนยันจากผู้ใช้ก่อนเริ่มพัฒนา
