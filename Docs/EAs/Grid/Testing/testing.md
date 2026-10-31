@@ -29,11 +29,28 @@
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
 | `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5` | ประสาน Lifecycle/Position Reconciler, reset-close retry, restart ระหว่าง reset และ safe recovery | ผ่าน (ผู้ใช้รายงาน 2026-10-30) |
-| `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5` | Ownership filtering, CLOSE_REQUIRED gate, retcode classification และ aggregate batch result; ไม่มี trade request | รอผล Compile/Runtime |
+| `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5` | Ownership filtering, CLOSE_REQUIRED gate, retcode classification, aggregate batch result และ Adapter identity guard; ไม่มี trade request | ผ่าน (ผู้ใช้รายงาน 2026-10-31) |
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
 ผลทั้งหมดข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant
+
+## Grid Order Execution Adapter — Round 1 (2026-10-31)
+
+ผู้ใช้ยืนยันว่า Compile และ Run ผ่านครบทั้ง 10 Tests หลังเพิ่ม Order Execution Policy/Adapter:
+
+- `test_grid_order_execution.mq5` — ผ่าน
+- `test_grid_runtime_orchestrator.mq5` — ผ่าน
+- `test_grid_position_reconciler.mq5` — ผ่าน
+- `test_grid_lifecycle.mq5` — ผ่าน
+- `test_grid_state_machine.mq5` — ผ่าน
+- `test_grid_types.mq5` — ผ่าน
+- `test_grid_persistence.mq5` — ผ่าน
+- `test_grid_identity.mq5` — ผ่าน
+- `test_grid_identity_multichart.mq5` — ผ่าน
+- `test_grid_restart_persistence.mq5` — ผ่าน
+
+ผลนี้ยืนยันเฉพาะ Unit/Regression Tests ที่ไม่ส่งคำสั่งปิด Position จริง ยังไม่ได้ยืนยัน Demo integration ของ CTrade close request
 
 ## Grid Regression Baseline ก่อน Grid State Machine (2026-10-26)
 

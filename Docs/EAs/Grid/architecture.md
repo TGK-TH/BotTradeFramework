@@ -70,7 +70,8 @@ MQL5 Test EAs
 ## ขอบเขตที่ยังไม่เสร็จ
 
 - Grid Runtime Orchestration Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-30
-- Grid Order Execution Adapter Round 1 อยู่ระหว่างตรวจสอบ: มี Policy และ Live Close Adapter แล้ว แต่ยังรอผู้ใช้ Compile/Run Unit Test และ Regression Tests
+- Grid Order Execution Adapter Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-31 (Unit Test ใหม่ + Grid Regression 9 ไฟล์ รวม 10 Tests)
+- การทดสอบข้างต้นยังไม่ใช่ Demo integration test ที่ส่งคำสั่งปิด Position จริง
 - ยังไม่มี EA Event Handler adapter ที่เรียก Orchestrator/Execution จาก OnInit/OnTick/OnTimer
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
 - ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว

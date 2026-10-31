@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-**In Progress** — เพิ่ม Policy, Live Adapter และ Unit Test ชุดแรกแล้ว รอผู้ใช้ Compile/Run ใน MetaEditor/MT5
+**Completed — User-reported MetaEditor/MT5 PASS (2026-10-31).** ผู้ใช้ยืนยันว่า Unit Test ใหม่และ Grid Regression Tests ทั้งหมด Compile/Run ผ่าน
 
 ## เป้าหมาย
 
@@ -80,10 +80,10 @@
 
 ## การตรวจสอบ
 
-- Regression Baseline ทั้ง 9 Grid Tests: ผู้ใช้รายงานว่า Compile/Run ผ่านเมื่อ 2026-10-31 ก่อนเริ่มแก้ไข
-- Unit Test ใหม่: ยังรอผู้ใช้ Compile/Run
-- Source review และ git diff --check: รอตรวจหลังแก้ไขเอกสารครบ
-- Assistant ไม่ได้รัน MetaEditor/MT5
+- Regression Baseline ก่อนเริ่ม Phase: ผู้ใช้รายงานว่าทั้ง 9 Grid Tests ผ่านเมื่อ 2026-10-31
+- หลัง Source changes: ผู้ใช้ยืนยันว่า Unit Test ใหม่และ Regression Tests ทั้ง 9 ไฟล์ Compile/Run ผ่านเมื่อ 2026-10-31 (10 Tests รวม)
+- Source review และ git diff --check: ผ่าน
+- Assistant ไม่ได้รัน MetaEditor/MT5; ผล Compile/Runtime เป็นผลที่ผู้ใช้รายงาน
 
 ## เกณฑ์ปิด Phase
 
@@ -92,4 +92,4 @@
 3. ตรวจสอบ Interface/การเรียกใช้ Adapter และ Retcode handling ร่วมกัน
 4. หากต้องทดสอบ Live close ให้ตกลงขั้นตอน Demo integration แยกต่างหากก่อนส่งคำสั่งจริง
 
-**สถานะปัจจุบัน: In Progress — รอ Unit Test ใหม่และ Regression หลังการเปลี่ยนแปลง**
+**สถานะปัจจุบัน: Completed — ผู้ใช้รายงานว่า 10 Tests ผ่านใน MetaEditor/MT5 เมื่อ 2026-10-31**
