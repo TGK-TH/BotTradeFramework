@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-10-30
+อัปเดตล่าสุด: 2026-10-31
 
 ## ก่อนเริ่ม
 
@@ -29,6 +29,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
 | `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5` | ประสาน Lifecycle/Position Reconciler, reset-close retry, restart ระหว่าง reset และ safe recovery | ผ่าน (ผู้ใช้รายงาน 2026-10-30) |
+| `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5` | Ownership filtering, CLOSE_REQUIRED gate, retcode classification และ aggregate batch result; ไม่มี trade request | รอผล Compile/Runtime |
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
@@ -146,6 +147,22 @@ Test EA นี้ใช้ Snapshot fixture และไม่ส่งคำส
 - ไม่มี Snapshot แต่มี Position ต้องไม่ Adopt และต้องรายงาน `ERROR`
 
 **ผลการทดสอบ:** ผู้ใช้รายงานเมื่อ 2026-10-30 ว่า Compile/Run `test_grid_runtime_orchestrator.mq5` และ Grid Regression Tests เดิมทั้ง 8 ไฟล์ใน MetaEditor/MT5 ผ่านทั้งหมด รวม 9 ไฟล์ จึงถือว่า Grid Runtime Orchestration Round 1 เสร็จสมบูรณ์ ผลนี้เป็นการยืนยันจากผู้ใช้ ไม่ใช่การรัน MetaEditor/MT5 โดย Assistant
+
+## Grid Order Execution Policy Test — เพิ่มแล้ว รอผล Compile/Runtime
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5`
+
+Unit Test นี้ Compile ทั้ง Policy และ Adapter แต่ไม่ส่งคำสั่งซื้อขายจริง ทดสอบ:
+
+- Close Batch ต้องมีเฉพาะ Ticket ที่ตรง Symbol + Magic Number
+- ไม่สร้าง Batch เมื่อ Runtime status ไม่ใช่ CLOSE_REQUIRED
+- ปฏิเสธ Identity ที่ไม่ถูกต้อง
+- จำแนก DONE, DONE_PARTIAL และ PLACED เป็น Accepted เพื่อรอ Reconciliation
+- จำแนก MARKET_CLOSED และ Failed request เป็นผลลัพธ์ที่ต้อง Retry
+- รวมผล Batch ที่มีทั้ง Accepted, Market Closed และ Failed อย่างระมัดระวัง
+- Batch ว่างไม่ถือเป็นการปิดสำเร็จ
+
+ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้
 
 ## นโยบาย Regression Test
 

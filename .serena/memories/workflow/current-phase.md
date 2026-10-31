@@ -1,6 +1,6 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-10-30, Grid Runtime Orchestration — Round 1 is COMPLETED based on user-reported MetaEditor/MT5 validation.
+As of 2026-10-31, Grid Order Execution Adapter — Round 1 is IN PROGRESS. User reported all nine Grid Regression Tests passed immediately before this phase began.
 
 ## Completed phase: Grid Runtime Orchestration — Round 1
 - Added `Include/BotTrade/Grid/GridRuntimeOrchestrator.mqh`.
@@ -26,8 +26,18 @@ As of 2026-10-30, Grid Runtime Orchestration — Round 1 is COMPLETED based on u
 - These are user-reported MetaEditor/MT5 results; assistant did not independently run MetaEditor/MT5.
 - No EA OnInit/OnTick/OnTimer adapter, pending-order management, Grid levels, Bounds, TP, re-entry, or actual open/close execution is included.
 
+## Current phase: Grid Order Execution Adapter — Round 1 (2026-10-31)
+- User explicitly approved the Batch Close policy: when Runtime reports CLOSE_REQUIRED, attempt to close every owned Position found in one pass, then let Runtime reconcile fresh account state and retry only what remains.
+- User reported all nine Grid Regression Tests passed immediately before source changes on 2026-10-31.
+- Added `Include/BotTrade/Grid/GridOrderExecutionPolicy.mqh`: pure ownership filtering, batch construction, retcode classification, and aggregate outcome policy; no trade requests.
+- Added `Include/BotTrade/Grid/GridOrderExecutionAdapter.mqh`: live account scan and ticket-specific CTrade PositionClose calls, gated by CLOSE_REQUIRED; reports one aggregate close attempt to Runtime.
+- Added `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5`: compiles Policy + Adapter and tests policy outcomes, adapter initialization, runtime identity guard, and non-CLOSE_REQUIRED gate; no live trade requests.
+- Added `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`; updated Grid architecture, testing guide, and PROJECT_STATUS.md.
+- New Unit Test and post-change 9-file Regression Tests still require user Compile/Runtime validation in MetaEditor/MT5.
+- Do not run a Demo integration test that sends real close requests without separate explicit user approval.
+
 ## Next work boundary
-No next phase is authorized yet. EA Runtime adapter or Order Execution must be separately scoped and explicitly approved by the user before implementation.
+Do not begin Initial/Grid-level opening, pending-order management, or EA Event Handler integration until separately scoped and explicitly approved.
 
 ## Workflow and safety
 - Work phase by phase; do not begin later phases without explicit user authorization.

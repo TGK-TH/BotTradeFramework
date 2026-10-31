@@ -262,6 +262,13 @@ public:
     return m_initialized && m_lifecycle.GetData(data);
   }
 
+  bool MatchesIdentity(string symbol, long magic_number)
+  {
+    return m_initialized &&
+           symbol == m_symbol &&
+           magic_number == m_magic_number;
+  }
+
   bool IsInitialized()
   {
     return m_initialized;

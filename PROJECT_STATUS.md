@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-30
+Last updated: 2026-10-31
 
 ## Current focus
-Grid Runtime Orchestration Round 1 is **Completed**. On 2026-10-30, the user reported that the new orchestrator test and all eight existing Grid Regression Tests compiled and passed in MetaEditor/MT5 (9 tests total). Actual order execution remains out of scope and requires a separately agreed phase.
+Grid Order Execution Adapter — Round 1 is **In Progress**. On 2026-10-31, the user reported that all nine Grid Regression Tests passed immediately before this phase began. The new execution-policy test is added but awaits MetaEditor/MT5 validation.
 
 ## Current phase
-**Grid Runtime Orchestration — Round 1: Completed (user-reported MetaEditor/MT5 PASS, 2026-10-30).** Adds a coordinator for Lifecycle + Position Reconciler, including reset close-required/retry/wait/rebuild flow. It does not send trade requests. See `Docs/EAs/Grid/Phases/phase-grid-runtime-orchestration.md`.
+**Grid Order Execution Adapter — Round 1: In Progress.** Adds a pure close-execution policy and a live CTrade adapter for ticket-specific batch closing when Runtime reports CLOSE_REQUIRED. It does not open Initial/Grid positions. See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
