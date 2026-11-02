@@ -1,12 +1,14 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-10-31
+Last updated: 2026-11-02
 
 ## Current focus
-Grid Order Execution Adapter — Round 1 is **Completed** based on user-reported MetaEditor/MT5 validation on 2026-10-31. The new execution test and all nine Grid Regression Tests passed (10 tests total).
+Grid Order Execution — Demo Integration Test is **In Progress**. User reported all 10 Grid Regression Tests passed on 2026-11-02 before source changes. A dedicated Demo-only Integration Test EA has been added; it is awaiting user compile/review and Demo execution.
 
 ## Current phase
-**Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** Adds a pure close-execution policy and a live CTrade adapter for ticket-specific batch closing when Runtime reports CLOSE_REQUIRED. Unit Tests do not send trade requests; live Demo close integration remains untested and requires separate approval. It does not open Initial/Grid positions. See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
+**Grid Order Execution — Demo Integration Test: Implementation ready for user validation (2026-11-02).** Adds `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5`, a separate Demo-only EA that seeds two owned positions and one foreign position, tests Runtime/Adapter close and reconciliation, then waits for the user to verify and click a guarded Foreign Position cleanup button. No Demo orders have been sent yet. See `Docs/EAs/Grid/Phases/phase-grid-order-execution-demo-integration.md`.
+
+Previous phase: **Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`

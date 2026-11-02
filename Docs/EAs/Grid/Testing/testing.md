@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-10-31
+อัปเดตล่าสุด: 2026-11-02
 
 ## ก่อนเริ่ม
 
@@ -8,7 +8,7 @@
 - Compile Test EA ใน MetaEditor แล้วรันบนกราฟตามวิธีของ Test นั้น
 - อ่านผลจากแท็บ Experts
 - อย่าถือว่าการตรวจโค้ดผ่านหมายถึง Compile/Runtime ผ่าน
-- Test EA ในชุดที่อธิบายด้านล่างไม่ควรส่งคำสั่งซื้อขายจริง แต่ควรตรวจ Source Code ก่อนรันหากไฟล์มีการเปลี่ยนแปลงภายหลัง
+- Unit/Regression Test EA ไม่ส่งคำสั่งซื้อขายจริง; ข้อยกเว้นคือ Demo Integration Test ที่ระบุชัดเจนว่าต้องเปิด Safety Input และคลิก START บนบัญชี Demo เท่านั้น ควรตรวจ Source Code ก่อนรันหากไฟล์มีการเปลี่ยนแปลงภายหลัง
 
 ## Unit Tests: Framework
 
@@ -180,6 +180,52 @@ Unit Test นี้ Compile ทั้ง Policy และ Adapter แต่ไ�
 - Batch ว่างไม่ถือเป็นการปิดสำเร็จ
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้
+
+## Grid Order Execution — Demo Integration Test (Implementation รอ Compile/Runtime)
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5`
+
+Test EA นี้แยกจาก EA หลักและส่งคำสั่งซื้อขายจริงบน Demo เพื่อทดสอบเส้นทาง CTrade close:
+
+- ค่าเริ่มต้น EnableDemoTest=false และต้องคลิก START บนกราฟหลังเปิด Input เป็น true
+- ปฏิเสธบัญชีเงินจริง/Contest และบัญชีที่ไม่ใช่ Hedging
+- ตรวจสิทธิ์ Trade และ Volume Min/Max/Step ก่อนส่งคำสั่ง
+- เปิด Owned BUY 2 Positions ด้วย Instance Magic และ Foreign BUY 1 Position ด้วย Magic ที่แยกและตรวจ collision แล้ว
+- บันทึก Fill Price จริงของ Owned Position แรกเป็น Anchor
+- Request Mode reset แล้วใช้ Runtime + Adapter ปิดเฉพาะ Owned Positions
+- ยืนยัน Foreign Position ด้วย Symbol + Magic + Ticket และแสดงปุ่ม CLEANUP FOREIGN POSITION ให้ผู้ใช้ตรวจสอบก่อน
+- เมื่อผู้ใช้กด Cleanup จะตรวจ Ticket/Symbol/Magic/จำนวนซ้ำก่อนปิดด้วย PositionClose(ticket)
+- Final Verification ต้องพบ Owned=0 และ Foreign=0 จึงรายงาน FINAL PASS
+- หาก Test ล้มเหลว จะหยุดและรายงาน Test Magic/Ticket/จำนวนที่อาจเหลือ โดยไม่พยายามปิด Position ที่ไม่ตรงกับ Test Identity
+
+**วิธีใช้:** ใช้บัญชี Demo แบบ Hedging บนกราฟใหม่ที่ไม่มี Production Grid EA, Compile EA, เปิด EnableDemoTest=true และคลิก START เมื่อพร้อม จากนั้นตรวจ Foreign Position ใน Trade tab ก่อนคลิก CLEANUP FOREIGN POSITION
+
+**ข้อควรระวัง:** Test EA เปิด BUY 3 Positions ตาม TestLot และอาจมี Spread/Commission; หาก Test หยุดกลางคันให้ตรวจและจัดการ Test Positions ด้วย Symbol + Magic Number ก่อนเริ่มใหม่
+
+สถานะ ณ 2026-11-02: Source เพิ่มแล้ว แต่ยังรอผู้ใช้ Compile/Review และรัน Demo Integration จริง
+
+## Grid Order Execution — Demo Integration Test (Implementation รอ Compile/Runtime)
+
+ไฟล์: `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5`
+
+Test EA นี้แยกจาก EA หลักและส่งคำสั่งซื้อขายจริงบน Demo เพื่อทดสอบเส้นทาง CTrade close:
+
+- ค่าเริ่มต้น EnableDemoTest=false และต้องคลิก START บนกราฟหลังเปิด Input เป็น true
+- ปฏิเสธบัญชีเงินจริง/Contest และบัญชีที่ไม่ใช่ Hedging
+- ตรวจสิทธิ์ Trade และ Volume Min/Max/Step ก่อนส่งคำสั่ง
+- เปิด Owned BUY 2 Positions ด้วย Instance Magic และ Foreign BUY 1 Position ด้วย Magic ที่แยกและตรวจ collision แล้ว
+- บันทึก Fill Price จริงของ Owned Position แรกเป็น Anchor
+- Request Mode reset แล้วใช้ Runtime + Adapter ปิดเฉพาะ Owned Positions
+- ยืนยัน Foreign Position ด้วย Symbol + Magic + Ticket และแสดงปุ่ม CLEANUP FOREIGN POSITION ให้ผู้ใช้ตรวจสอบก่อน
+- เมื่อผู้ใช้กด Cleanup จะตรวจ Ticket/Symbol/Magic/จำนวนซ้ำก่อนปิดด้วย PositionClose(ticket)
+- Final Verification ต้องพบ Owned=0 และ Foreign=0 จึงรายงาน FINAL PASS
+- หาก Test ล้มเหลว จะหยุดและรายงาน Test Magic/Ticket/จำนวนที่อาจเหลือ โดยไม่พยายามปิด Position ที่ไม่ตรงกับ Test Identity
+
+**วิธีใช้:** ใช้บัญชี Demo แบบ Hedging บนกราฟใหม่ที่ไม่มี Production Grid EA, Compile EA, เปิด EnableDemoTest=true และคลิก START เมื่อพร้อม จากนั้นตรวจ Foreign Position ใน Trade tab ก่อนคลิก CLEANUP FOREIGN POSITION
+
+**ข้อควรระวัง:** Test EA เปิด BUY 3 Positions ตาม TestLot และอาจมี Spread/Commission; หาก Test หยุดกลางคันให้ตรวจและจัดการ Test Positions ด้วย Symbol + Magic Number ก่อนเริ่มใหม่
+
+สถานะ ณ 2026-11-02: Source เพิ่มแล้ว แต่ยังรอผู้ใช้ Compile/Review และรัน Demo Integration จริง
 
 ## นโยบาย Regression Test
 

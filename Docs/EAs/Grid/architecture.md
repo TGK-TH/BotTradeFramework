@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-10-31
+อัปเดตล่าสุด: 2026-11-02
 
 ## ขอบเขตของเอกสาร
 
@@ -71,7 +71,8 @@ MQL5 Test EAs
 
 - Grid Runtime Orchestration Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-30
 - Grid Order Execution Adapter Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-31 (Unit Test ใหม่ + Grid Regression 9 ไฟล์ รวม 10 Tests)
-- การทดสอบข้างต้นยังไม่ใช่ Demo integration test ที่ส่งคำสั่งปิด Position จริง
+- เพิ่ม Demo Integration Test EA แยกที่ `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` เพื่อทดสอบ Adapter บนบัญชี Demo; Source ยังรอผู้ใช้ Compile/Review และยังไม่มีการส่งคำสั่งจริง
+- การทดสอบ Unit/Regression ก่อนหน้านี้ยังไม่ใช่ Demo integration test ที่ส่งคำสั่งปิด Position จริง
 - ยังไม่มี EA Event Handler adapter ที่เรียก Orchestrator/Execution จาก OnInit/OnTick/OnTimer
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
 - ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว
