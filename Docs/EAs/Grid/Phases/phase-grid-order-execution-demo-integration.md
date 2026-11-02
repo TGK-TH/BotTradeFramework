@@ -4,7 +4,7 @@
 
 ## สถานะ
 
-**Implementation ready for user compile/review; Demo execution not yet performed.** ผู้ใช้ยืนยัน Regression Baseline ทั้ง 10 Tests ผ่านก่อนเริ่ม Phase นี้ และอนุมัติ Test Plan รวมถึง Manual Foreign Position Cleanup แล้ว
+**Completed — user-reported MetaEditor compile and Demo Integration Test passed on 2026-11-02.** ผู้ใช้ยืนยัน Regression Baseline ทั้ง 10 Tests ผ่านก่อนเริ่ม Phase นี้ และยืนยันการทดสอบ Demo จนถึง FINAL PASS แล้ว
 
 ## เป้าหมาย
 
@@ -78,6 +78,8 @@
 ## Validation Status
 
 - ก่อนเริ่ม Phase: ผู้ใช้รายงานว่า Grid Regression Tests ทั้ง 10 ไฟล์ผ่านเมื่อ 2026-11-02
-- Source implementation: เพิ่ม Test EA แยกแล้ว; ยังรอผู้ใช้ Compile/Review ใน MetaEditor
-- Demo execution: ยังไม่เริ่ม และไม่มีการส่งคำสั่งซื้อขายจาก Assistant
-- Phase จะเสร็จเมื่อผู้ใช้ยืนยัน Compile/Runtime Test และ Demo Integration Flow ผ่าน หรือมีการแก้ไขตามผลที่พบ
+- Source implementation: เพิ่ม Test EA แยกแล้ว; ผู้ใช้รายงานว่า Compile ใน MetaEditor ผ่าน
+- Demo execution: ผู้ใช้รายงานว่าเปิด BUY 3 Positions สำเร็จ (Owned 2 + Foreign 1), Adapter ปิด Owned ทั้ง 2 และยืนยันว่า Foreign Position เดิมยังอยู่ จากนั้นกด CLEANUP และปิด Foreign Position ได้สำเร็จ
+- Final Log ที่ผู้ใช้รายงาน: `TGK DEMO INTEGRATION: FINAL RESULT: PASS` เมื่อ 2026-11-02 เวลา 22:58:52
+- ผลนี้ยืนยันเส้นทาง Live Scan + ticket-specific `CTrade.PositionClose()` + Runtime reconciliation บน Demo Hedging Account สำหรับ Test Scenario นี้ ไม่ใช่การยืนยัน Grid V1 ทั้งระบบ
+- Phase เสร็จสมบูรณ์ตามผล Compile/Runtime ที่ผู้ใช้รายงาน; Assistant ไม่ได้รัน MetaEditor/MT5 เอง

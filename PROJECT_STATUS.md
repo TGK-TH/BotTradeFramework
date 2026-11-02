@@ -3,10 +3,10 @@
 Last updated: 2026-11-02
 
 ## Current focus
-Grid Order Execution — Demo Integration Test is **In Progress**. User reported all 10 Grid Regression Tests passed on 2026-11-02 before source changes. A dedicated Demo-only Integration Test EA has been added; it is awaiting user compile/review and Demo execution.
+Grid Order Execution — Demo Integration Test is **Completed (user-reported FINAL PASS, 2026-11-02)**. User reported all 10 Grid Regression Tests passed before source changes, the Demo Test EA compiled, Owned Positions were closed while the Foreign Position remained untouched, and the guarded cleanup then closed the Foreign Position successfully.
 
 ## Current phase
-**Grid Order Execution — Demo Integration Test: Implementation ready for user validation (2026-11-02).** Adds `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5`, a separate Demo-only EA that seeds two owned positions and one foreign position, tests Runtime/Adapter close and reconciliation, then waits for the user to verify and click a guarded Foreign Position cleanup button. No Demo orders have been sent yet. See `Docs/EAs/Grid/Phases/phase-grid-order-execution-demo-integration.md`.
+**Grid Order Execution — Demo Integration Test: Completed (2026-11-02, user-reported).** `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` compiled successfully. On Demo Hedging, it opened two Owned BUY positions and one Foreign BUY position; Runtime/Adapter closed both Owned positions, verified the same Foreign Ticket/Magic remained, and the user-triggered guarded cleanup closed that Foreign Position. User reported final log `TGK DEMO INTEGRATION: FINAL RESULT: PASS`. This validates the tested live close/reconciliation path, not the complete Grid V1 EA. See `Docs/EAs/Grid/Phases/phase-grid-order-execution-demo-integration.md`.
 
 Previous phase: **Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
 

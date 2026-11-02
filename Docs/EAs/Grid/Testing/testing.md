@@ -202,7 +202,9 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 **ข้อควรระวัง:** Test EA เปิด BUY 3 Positions ตาม TestLot และอาจมี Spread/Commission; หาก Test หยุดกลางคันให้ตรวจและจัดการ Test Positions ด้วย Symbol + Magic Number ก่อนเริ่มใหม่
 
-สถานะ ณ 2026-11-02: Source เพิ่มแล้ว แต่ยังรอผู้ใช้ Compile/Review และรัน Demo Integration จริง
+ผลการทดสอบ (ผู้ใช้รายงาน 2026-11-02): Compile ผ่านและ Demo Integration ผ่านครบ โดยเปิด Owned BUY 2 + Foreign BUY 1, Adapter ปิด Owned ได้ครบและตรวจว่า Foreign Ticket/Magic เดิมยังอยู่ จากนั้นผู้ใช้กด CLEANUP เพื่อปิด Foreign Position และ EA รายงาน `TGK DEMO INTEGRATION: FINAL RESULT: PASS` เวลา 22:58:52
+
+ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
 ## Grid Order Execution — Demo Integration Test (Implementation รอ Compile/Runtime)
 
@@ -225,7 +227,9 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 **ข้อควรระวัง:** Test EA เปิด BUY 3 Positions ตาม TestLot และอาจมี Spread/Commission; หาก Test หยุดกลางคันให้ตรวจและจัดการ Test Positions ด้วย Symbol + Magic Number ก่อนเริ่มใหม่
 
-สถานะ ณ 2026-11-02: Source เพิ่มแล้ว แต่ยังรอผู้ใช้ Compile/Review และรัน Demo Integration จริง
+ผลการทดสอบ (ผู้ใช้รายงาน 2026-11-02): Compile ผ่านและ Demo Integration ผ่านครบ โดยเปิด Owned BUY 2 + Foreign BUY 1, Adapter ปิด Owned ได้ครบและตรวจว่า Foreign Ticket/Magic เดิมยังอยู่ จากนั้นผู้ใช้กด CLEANUP เพื่อปิด Foreign Position และ EA รายงาน `TGK DEMO INTEGRATION: FINAL RESULT: PASS` เวลา 22:58:52
+
+ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
 ## นโยบาย Regression Test
 
