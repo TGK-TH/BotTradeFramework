@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-02
+อัปเดตล่าสุด: 2026-11-04
 
 ## ขอบเขตของเอกสาร
 
@@ -66,6 +66,21 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridOrderExecutionAdapter.mqh` | Live adapter สำหรับปิด Position แบบ ticket-specific เมื่อ Runtime แจ้ง CLOSE_REQUIRED |
 | `Include/BotTrade/Testing/TestAssert.mqh` | ฟังก์ชัน Assertion พื้นฐาน |
 | `Include/BotTrade/Testing/TestRunner.mqh` | จัดกลุ่ม Test นับผล และพิมพ์ PASS/FAIL |
+
+## Grid Level Engine — Design ที่ตกลงแล้ว (ยังไม่ Implement)
+
+Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.md)
+
+- Two-sided Grid Levels คำนวณจาก Fill Price (Anchor) และ Grid Step ทั้งสองด้าน; Bounds เป็น Hard Filter ไม่เลื่อนราคา Level
+- Anchor เป็น Special/Re-entry Level แยกจาก Grid Levels ปกติ ไม่รวมใน `level_count`
+- Initial State และ State transitions ใช้ Current Price (BUY=Ask, SELL=Bid) ไม่ใช้ตำแหน่งเทียบ Anchor เป็นเงื่อนไขเข้าเทรด
+- BUY เลือก Candidate ราคาต่ำที่สุด; SELL เลือก Candidate ราคาสูงที่สุด; หนึ่ง Price Check เลือกได้ไม่เกินหนึ่ง Candidate
+- `WAIT_ACTIVATION`, `READY`, `ACTIVE`, `WAIT_RETURN` มีความหมายและ transitions ตาม Design Specification
+- Level ที่ไม่ได้รับเลือกและถูกข้ามไปอยู่ผิดด้านของ Current Price เปลี่ยนเป็น `WAIT_ACTIVATION`; `ACTIVE` คงเดิม
+- TP -> `WAIT_RETURN`; Non-TP close ใช้ Current Price ตัดสิน `WAIT_ACTIVATION` หรือ `READY`
+- Runtime/Execution รับผิดชอบ Order request และ Position Reconciliation; Pure Engine ไม่เรียก Trade API
+
+**สถานะ Source:** มี Prototype `GridLevelEngine.mqh` และ Test EA อยู่แล้ว แต่ยังไม่ได้ปรับให้ตรง Design นี้ และยังไม่มีผล Compile/Runtime ที่ผู้ใช้ยืนยัน ห้ามตีความรายการข้างต้นว่า Implemented แล้ว
 
 ## ขอบเขตที่ยังไม่เสร็จ
 

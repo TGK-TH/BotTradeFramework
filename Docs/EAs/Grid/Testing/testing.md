@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-02
+อัปเดตล่าสุด: 2026-11-04
 
 ## ก่อนเริ่ม
 
@@ -230,6 +230,26 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 ผลการทดสอบ (ผู้ใช้รายงาน 2026-11-02): Compile ผ่านและ Demo Integration ผ่านครบ โดยเปิด Owned BUY 2 + Foreign BUY 1, Adapter ปิด Owned ได้ครบและตรวจว่า Foreign Ticket/Magic เดิมยังอยู่ จากนั้นผู้ใช้กด CLEANUP เพื่อปิด Foreign Position และ EA รายงาน `TGK DEMO INTEGRATION: FINAL RESULT: PASS` เวลา 22:58:52
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
+
+## Grid Level Engine — Design/Test Plan (Implementation Pending)
+
+Design Specification: [phase-grid-level-engine-design.md](../Phases/phase-grid-level-engine-design.md)
+
+Test EA ที่เตรียมไว้: `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5`
+
+หลังจาก Design Review ผู้ใช้ยืนยันข้อกำหนดหลักแล้ว Test Plan ต้องครอบคลุม:
+- Two-sided Level calculation, Anchor แยกจาก Grid Levels, `level_count` ไม่นับ Anchor และ Bounds แบบ Hard Filter
+- Initial State ตาม Current Price (BUY ใช้ Ask, SELL ใช้ Bid)
+- Activation และ Retrace ในทิศทางที่ถูกต้อง
+- Candidate selection: BUY ราคาต่ำที่สุด, SELL ราคาสูงที่สุด, สูงสุดหนึ่ง Candidate ต่อ Price Check
+- Candidate selection ที่รวมทั้ง `READY` และ `WAIT_RETURN`, รวมถึง Anchor
+- Unselected `READY`/`WAIT_RETURN` ที่ถูกข้ามและอยู่ผิดด้านของราคาเปลี่ยนเป็น `WAIT_ACTIVATION`; `ACTIVE` คงเดิม
+- Retry/Reconciliation และการแทน Candidate เดิมด้วย Candidate ที่ดีกว่า
+- ยืนยัน Position จริงก่อนเปลี่ยนเป็น `ACTIVE`
+- TP -> `WAIT_RETURN`; SL/Manual/Other close ใช้ Current Price กำหนด State
+- Anchor TP/Re-entry และการแยก State ของแต่ละ Level
+
+**สถานะ:** เป็น Design/Test Plan เท่านั้น Prototype ปัจจุบันยังไม่ตรง Design ใหม่ และผู้ใช้ยังไม่ได้ Compile/Run Test EA นี้ รายละเอียด Edge Cases ที่ยังต้องล็อกก่อน Implementation ได้แก่ exact touch/equality, anti-duplicate, retry/reconciliation handoff และ partial/multiple Positions ต่อ Level
 
 ## นโยบาย Regression Test
 

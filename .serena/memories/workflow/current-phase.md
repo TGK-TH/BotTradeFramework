@@ -1,36 +1,38 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-11-02, Grid Order Execution — Demo Integration Test is completed based on user-reported MetaEditor/MT5 results.
+As of 2026-11-04, Grid Level Engine Design Review is complete and approved by the user; implementation has NOT started.
 
-## Completed phase: Grid Order Execution — Demo Integration Test
-- User reported all 10 Grid Regression Tests passed on 2026-11-02 before source changes.
-- Added dedicated Demo-only Test EA: `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5`.
-- User confirmed the Test EA compiled successfully in MetaEditor.
-- User ran the Demo test on a Hedging Demo account:
-  1. START seeded two Owned BUY positions using Instance Magic and one Foreign BUY position using a distinct Magic.
-  2. Log confirmed: `seeded 2 owned positions (magic=710002) and 1 foreign position (ticket=152844313208 magic=100710002)`.
-  3. Runtime + Adapter closed both Owned positions.
-  4. Log confirmed PASS while the Foreign Position remained with its original ticket.
-  5. User inspected the Foreign Position and clicked CLEANUP; the remaining Foreign Position was closed.
-  6. User reported final log: `TGK DEMO INTEGRATION: FINAL RESULT: PASS` at 2026-11-02 22:58:52.
-- This validates live position scanning, exact Symbol + Magic ownership filtering, ticket-specific CTrade close, and Runtime reconciliation for the tested Demo scenario.
-- It does not prove complete Grid V1 behavior or production EA event-handler integration.
-- Assistant did not independently compile or run MetaEditor/MT5.
-- No production Grid EA or Adapter source was changed during this Demo test phase.
-- Documentation updated:
-  - `Docs/EAs/Grid/Phases/phase-grid-order-execution-demo-integration.md`
-  - `Docs/EAs/Grid/Testing/testing.md`
-  - `Docs/EAs/Grid/architecture.md`
-  - `Docs/EAs/Grid/README.md` (phase link was already present)
-  - `PROJECT_STATUS.md`
+## Current phase: Grid Level Engine — Design Agreed, Implementation Pending
+- Full specification and agreed test plan: `Docs/EAs/Grid/Phases/phase-grid-level-engine-design.md`.
+- User confirmed all five final design decisions on 2026-11-04:
+  1. Bounds are hard filters; Anchor=4000, Step=5, Bounds=3992..4012 yields Grid Levels 3995, 4005, 4010 only.
+  2. Unselected READY or WAIT_RETURN Levels that are crossed and now lie on the wrong side of Current Price become WAIT_ACTIVATION; ACTIVE remains unchanged.
+  3. If a pending open Candidate has not succeeded and price reaches a better Candidate, the better Candidate may replace it; do not wait indefinitely for the earlier one.
+  4. Non-TP closes (SL, Manual Close, other reasons) set WAIT_ACTIVATION or READY based on Current Price.
+  5. Anchor is a Special Level separate from ordinary Grid Levels, excluded from level_count, with the same State Machine and Re-entry behavior.
+- Two-sided Grid: calculate ordinary levels on both sides of actual Fill Price Anchor using Grid Step. Do not shift levels to Bounds.
+- Initial state uses Current Price, not position relative to Anchor: BUY uses Ask (above=WAIT_ACTIVATION, below=READY); SELL uses Bid (below=WAIT_ACTIVATION, above=READY).
+- BUY: price rises through WAIT_ACTIVATION -> READY; price retraces downward through READY/WAIT_RETURN -> Candidate. Choose lowest eligible price when multiple candidates are crossed in one Price Check.
+- SELL is inverse and chooses highest eligible price.
+- One Candidate maximum per Price Check. Anchor can also be a Candidate according to its state.
+- Successful open must be confirmed by Runtime/Position Reconciliation before state becomes ACTIVE. Engine itself has no Trade API.
+- TP close -> WAIT_RETURN; return to Entry Level produces Re-entry Candidate and becomes ACTIVE only after confirmed open.
+- Current prototype files `Include/BotTrade/Grid/GridLevelEngine.mqh` and `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` are not yet updated to this design and have not been compiled/run by the user.
+- User reported the 10 existing Grid Regression Tests passed on 2026-11-03 before the prototype additions.
 
-## Next action
-No next implementation phase has been started or authorized. Before any new Grid feature/refactor, run the relevant Grid Regression Tests first and agree on the next phase scope.
+## Open edge details before implementation
+- Define exact touch/equality and anti-duplicate semantics.
+- Define retry/reconciliation handoff when price moves through several candidates while an earlier request remains unresolved.
+- Define handling of partial/multiple positions per Level; ACTIVE must persist while any owned position for that Level remains.
+- Persistence/Restart integration is outside the pure Engine scope and needs a later integration phase.
+
+## Next step
+Review/resolve the edge details and test cases in the Design Specification. Do not edit source or begin implementation until the user explicitly approves.
 
 ## Workflow
-- Work phase by phase; do not start later phases without explicit user authorization.
+- Work phase by phase; do not start later phases without explicit approval.
 - User performs MetaEditor/MT5 tests and reports results.
-- Update Thai Docs and this memory after each completed phase.
-- Before new Grid feature/refactor, run relevant Grid Regression Tests first.
+- Before any Grid source feature/refactor, run relevant Grid Regression Tests first.
+- Update Thai Docs and this memory after completed phases.
 - Use 2-space indentation and one parameter per line for multi-parameter test calls.
-- If Serena/MCP fails, remind user to check the MCP Serena server.
+- If Serena/MCP fails, remind the user to check the MCP Serena server.

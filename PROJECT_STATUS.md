@@ -1,14 +1,36 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-02
+Last updated: 2026-11-04
 
 ## Current focus
-Grid Order Execution — Demo Integration Test is **Completed (user-reported FINAL PASS, 2026-11-02)**. User reported all 10 Grid Regression Tests passed before source changes, the Demo Test EA compiled, Owned Positions were closed while the Foreign Position remained untouched, and the guarded cleanup then closed the Foreign Position successfully.
+**Grid Level Engine — Design Agreed; implementation pending.** ผู้ใช้ยืนยัน Design สำหรับ Two-sided Grid, Anchor Re-entry, State transitions, Candidate selection, Unselected Level handling, Retry/Candidate replacement และ Position close outcomes แล้ว ดู `Docs/EAs/Grid/Phases/phase-grid-level-engine-design.md` ขณะนี้ยังไม่มีการแก้ Source Code ให้ตรง Design ใหม่นี้ และยังไม่มี Compile/Runtime result ของ Engine
 
 ## Current phase
-**Grid Order Execution — Demo Integration Test: Completed (2026-11-02, user-reported).** `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` compiled successfully. On Demo Hedging, it opened two Owned BUY positions and one Foreign BUY position; Runtime/Adapter closed both Owned positions, verified the same Foreign Ticket/Magic remained, and the user-triggered guarded cleanup closed that Foreign Position. User reported final log `TGK DEMO INTEGRATION: FINAL RESULT: PASS`. This validates the tested live close/reconciliation path, not the complete Grid V1 EA. See `Docs/EAs/Grid/Phases/phase-grid-order-execution-demo-integration.md`.
+**Grid Level Engine — Design Review (2026-11-04): Design Agreed, Implementation Not Started.**
 
-Previous phase: **Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
+### Design decisions confirmed
+- Two-sided Grid Levels คำนวณจาก Fill Price (Anchor) + Grid Step ทั้งเหนือและใต้ Anchor
+- Anchor เป็น Special/Re-entry Level แยกจาก Grid Levels ปกติ ไม่รวมใน `level_count` และไม่สร้าง Grid Level ซ้ำที่ราคา Anchor
+- Bounds เป็น Hard Filter ไม่เลื่อนระดับราคา; ตัวอย่าง Anchor=4000, Step=5, Bounds=3992..4012 ได้ Levels 3995, 4005, 4010
+- Initial State อิง Current Price: BUY ใช้ Ask (เหนือราคา WAIT_ACTIVATION / ใต้ราคา READY); SELL ใช้ Bid (ใต้ราคา WAIT_ACTIVATION / เหนือราคา READY)
+- BUY Activate เมื่อราคาขึ้นผ่าน WAIT_ACTIVATION และ Entry เมื่อราคาลงผ่าน READY/WAIT_RETURN; เลือก Candidate ราคาต่ำสุด
+- SELL เป็นทิศกลับกัน; เลือก Candidate ราคาสูงสุด
+- เมื่อมี Candidate หลายตัวใน Price Check เดียว เลือกได้เพียงหนึ่ง
+- READY/WAIT_RETURN ที่ถูกข้ามแต่ไม่ได้เลือกและอยู่ผิดด้านของ Current Price เปลี่ยนเป็น WAIT_ACTIVATION; ACTIVE คงเดิม
+- หาก Order Candidate เดิมยังไม่สำเร็จ แต่ราคาไปถึง Candidate ที่ดีกว่า ให้ Candidate ใหม่แทนได้ โดยใช้ Runtime/Execution Reconciliation
+- ปิดด้วย TP -> WAIT_RETURN; ปิดด้วย SL/Manual/เหตุผลอื่น -> ใช้ Current Price กำหนด WAIT_ACTIVATION หรือ READY
+- Anchor ใช้ State Machine เดียวกันและ Re-entry ได้
+
+### Current files / validation
+- Prototype files already exist: `Include/BotTrade/Grid/GridLevelEngine.mqh` and `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5`; ยังไม่ได้ปรับให้ตรง Design ใหม่
+- ผู้ใช้รายงาน Grid Regression Tests ทั้ง 10 ไฟล์ผ่านเมื่อ 2026-11-03 ก่อนแก้/เพิ่ม prototype
+- ผู้ใช้ยังไม่ได้ Compile หรือ Run `test_grid_level_engine.mq5`; ห้ามระบุว่า Compile/Runtime ผ่าน
+- ไม่มี Production Grid EA integration หรือ Trade API ใน Scope ของ Pure Engine รอบนี้
+
+### Exact next step
+ตรวจทาน Edge Cases/Test Cases ใน Design Spec ให้ครบ (โดยเฉพาะ touch/equality, retry/reconciliation และ Position ต่อ Level) แล้วรอผู้ใช้อนุมัติก่อนเริ่ม Test-first implementation
+
+Previous completed implementation phase: Grid Order Execution — Demo Integration Test (user-reported FINAL PASS, 2026-11-02). Earlier phase: **Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
 
 ### Phase 1 files and result
 - `Include/BotTrade/Testing/TestAssert.mqh`
