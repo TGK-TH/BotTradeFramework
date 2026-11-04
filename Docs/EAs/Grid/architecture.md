@@ -81,7 +81,7 @@ Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.
 - ปิด Position: ใช้ Current Price ก่อน; ถ้า Level อยู่ผิดด้าน -> `WAIT_ACTIVATION`, ถ้ายังอยู่ด้าน Re-entry -> TP=`WAIT_RETURN`, Non-TP=`READY`
 - Runtime/Execution รับผิดชอบ Order request และ Position Reconciliation; Pure Engine ไม่เรียก Trade API
 
-**สถานะ Source:** Round 1 ปรับ `GridLevelEngine.mqh`, `GridTypes.mqh` และ enum validation ใน `GridPersistence.mqh` ตาม Design แล้ว แต่ยังไม่มีผล Compile/Runtime ที่ผู้ใช้ยืนยัน ห้ามตีความว่า Tested/Validated แล้ว
+**สถานะ Source/Validation:** Grid Level Engine Round 1 ปรับ `GridLevelEngine.mqh`, `GridTypes.mqh` และ enum validation ใน `GridPersistence.mqh` ตาม Design แล้ว และผู้ใช้ยืนยันว่า Compile และ Grid Regression Tests ครบ 11/11 ผ่านใน MetaEditor/MT5 เมื่อ 2026-11-04 ผลนี้ครอบคลุม Pure Engine และ Test contracts เท่านั้น ไม่ใช่ Production EA Integration
 
 ## ขอบเขตที่ยังไม่เสร็จ
 

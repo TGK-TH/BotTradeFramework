@@ -2,7 +2,11 @@
 
 อัปเดตล่าสุด: 2026-11-04
 
-เอกสารนี้ต่อยอดจาก [Design Specification](phase-grid-level-engine-design.md) และบันทึกกติกา Edge Cases ที่ใช้กับ Pure Engine รอบแรก รวมถึงสถานะ Source/Test ปัจจุบัน
+**สถานะ: Completed — User Verified**
+
+ผู้ใช้รายงานว่า Compile และรัน Grid Regression Tests ครบทั้ง 11 ไฟล์ใน MetaEditor/MT5 ผ่านทั้งหมดเมื่อ 2026-11-04
+
+เอกสารนี้ต่อยอดจาก [Design Specification](phase-grid-level-engine-design.md) และบันทึกกติกา Edge Cases ที่ใช้กับ Pure Engine รอบแรก รวมถึงผลการตรวจสอบ Source/Test
 
 ## Edge Contracts
 
@@ -58,11 +62,11 @@ Current Price แตะ Level พอดีถือเป็น crossing ใน 
 - test_grid_level_engine.mq5 ครอบคลุม Two-sided calculation, hard Bounds, initial states, activation, BUY/SELL best-price selection, unselected WAIT_RETURN transition, Anchor re-entry, TP/non-TP close state, entry failure, exact touch และ stationary-price duplicate prevention
 - test_grid_persistence.mq5 เพิ่ม Save/Restore สำหรับ WAIT_ACTIVATION
 - test_grid_types.mq5 เพิ่ม assertion ยืนยัน numeric enum value ของ WAIT_ACTIVATION = 3
-- ยังต้อง Compile และ Run ใน MetaEditor/MT5 โดยผู้ใช้
 
-## Validation
+## Validation — User-reported PASS (2026-11-04)
 
-- `git diff --check` and lightweight delimiter checks: PASS
-- MetaEditor compile: pending user run
-- Grid Level Engine unit tests: pending user run
-- Full Grid regression: pending user run
+- MetaEditor compile: PASS
+- `test_grid_level_engine.mq5` และ Grid Regression Tests ที่เหลือ รวมทั้งหมด 11 ไฟล์: PASS
+- ผู้ใช้ยืนยันว่า Compile ใหม่และรัน Test ครบทั้งหมดผ่าน
+- Assistant ไม่ได้รัน MetaEditor/MT5 เอง
+- ขอบเขตการยืนยัน: Pure Grid Level Engine, Type contract และ Persistence coverage ตาม Test Suite; ยังไม่ใช่การยืนยัน Production EA Event Handler หรือ Live Grid V1 Integration

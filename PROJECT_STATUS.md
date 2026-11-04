@@ -3,10 +3,10 @@
 Last updated: 2026-11-04
 
 ## Current focus
-**Grid Level Engine — Round 1 Source/Test prepared; awaiting user MetaEditor validation.** Design decisions and Edge Contracts are documented in `Docs/EAs/Grid/Phases/phase-grid-level-engine-design.md` and `Docs/EAs/Grid/Phases/phase-grid-level-engine-implementation-round-1.md`.
+**Grid Level Engine — Round 1 completed and user-verified.** The next Grid phase has not been started; await explicit scope/approval.
 
 ## Current phase
-**Grid Level Engine — Round 1 implementation prepared (2026-11-04); Compile/Runtime pending.**
+**Grid Level Engine — Round 1: Completed (user-reported full 11/11 Grid Regression Tests passed in MetaEditor/MT5, 2026-11-04).**
 
 ### Design decisions confirmed
 - Two-sided Grid Levels from actual Fill Price (Anchor) + Grid Step; Anchor is separate and supports Re-entry, excluded from ordinary LevelCount.
@@ -30,10 +30,9 @@ Last updated: 2026-11-04
 - Existing production Grid EA and Trade API integration remain out of scope.
 
 ### Validation
-- User reported 10 existing Grid Regression Tests passed on 2026-11-03 before this Round 1 implementation.
-- Round 1 source/test files have NOT yet been compiled or run by the user. Do not claim MetaEditor/MT5 pass.
-- `git diff --check` and lightweight delimiter checks passed in repository; this is not a substitute for MetaEditor compilation.
-- Next: user compiles/runs `test_grid_level_engine.mq5`, `test_grid_persistence.mq5`, then the full 11-test Grid regression suite (10 existing regression tests plus the new Grid Level Engine test).
+- Baseline: user reported all 10 existing Grid Regression Tests passed on 2026-11-03 before this Round 1 implementation.
+- **Final validation: user reported on 2026-11-04 that compilation and all 11 Grid Regression Tests passed in MetaEditor/MT5.** This is user-reported validation; the assistant did not independently run MetaEditor/MT5.
+- Round 1 is complete. The result validates the Pure Grid Level Engine and its covered persistence/type contracts; it does not validate production EA event-handler integration, live multi-level order execution, or the full Grid V1 system.
 
 Previous completed implementation phase: Grid Order Execution — Demo Integration Test (user-reported FINAL PASS, 2026-11-02). Earlier phase: **Grid Order Execution Adapter — Round 1: Completed (user-reported 10/10 MetaEditor/MT5 tests passed, 2026-10-31).** See `Docs/EAs/Grid/Phases/phase-grid-order-execution.md`.
 

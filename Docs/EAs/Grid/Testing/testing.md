@@ -232,7 +232,7 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
-## Grid Level Engine — Round 1 Test Plan (Compile/Runtime Pending)
+## Grid Level Engine — Round 1 Test Plan (ผ่านตามผลผู้ใช้รายงาน 2026-11-04)
 
 Design Specification: [phase-grid-level-engine-design.md](../Phases/phase-grid-level-engine-design.md)
 
@@ -250,7 +250,9 @@ Test EA ที่เตรียมไว้: `Experts/TGK/Tests/Grids/test_grid
 - TP -> `WAIT_RETURN`; SL/Manual/Other close ใช้ Current Price กำหนด State
 - Anchor TP/Re-entry และการแยก State ของแต่ละ Level
 
-**สถานะ:** Round 1 ปรับ Test EA และเพิ่ม Persistence test สำหรับ `WAIT_ACTIVATION` แล้ว รายละเอียด Edge Contracts อยู่ใน [Implementation Round 1](../Phases/phase-grid-level-engine-implementation-round-1.md) แต่ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5
+**ผลการทดสอบ (ผู้ใช้รายงาน 2026-11-04): PASS** — ผู้ใช้ Compile ใหม่และรัน Grid Regression Tests ครบทั้ง 11 ไฟล์ใน MetaEditor/MT5 ผ่านทั้งหมด รวม `test_grid_level_engine.mq5` ซึ่งเป็น Test ใหม่ของ Round 1 รายละเอียด Edge Contracts อยู่ใน [Implementation Round 1](../Phases/phase-grid-level-engine-implementation-round-1.md)
+
+ผลนี้เป็นการยืนยันจากผู้ใช้ ไม่ใช่การรัน MetaEditor/MT5 โดย Assistant และยังไม่ครอบคลุม Production EA Event Handler หรือ Live Grid V1 Integration
 
 ## นโยบาย Regression Test
 
