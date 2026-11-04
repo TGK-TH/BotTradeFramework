@@ -19,7 +19,8 @@ Grid เป็น EA หนึ่งตัวใน BotTradeFramework ไม่�
 - [Phase: Grid Lifecycle Integration](Phases/phase-grid-lifecycle-integration.md)
 - [Phase: Grid Order Execution](Phases/phase-grid-order-execution.md)
 - [Phase: Grid Order Execution — Demo Integration Test](Phases/phase-grid-order-execution-demo-integration.md)
-- [Grid Level Engine — Design Specification](Phases/phase-grid-level-engine-design.md) — Design ที่ตกลงแล้วและ Test Cases ก่อนเริ่ม Implementation
+- [Grid Level Engine — Design Specification](Phases/phase-grid-level-engine-design.md) — Design ที่ตกลงแล้ว
+- [Grid Level Engine — Implementation Round 1](Phases/phase-grid-level-engine-implementation-round-1.md) — Source/Test ที่เตรียมแล้ว รอ Compile/Run ใน MT5
 
 ## ข้อกำหนด Grid V1 ที่ตกลงไว้ แต่ยังไม่เท่ากับการพัฒนาเสร็จ
 

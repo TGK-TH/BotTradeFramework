@@ -68,6 +68,10 @@ int OnInit()
     "LEVEL_WAIT_RETURN state",
     (int)TGK_GRID_LEVEL_WAIT_RETURN,
     2);
+  Tests.AssertEqualInt(
+    "LEVEL_WAIT_ACTIVATION state",
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION,
+    3);
   Tests.EndTest();
 
   Tests.BeginTest("Grid instance data fields retain assigned values");

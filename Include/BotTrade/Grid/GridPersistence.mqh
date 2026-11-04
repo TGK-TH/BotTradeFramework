@@ -211,7 +211,7 @@ public:
   {
     if(m_prefix == "" || level_index < 0 ||
        level_state < TGK_GRID_LEVEL_READY ||
-       level_state > TGK_GRID_LEVEL_WAIT_RETURN)
+       level_state > TGK_GRID_LEVEL_WAIT_ACTIVATION)
       return false;
 
     if(!WriteValue(StringFormat("lv.%d", level_index), (double)level_state))
@@ -229,7 +229,7 @@ public:
       return false;
 
     if((int)value < TGK_GRID_LEVEL_READY ||
-       (int)value > TGK_GRID_LEVEL_WAIT_RETURN)
+       (int)value > TGK_GRID_LEVEL_WAIT_ACTIVATION)
       return false;
 
     level_state = (ENUM_TGK_GRID_LEVEL_STATE)(int)value;

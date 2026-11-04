@@ -23,8 +23,9 @@
 
 | ไฟล์ | สิ่งที่ทดสอบ | ผลที่ผู้ใช้รายงาน |
 |---|---|---|
-| `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | ผ่าน |
-| `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | ผ่าน |
+| `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | PASS ก่อนเพิ่ม WAIT_ACTIVATION; รอ Regression ใหม่ |
+| `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS ก่อนเพิ่ม WAIT_ACTIVATION; รอ Regression ใหม่ |
+| `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | รอผู้ใช้ Compile/Run |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -231,7 +232,7 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
-## Grid Level Engine — Design/Test Plan (Implementation Pending)
+## Grid Level Engine — Round 1 Test Plan (Compile/Runtime Pending)
 
 Design Specification: [phase-grid-level-engine-design.md](../Phases/phase-grid-level-engine-design.md)
 
@@ -249,7 +250,7 @@ Test EA ที่เตรียมไว้: `Experts/TGK/Tests/Grids/test_grid
 - TP -> `WAIT_RETURN`; SL/Manual/Other close ใช้ Current Price กำหนด State
 - Anchor TP/Re-entry และการแยก State ของแต่ละ Level
 
-**สถานะ:** เป็น Design/Test Plan เท่านั้น Prototype ปัจจุบันยังไม่ตรง Design ใหม่ และผู้ใช้ยังไม่ได้ Compile/Run Test EA นี้ รายละเอียด Edge Cases ที่ยังต้องล็อกก่อน Implementation ได้แก่ exact touch/equality, anti-duplicate, retry/reconciliation handoff และ partial/multiple Positions ต่อ Level
+**สถานะ:** Round 1 ปรับ Test EA และเพิ่ม Persistence test สำหรับ `WAIT_ACTIVATION` แล้ว รายละเอียด Edge Contracts อยู่ใน [Implementation Round 1](../Phases/phase-grid-level-engine-implementation-round-1.md) แต่ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5
 
 ## นโยบาย Regression Test
 

@@ -169,6 +169,9 @@ int OnInit()
   Tests.AssertTrue(
     "save WAIT_RETURN level",
     Persistence.SaveLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
+  Tests.AssertTrue(
+    "save WAIT_ACTIVATION level",
+    Persistence.SaveLevelState(3, TGK_GRID_LEVEL_WAIT_ACTIVATION));
 
   ENUM_TGK_GRID_LEVEL_STATE level_state = TGK_GRID_LEVEL_READY;
   Tests.AssertTrue(
@@ -192,6 +195,13 @@ int OnInit()
     "WAIT_RETURN value",
     (int)level_state,
     (int)TGK_GRID_LEVEL_WAIT_RETURN);
+  Tests.AssertTrue(
+    "restore WAIT_ACTIVATION level",
+    Persistence.RestoreLevelState(3, level_state));
+  Tests.AssertEqualInt(
+    "WAIT_ACTIVATION value",
+    (int)level_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
   Tests.AssertFalse(
     "missing level rejected",
     Persistence.RestoreLevelState(9, level_state));

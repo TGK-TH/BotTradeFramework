@@ -1,6 +1,6 @@
 #property strict
 #property version "1.00"
-#property description "Unit tests for pure Grid level calculation and touch/cross selection; no trading."
+#property description "Unit tests for Two-sided Grid levels, state transitions and candidate selection; no trading."
 
 #include <BotTrade/Testing/TestRunner.mqh>
 #include <BotTrade/Grid/GridLevelEngine.mqh>
@@ -11,281 +11,402 @@ int OnInit()
 {
   Tests.BeginSuite("TGK Grid Level Engine");
 
-  Tests.BeginTest("BUY levels are calculated below the actual Anchor");
-  CTGKGridLevelEngine buy;
-  Tests.AssertTrue(
-    "valid BUY configuration initializes",
-    buy.Initialize(
-      TGK_GRID_MODE_BUY,
-      2650.25,
-      2.5,
-      2630.0,
-      2660.0,
-      5));
-  double price = 0.0;
-  Tests.AssertTrue("BUY level 0 exists", buy.GetLevelPrice(0, price));
-  Tests.AssertEqualDouble("BUY level 0", price, 2647.75, 0.000001);
-  Tests.AssertTrue("BUY level 1 exists", buy.GetLevelPrice(1, price));
-  Tests.AssertEqualDouble("BUY level 1", price, 2645.25, 0.000001);
-  Tests.AssertTrue("BUY level 4 exists", buy.GetLevelPrice(4, price));
-  Tests.AssertEqualDouble("BUY level 4", price, 2637.75, 0.000001);
-  Tests.EndTest();
-
-  Tests.BeginTest("SELL levels are calculated above the actual Anchor");
-  CTGKGridLevelEngine sell;
-  Tests.AssertTrue(
-    "valid SELL configuration initializes",
-    sell.Initialize(
-      TGK_GRID_MODE_SELL,
-      2650.25,
-      2.5,
-      2640.0,
-      2660.0,
-      5));
-  Tests.AssertTrue("SELL level 0 exists", sell.GetLevelPrice(0, price));
-  Tests.AssertEqualDouble("SELL level 0", price, 2652.75, 0.000001);
-  Tests.AssertTrue("SELL level 1 exists", sell.GetLevelPrice(1, price));
-  Tests.AssertEqualDouble("SELL level 1", price, 2655.25, 0.000001);
-  Tests.EndTest();
-
-  Tests.BeginTest("Bounds are hard filters and never shift calculated levels");
+  Tests.BeginTest("Two-sided levels use Anchor and Step with hard Bounds");
   CTGKGridLevelEngine bounded;
   Tests.AssertTrue(
-    "configuration with bounds initializes",
+    "Two-sided configuration initializes",
     bounded.Initialize(
       TGK_GRID_MODE_BUY,
-      2650.0,
-      2.0,
-      2646.0,
-      2654.0,
-      5));
-  Tests.AssertTrue("level exactly at lower bound is included", bounded.GetLevelPrice(1, price));
-  Tests.AssertEqualDouble("exact lower bound", price, 2646.0, 0.000001);
-  Tests.AssertFalse("level below lower bound is excluded", bounded.GetLevelPrice(2, price));
+      4000.0,
+      5.0,
+      3992.0,
+      4012.0,
+      3,
+      3999.0,
+      4000.0));
+  Tests.AssertEqualInt("three ordinary levels fit inside Bounds", bounded.LevelCount(), 3);
+
+  double price = 0.0;
+  Tests.AssertTrue("lowest level exists", bounded.GetLevelPrice(0, price));
+  Tests.AssertEqualDouble("lowest level is 3995", price, 3995.0, 0.000001);
+  Tests.AssertTrue("middle level exists", bounded.GetLevelPrice(1, price));
+  Tests.AssertEqualDouble("middle level is 4005", price, 4005.0, 0.000001);
+  Tests.AssertTrue("highest level exists", bounded.GetLevelPrice(2, price));
+  Tests.AssertEqualDouble("highest level is 4010", price, 4010.0, 0.000001);
+  Tests.AssertFalse("Anchor is not duplicated as a Grid Level", bounded.GetLevelPrice(3, price));
   Tests.EndTest();
 
-  Tests.BeginTest("Invalid configuration and level indexes are rejected");
+  Tests.BeginTest("Initial states use Current Price and Anchor is ACTIVE");
+  CTGKGridLevelEngine buy_initial;
+  Tests.AssertTrue(
+    "BUY initializes",
+    buy_initial.Initialize(
+      TGK_GRID_MODE_BUY,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      3999.0,
+      4000.0));
+  ENUM_TGK_GRID_LEVEL_STATE state = TGK_GRID_LEVEL_READY;
+  Tests.AssertTrue("BUY lower level state available", buy_initial.GetLevelState(0, state));
+  Tests.AssertEqualInt("BUY lower level starts READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertTrue("BUY upper level state available", buy_initial.GetLevelState(2, state));
+  Tests.AssertEqualInt("BUY upper level starts WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertEqualInt(
+    "BUY Anchor starts ACTIVE",
+    (int)buy_initial.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  CTGKGridLevelEngine sell_initial;
+  Tests.AssertTrue(
+    "SELL initializes",
+    sell_initial.Initialize(
+      TGK_GRID_MODE_SELL,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      4000.0,
+      4001.0));
+  Tests.AssertTrue("SELL lower level state available", sell_initial.GetLevelState(0, state));
+  Tests.AssertEqualInt("SELL lower level starts WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertTrue("SELL upper level state available", sell_initial.GetLevelState(2, state));
+  Tests.AssertEqualInt("SELL upper level starts READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("BUY WAIT_ACTIVATION becomes READY only on upward crossing");
+  CTGKGridLevelEngine buy_activation;
+  buy_activation.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    4004.0,
+    4005.0);
+  bool is_anchor = false;
+  int selected = -1;
+  double selected_price = 0.0;
+  Tests.AssertFalse(
+    "upward activation does not create a BUY entry",
+    buy_activation.UpdatePrice(
+      4003.0,
+      4004.0,
+      4004.0,
+      4005.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertTrue("BUY level state readable after activation", buy_activation.GetLevelState(2, state));
+  Tests.AssertEqualInt("BUY upper level becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("SELL WAIT_ACTIVATION becomes READY only on downward crossing");
+  CTGKGridLevelEngine sell_activation;
+  sell_activation.Initialize(
+    TGK_GRID_MODE_SELL,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    3995.0,
+    3996.0);
+  Tests.AssertFalse(
+    "downward activation does not create a SELL entry",
+    sell_activation.UpdatePrice(
+      3996.0,
+      3997.0,
+      3995.0,
+      3996.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertTrue("SELL lower level state readable", sell_activation.GetLevelState(1, state));
+  Tests.AssertEqualInt("SELL lower level becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("BUY selects the lowest crossed READY level");
+  CTGKGridLevelEngine buy_selection;
+  buy_selection.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    4010.0,
+    4011.0);
+  Tests.AssertTrue("mark an unselected level WAIT_RETURN", buy_selection.SetLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
+  Tests.AssertTrue(
+    "downward gap returns one candidate",
+    buy_selection.UpdatePrice(
+      4010.0,
+      4011.0,
+      3989.0,
+      3990.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertFalse("selected candidate is not Anchor", is_anchor);
+  Tests.AssertEqualInt("candidate index is lowest-price level", selected, 0);
+  Tests.AssertEqualDouble("BUY selects 3990", selected_price, 3990.0, 0.000001);
+  Tests.AssertTrue("unselected higher level state readable", buy_selection.GetLevelState(1, state));
+  Tests.AssertEqualInt("unselected crossed BUY level becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertTrue("unselected WAIT_RETURN state readable", buy_selection.GetLevelState(2, state));
+  Tests.AssertEqualInt("unselected crossed WAIT_RETURN becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.EndTest();
+
+  Tests.BeginTest("SELL selects the highest crossed READY level");
+  CTGKGridLevelEngine sell_selection;
+  sell_selection.Initialize(
+    TGK_GRID_MODE_SELL,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    3989.0,
+    3990.0);
+  Tests.AssertTrue(
+    "upward gap returns one candidate",
+    sell_selection.UpdatePrice(
+      3989.0,
+      3990.0,
+      4010.0,
+      4011.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertFalse("selected candidate is not Anchor", is_anchor);
+  Tests.AssertEqualInt("candidate index is highest-price level", selected, 3);
+  Tests.AssertEqualDouble("SELL selects 4010", selected_price, 4010.0, 0.000001);
+  Tests.AssertTrue("unselected lower level state readable", sell_selection.GetLevelState(1, state));
+  Tests.AssertEqualInt("unselected crossed SELL level becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.EndTest();
+
+  Tests.BeginTest("WAIT_RETURN can be selected and ACTIVE cannot");
+  CTGKGridLevelEngine reentry;
+  reentry.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    4010.0,
+    4011.0);
+  Tests.AssertTrue("set level WAIT_RETURN", reentry.SetLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
+  Tests.AssertTrue(
+    "WAIT_RETURN is eligible for re-entry",
+    reentry.UpdatePrice(
+      4005.0,
+      4006.0,
+      4004.0,
+      4005.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertEqualInt("WAIT_RETURN level selected", selected, 2);
+  Tests.AssertTrue("set another level ACTIVE", reentry.SetLevelState(0, TGK_GRID_LEVEL_ACTIVE));
+  Tests.AssertTrue("disable lower READY level", reentry.SetLevelState(1, TGK_GRID_LEVEL_WAIT_ACTIVATION));
+  Tests.AssertTrue("disable upper READY level", reentry.SetLevelState(3, TGK_GRID_LEVEL_WAIT_ACTIVATION));
+  Tests.AssertFalse(
+    "ACTIVE level is not selected",
+    reentry.UpdatePrice(
+      3995.0,
+      3996.0,
+      3994.0,
+      3995.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.EndTest();
+
+  Tests.BeginTest("Anchor is a separate candidate and supports re-entry");
+  CTGKGridLevelEngine anchor;
+  anchor.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    4005.0,
+    4006.0);
+  Tests.AssertTrue(
+    "close Anchor with TP",
+    anchor.RecordPositionClosed(
+      true,
+      -1,
+      true,
+      4004.0,
+      4005.0));
+  Tests.AssertEqualInt(
+    "Anchor becomes WAIT_RETURN",
+    (int)anchor.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_RETURN);
+  Tests.AssertTrue(
+    "Anchor return creates candidate",
+    anchor.UpdatePrice(
+      4001.0,
+      4002.0,
+      3999.0,
+      4000.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertTrue("candidate identifies Anchor", is_anchor);
+  Tests.AssertEqualDouble("Anchor candidate price", selected_price, 4000.0, 0.000001);
+  Tests.AssertTrue("confirm Anchor entry", anchor.RecordEntryConfirmed(true, -1));
+  Tests.AssertEqualInt(
+    "confirmed Anchor becomes ACTIVE",
+    (int)anchor.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.EndTest();
+
+  Tests.BeginTest("TP and non-TP close outcomes use Current Price");
+  CTGKGridLevelEngine close_states;
+  close_states.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    3999.0,
+    4000.0);
+  Tests.AssertTrue(
+    "close lower level by TP above Entry",
+    close_states.RecordPositionClosed(
+      false,
+      0,
+      true,
+      4000.0,
+      4001.0));
+  Tests.AssertTrue("read lower level after TP", close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("TP below current BUY price becomes WAIT_RETURN", (int)state, (int)TGK_GRID_LEVEL_WAIT_RETURN);
+
+  Tests.AssertTrue(
+    "close lower level by SL below Entry",
+    close_states.RecordPositionClosed(
+      false,
+      0,
+      false,
+      3989.0,
+      3990.0));
+  Tests.AssertTrue("read lower level after SL", close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("non-TP below current BUY price becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  Tests.AssertTrue(
+    "close lower level by manual close above Entry",
+    close_states.RecordPositionClosed(
+      false,
+      0,
+      false,
+      3995.0,
+      3996.0));
+  Tests.AssertTrue("read lower level after manual close", close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("non-TP above current BUY price becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("Failed candidate is re-armed from Current Price");
+  CTGKGridLevelEngine retry;
+  retry.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3990.0,
+    4010.0,
+    4,
+    3994.0,
+    3995.0);
+  Tests.AssertTrue(
+    "failed lower candidate is recorded",
+    retry.RecordEntryFailed(
+      false,
+      0,
+      3989.0,
+      3990.0));
+  Tests.AssertTrue("failed lower level state readable", retry.GetLevelState(0, state));
+  Tests.AssertEqualInt("failed BUY level now above price waits activation", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.EndTest();
+
+  Tests.BeginTest("Touch equality triggers once and stationary price does not retrigger");
+  CTGKGridLevelEngine equality;
+  equality.Initialize(
+    TGK_GRID_MODE_BUY,
+    4005.0,
+    5.0,
+    3995.0,
+    4015.0,
+    4,
+    4004.0,
+    4005.0);
+  Tests.AssertTrue(
+    "current Ask exactly at READY level triggers",
+    equality.UpdatePrice(
+      4000.0,
+      4001.0,
+      3999.0,
+      4000.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.AssertFalse(
+    "same price does not retrigger on next check",
+    equality.UpdatePrice(
+      3999.0,
+      4000.0,
+      3999.0,
+      4000.0,
+      is_anchor,
+      selected,
+      selected_price));
+  Tests.EndTest();
+
+  Tests.BeginTest("Invalid configuration and invalid level indexes are rejected");
   CTGKGridLevelEngine invalid;
   Tests.AssertFalse(
     "zero Anchor is rejected",
     invalid.Initialize(
       TGK_GRID_MODE_BUY,
       0.0,
-      2.0,
-      2600.0,
-      2700.0,
-      5));
+      5.0,
+      3900.0,
+      4100.0,
+      40,
+      3999.0,
+      4000.0));
   Tests.AssertFalse(
-    "zero GridStep is rejected",
+    "zero Step is rejected",
     invalid.Initialize(
       TGK_GRID_MODE_BUY,
-      2650.0,
+      4000.0,
       0.0,
-      2600.0,
-      2700.0,
-      5));
+      3900.0,
+      4100.0,
+      40,
+      3999.0,
+      4000.0));
   Tests.AssertFalse(
-    "reversed Bounds are rejected",
+    "mismatched total level_count is rejected",
     invalid.Initialize(
       TGK_GRID_MODE_BUY,
-      2650.0,
-      2.0,
-      2700.0,
-      2600.0,
-      5));
-  Tests.AssertFalse(
-    "zero level count is rejected",
-    invalid.Initialize(
-      TGK_GRID_MODE_BUY,
-      2650.0,
-      2.0,
-      2600.0,
-      2700.0,
-      0));
-  Tests.AssertFalse("negative index is rejected", buy.GetLevelPrice(-1, price));
-  Tests.AssertFalse("index past configured count is rejected", buy.GetLevelPrice(5, price));
-  Tests.EndTest();
-
-  Tests.BeginTest("BUY uses Ask and detects touch or downward crossing");
-  CTGKGridLevelEngine buy_touch;
-  buy_touch.Initialize(
-    TGK_GRID_MODE_BUY,
-    2650.0,
-    2.0,
-    2640.0,
-    2660.0,
-    5);
-  int selected = -1;
-  double selected_price = 0.0;
-  Tests.AssertTrue(
-    "Ask touching level selects it",
-    buy_touch.FindEntryLevel(
-      2648.5,
-      2648.0,
-      2648.0,
-      2647.9,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("selected BUY level", selected, 0);
-  Tests.AssertEqualDouble("selected BUY price", selected_price, 2648.0, 0.000001);
-
-  selected = -1;
-  Tests.AssertTrue(
-    "Ask crossing downward selects level",
-    buy_touch.FindEntryLevel(
-      2648.5,
-      2648.5,
-      2647.5,
-      2647.5,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("crossed BUY level", selected, 0);
-  Tests.EndTest();
-
-  Tests.BeginTest("SELL uses Bid and detects touch or upward crossing");
-  CTGKGridLevelEngine sell_touch;
-  sell_touch.Initialize(
-    TGK_GRID_MODE_SELL,
-    2650.0,
-    2.0,
-    2640.0,
-    2660.0,
-    5);
-  selected = -1;
-  Tests.AssertTrue(
-    "Bid touching level selects it",
-    sell_touch.FindEntryLevel(
-      2651.5,
-      2652.0,
-      2652.0,
-      2652.1,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("selected SELL level", selected, 0);
-  Tests.AssertEqualDouble("selected SELL price", selected_price, 2652.0, 0.000001);
-
-  selected = -1;
-  Tests.AssertTrue(
-    "Bid crossing upward selects level",
-    sell_touch.FindEntryLevel(
-      2651.5,
-      2651.5,
-      2652.5,
-      2652.5,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("crossed SELL level", selected, 0);
-  Tests.EndTest();
-
-  Tests.BeginTest("One price check selects only the first crossed eligible level");
-  CTGKGridLevelEngine multi;
-  multi.Initialize(
-    TGK_GRID_MODE_BUY,
-    2650.0,
-    2.0,
-    2640.0,
-    2660.0,
-    5);
-  selected = -1;
-  Tests.AssertTrue(
-    "large downward move selects one level",
-    multi.FindEntryLevel(
-      2650.5,
-      2650.5,
-      2643.5,
-      2643.5,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("nearest crossed level from previous price", selected, 0);
-  Tests.AssertEqualDouble("only first level is selected", selected_price, 2648.0, 0.000001);
-  Tests.EndTest();
-
-  Tests.BeginTest("Bounds exclude entries and price checks without a crossing select nothing");
-  CTGKGridLevelEngine filtered;
-  filtered.Initialize(
-    TGK_GRID_MODE_BUY,
-    2650.0,
-    2.0,
-    2649.0,
-    2660.0,
-    5);
-  selected = -1;
-  Tests.AssertFalse(
-    "out-of-bounds calculated level is not selectable",
-    filtered.FindEntryLevel(
-      2649.0,
-      2649.0,
-      2647.5,
-      2647.5,
-      selected,
-      selected_price));
-  Tests.AssertEqualInt("no selection leaves index sentinel", selected, -1);
-
-  Tests.AssertFalse(
-    "no touch or crossing returns false",
-    buy_touch.FindEntryLevel(
-      2649.0,
-      2649.0,
-      2648.5,
-      2648.5,
-      selected,
-      selected_price));
-  Tests.EndTest();
-
-  Tests.BeginTest("Non-READY levels cannot be selected again");
-  CTGKGridLevelEngine states;
-  states.Initialize(
-    TGK_GRID_MODE_BUY,
-    2650.0,
-    2.0,
-    2640.0,
-    2660.0,
-    5);
-  Tests.AssertTrue(
-    "mark level ACTIVE",
-    states.SetLevelState(0, TGK_GRID_LEVEL_ACTIVE));
-  selected = -1;
-  Tests.AssertFalse(
-    "ACTIVE level is not selected again",
-    states.FindEntryLevel(
-      2648.5,
-      2648.5,
-      2647.5,
-      2647.5,
-      selected,
-      selected_price));
-  Tests.AssertTrue(
-    "mark level WAIT_RETURN",
-    states.SetLevelState(0, TGK_GRID_LEVEL_WAIT_RETURN));
-  Tests.AssertFalse(
-    "WAIT_RETURN level is not selected as a new entry",
-    states.FindEntryLevel(
-      2648.5,
-      2648.5,
-      2647.5,
-      2647.5,
-      selected,
-      selected_price));
-  Tests.AssertTrue(
-    "level can become READY after return handling",
-    states.SetLevelState(0, TGK_GRID_LEVEL_READY));
-  Tests.AssertTrue(
-    "READY level can be selected again",
-    states.FindEntryLevel(
-      2648.5,
-      2648.5,
-      2647.5,
-      2647.5,
-      selected,
-      selected_price));
-  Tests.EndTest();
-
-  Tests.BeginTest("Invalid state updates are rejected");
-  Tests.AssertFalse("negative state index is rejected", states.SetLevelState(-1, TGK_GRID_LEVEL_ACTIVE));
-  Tests.AssertFalse("state index past count is rejected", states.SetLevelState(5, TGK_GRID_LEVEL_ACTIVE));
-  Tests.AssertFalse("invalid state value is rejected", states.SetLevelState(0, (ENUM_TGK_GRID_LEVEL_STATE)99));
-  ENUM_TGK_GRID_LEVEL_STATE level_state = TGK_GRID_LEVEL_READY;
-  Tests.AssertFalse("state index past count is rejected", states.GetLevelState(5, level_state));
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      5,
+      3999.0,
+      4000.0));
+  Tests.AssertFalse("invalid index is rejected", bounded.GetLevelPrice(-1, price));
+  Tests.AssertFalse("index past count is rejected", bounded.GetLevelPrice(3, price));
+  Tests.AssertFalse("invalid state is rejected", bounded.SetLevelState(0, (ENUM_TGK_GRID_LEVEL_STATE)99));
   Tests.EndTest();
 
   Tests.EndSuite();

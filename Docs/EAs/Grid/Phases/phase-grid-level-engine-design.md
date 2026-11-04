@@ -1,10 +1,10 @@
-# Grid Level Engine — Design Specification (Approved, Implementation Pending)
+# Grid Level Engine — Design Specification (Approved)
 
 อัปเดตล่าสุด: 2026-11-04
 
 ## สถานะ
 
-**Design Agreed — ยังไม่เริ่มแก้ Source Code และยังไม่มีผล Compile/Runtime ของ Grid Level Engine**
+**Design Agreed — Round 1 Source/Test prepared; MetaEditor Compile and Runtime validation pending user run.**
 
 ผู้ใช้ยืนยัน Design และกติกาทั้ง 5 ประเด็นแล้วเมื่อ 2026-11-04 เอกสารนี้เป็นข้อกำหนดสำหรับ Implementation และ Test Cases รอบถัดไป ไม่ใช่หลักฐานว่า Source Code ปัจจุบันรองรับพฤติกรรมเหล่านี้แล้ว
 
@@ -64,12 +64,12 @@ State ของ Level ที่ไม่มี Position อิง Current Price 
 - SELL ใช้ Bid
 
 BUY:
-- Level เหนือ Current Ask เริ่มเป็น `WAIT_ACTIVATION`
+- Level เหนือหรือเท่ากับ Current Ask เริ่มเป็น `WAIT_ACTIVATION`
 - Level ใต้ Current Ask เริ่มเป็น `READY`
 - Anchor เริ่มเป็น `ACTIVE` เมื่อมี Initial Position ที่ Fill Price แล้ว
 
 SELL (กลับด้าน):
-- Level ใต้ Current Bid เริ่มเป็น `WAIT_ACTIVATION`
+- Level ใต้หรือเท่ากับ Current Bid เริ่มเป็น `WAIT_ACTIVATION`
 - Level เหนือ Current Bid เริ่มเป็น `READY`
 - Anchor เริ่มเป็น `ACTIVE` เมื่อมี Initial Position ที่ Fill Price แล้ว
 
@@ -80,7 +80,7 @@ SELL (กลับด้าน):
 - ราคาเคลื่อนขึ้นผ่าน `WAIT_ACTIVATION` -> `READY`
 - ราคาเคลื่อนลงผ่าน `READY` -> เป็น Entry Candidate
 - เมื่อ Order เปิดสำเร็จ -> `ACTIVE`
-- เมื่อ Position ปิดด้วย TP -> `WAIT_RETURN`
+- เมื่อ Position ปิด ให้พิจารณา Current Ask ก่อน: หาก Level อยู่เหนือหรือเท่ากับ Ask -> `WAIT_ACTIVATION`; หาก Level อยู่ใต้ Ask และปิดด้วย TP -> `WAIT_RETURN`; หากปิดด้วยเหตุผลอื่น -> `READY`
 - เมื่อราคากลับลงมาถึง Level ที่เป็น `WAIT_RETURN` -> ส่ง Re-entry Candidate; เมื่อเปิดสำเร็จ -> `ACTIVE`
 - หาก Position ปิดด้วยเหตุผลอื่นที่ไม่ใช่ TP (เช่น SL หรือ Manual Close):
   - Level อยู่เหนือ Current Ask -> `WAIT_ACTIVATION`
@@ -91,7 +91,7 @@ SELL (กลับด้าน):
 - ราคาเคลื่อนลงผ่าน `WAIT_ACTIVATION` -> `READY`
 - ราคาเคลื่อนขึ้นผ่าน `READY` -> เป็น Entry Candidate
 - เมื่อ Order เปิดสำเร็จ -> `ACTIVE`
-- เมื่อ Position ปิดด้วย TP -> `WAIT_RETURN`
+- เมื่อ Position ปิด ให้พิจารณา Current Bid ก่อน: หาก Level อยู่ใต้หรือเท่ากับ Bid -> `WAIT_ACTIVATION`; หาก Level อยู่เหนือ Bid และปิดด้วย TP -> `WAIT_RETURN`; หากปิดด้วยเหตุผลอื่น -> `READY`
 - เมื่อราคากลับขึ้นมาถึง Level ที่เป็น `WAIT_RETURN` -> ส่ง Re-entry Candidate; เมื่อเปิดสำเร็จ -> `ACTIVE`
 - หาก Position ปิดด้วยเหตุผลอื่นที่ไม่ใช่ TP:
   - Level อยู่ใต้ Current Bid -> `WAIT_ACTIVATION`
@@ -136,8 +136,8 @@ SELL (กลับด้าน):
 ## 6. Position Close Outcomes
 
 เมื่อ Runtime/Reconciliation ยืนยันว่า Position ปิดแล้ว:
-- ปิดด้วย TP: เปลี่ยนเป็น `WAIT_RETURN` เพื่อรอราคา Re-entry
-- ปิดด้วยเหตุผลอื่นทั้งหมด (รวม SL, Manual Close และเหตุผลอื่นที่ไม่ใช่ TP): ใช้ Current Price ตัดสิน `WAIT_ACTIVATION` หรือ `READY` ตามกฎของ BUY/SELL ด้านบน
+- ใช้ Current Price ตัดสินก่อนเสมอ: หาก Level อยู่ผิดด้านของตลาด (BUY: Level >= Ask; SELL: Level <= Bid) ให้ `WAIT_ACTIVATION` ไม่ว่าจะปิดด้วยเหตุผลใด
+- หาก Level ยังอยู่ด้าน Re-entry ของตลาด (BUY: Level < Ask; SELL: Level > Bid): ปิดด้วย TP ให้ `WAIT_RETURN`; ปิดด้วยเหตุผลอื่น (SL, Manual Close และอื่น ๆ) ให้ `READY`
 - กรณีปิด Position หลายเหตุผล/หลาย Deal ต้องให้ Integration layer ระบุผลปิดของ Position/Level อย่างชัดเจนก่อนแจ้ง Engine
 
 ## 7. Re-entry และ Anchor

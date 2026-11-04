@@ -1,33 +1,41 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-11-04, Grid Level Engine Design Review is complete and approved by the user; implementation has NOT started.
+As of 2026-11-04, Grid Level Engine Round 1 source and tests have been prepared. MetaEditor/MT5 validation is pending the user.
 
-## Current phase: Grid Level Engine — Design Agreed, Implementation Pending
-- Full specification and agreed test plan: `Docs/EAs/Grid/Phases/phase-grid-level-engine-design.md`.
-- User confirmed all five final design decisions on 2026-11-04:
-  1. Bounds are hard filters; Anchor=4000, Step=5, Bounds=3992..4012 yields Grid Levels 3995, 4005, 4010 only.
-  2. Unselected READY or WAIT_RETURN Levels that are crossed and now lie on the wrong side of Current Price become WAIT_ACTIVATION; ACTIVE remains unchanged.
-  3. If a pending open Candidate has not succeeded and price reaches a better Candidate, the better Candidate may replace it; do not wait indefinitely for the earlier one.
-  4. Non-TP closes (SL, Manual Close, other reasons) set WAIT_ACTIVATION or READY based on Current Price.
-  5. Anchor is a Special Level separate from ordinary Grid Levels, excluded from level_count, with the same State Machine and Re-entry behavior.
-- Two-sided Grid: calculate ordinary levels on both sides of actual Fill Price Anchor using Grid Step. Do not shift levels to Bounds.
-- Initial state uses Current Price, not position relative to Anchor: BUY uses Ask (above=WAIT_ACTIVATION, below=READY); SELL uses Bid (below=WAIT_ACTIVATION, above=READY).
-- BUY: price rises through WAIT_ACTIVATION -> READY; price retraces downward through READY/WAIT_RETURN -> Candidate. Choose lowest eligible price when multiple candidates are crossed in one Price Check.
-- SELL is inverse and chooses highest eligible price.
-- One Candidate maximum per Price Check. Anchor can also be a Candidate according to its state.
-- Successful open must be confirmed by Runtime/Position Reconciliation before state becomes ACTIVE. Engine itself has no Trade API.
-- TP close -> WAIT_RETURN; return to Entry Level produces Re-entry Candidate and becomes ACTIVE only after confirmed open.
-- Current prototype files `Include/BotTrade/Grid/GridLevelEngine.mqh` and `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` are not yet updated to this design and have not been compiled/run by the user.
-- User reported the 10 existing Grid Regression Tests passed on 2026-11-03 before the prototype additions.
+## Current phase: Grid Level Engine — Round 1
 
-## Open edge details before implementation
-- Define exact touch/equality and anti-duplicate semantics.
-- Define retry/reconciliation handoff when price moves through several candidates while an earlier request remains unresolved.
-- Define handling of partial/multiple positions per Level; ACTIVE must persist while any owned position for that Level remains.
-- Persistence/Restart integration is outside the pure Engine scope and needs a later integration phase.
+Design references:
+- `Docs/EAs/Grid/Phases/phase-grid-level-engine-design.md`
+- `Docs/EAs/Grid/Phases/phase-grid-level-engine-implementation-round-1.md`
 
-## Next step
-Review/resolve the edge details and test cases in the Design Specification. Do not edit source or begin implementation until the user explicitly approves.
+## Round 1 changes
+- Rewrote `Include/BotTrade/Grid/GridLevelEngine.mqh` for Two-sided Grid levels sorted ascending by price, with Anchor as a separate Special/Re-entry Level. Caller passes total ordinary `level_count` (both sides, Anchor excluded); Engine independently validates it against Anchor/Step/Bounds.
+- Grid Level count is calculated from Anchor, Step and hard Bounds; Anchor is excluded. Bounds do not shift levels.
+- Initial states use current entry quote: BUY Ask (above/equal WAIT_ACTIVATION, below READY); SELL Bid (below/equal WAIT_ACTIVATION, above READY). Anchor starts ACTIVE for the initial filled position.
+- Appended `TGK_GRID_LEVEL_WAIT_ACTIVATION` to `GridTypes.mqh`, preserving numeric values of READY, ACTIVE, WAIT_RETURN.
+- Updated `GridPersistence.mqh` enum range validation to accept WAIT_ACTIVATION.
+- Engine methods: `UpdatePrice()` (activation + max one best-price candidate), `RecordEntryConfirmed()`, `RecordEntryFailed()`, `RecordPositionClosed()`, plus Anchor/ordinary Level state getters/setters.
+- BUY uses Ask; activation upward, entry downward, selects lowest crossed eligible price. SELL uses Bid; activation downward, entry upward, selects highest crossed eligible price.
+- READY and WAIT_RETURN are eligible; ACTIVE is not. Unselected crossed eligible levels left on the wrong side of current price become WAIT_ACTIVATION.
+- TP/non-TP close outcome is evaluated against current price: if Level is already past the market, WAIT_ACTIVATION; otherwise TP -> WAIT_RETURN, non-TP -> READY.
+- Exact crossing uses strict previous-side and inclusive current-side (half-open): BUY activation prev<level<=current, BUY entry prev>level>=current; SELL inverse. Stationary quote cannot retrigger.
+- Accepted/Placed unresolved requests must not be duplicated. Execution/Reconciliation must resolve outstanding request before retry; better candidates observed while pending must be retained by Runtime/Execution. Pure Engine does not send orders.
+- One logical open Position per Level. Partial close retains ACTIVE until reconciliation finds no Position. Ticket-to-Level mapping is an integration responsibility.
+- Restart persistence integration is outside this Pure Engine round.
+
+## Files changed
+- `Include/BotTrade/Grid/GridLevelEngine.mqh`
+- `Include/BotTrade/Grid/GridTypes.mqh`
+- `Include/BotTrade/Grid/GridPersistence.mqh`
+- `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_persistence.mq5`
+- `Experts/TGK/Tests/Grids/test_grid_types.mq5` (WAIT_ACTIVATION enum numeric contract)
+- Docs: Design Spec, Implementation Round 1 notes, README, architecture, testing guide, PROJECT_STATUS.
+
+## Validation status
+- User-reported baseline: all 10 Grid Regression Tests passed on 2026-11-03 before Round 1 changes.
+- Round 1 MetaEditor compile/runtime has NOT been performed or reported by the user.
+- Next: user compiles/runs `test_grid_level_engine.mq5` and `test_grid_persistence.mq5`, then reruns all 11 Grid regression tests (10 existing plus Grid Level Engine).
 
 ## Workflow
 - Work phase by phase; do not start later phases without explicit approval.
