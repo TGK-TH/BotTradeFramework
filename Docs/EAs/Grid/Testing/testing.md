@@ -232,6 +232,22 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
+## Grid Level Runtime Coordinator — Round 1 (Design Locked; Awaiting Baseline)
+
+เอกสาร Contract และ Test Plan: [phase-grid-level-runtime-coordinator-round-1.md](../Phases/phase-grid-level-runtime-coordinator-round-1.md)
+
+Test EA ที่จะเพิ่ม: Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5
+
+ขอบเขต Test สำคัญ:
+- Serialized Entry Request: หนึ่ง unresolved request ต่อ Instance
+- Deferred Candidate: BUY เก็บราคาต่ำสุด / SELL เก็บราคาสูงสุด และตรวจ Level State ล่าสุดก่อนนำกลับมาใช้
+- Accepted/Placed ไม่เปลี่ยน Level เป็น ACTIVE; ต้องมี Reconciliation ยืนยัน Position ที่ Mapping ตรง Request
+- Position mapping ต้องตรวจ Symbol + Magic + Ticket + Anchor/Level Index + Volume และปฏิเสธ mapping ซ้ำ/ไม่ถูกต้อง
+- Partial Close คง ACTIVE; Full Close ต้องทราบ TP/Non-TP ก่อนเปลี่ยน State
+- Coordinator ไม่มี Trade API หรือ Live Account API
+
+**Implementation Gate:** ก่อนแก้ Source Code ให้ผู้ใช้ Compile/Run Grid Regression Tests ทั้ง 11 ไฟล์ปัจจุบันและยืนยัน PASS ก่อน
+
 ## Grid Level Engine — Round 1 Test Plan (ผ่านตามผลผู้ใช้รายงาน 2026-11-04)
 
 Design Specification: [phase-grid-level-engine-design.md](../Phases/phase-grid-level-engine-design.md)

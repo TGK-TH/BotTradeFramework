@@ -3,10 +3,12 @@
 Last updated: 2026-11-04
 
 ## Current focus
-**Grid Level Engine — Round 1 completed and user-verified.** The next Grid phase has not been started; await explicit scope/approval.
+**Grid Level Runtime Coordinator — Round 1: Contract and Test Design locked; awaiting user-reported 11/11 Regression Baseline before implementation.**
 
 ## Current phase
-**Grid Level Engine — Round 1: Completed (user-reported full 11/11 Grid Regression Tests passed in MetaEditor/MT5, 2026-11-04).**
+**Grid Level Runtime Coordinator — Round 1: Design locked; implementation not started.** The user approved serialized unresolved Entry Requests (one per Instance) with best Deferred Candidate retention, and explicit Position-to-Level Mapping supplied by the Integration Layer. Awaiting a fresh user-reported pass of the current 11 Grid Regression Tests before source changes.
+
+Previous completed phase: **Grid Level Engine — Round 1** (user-reported 11/11 tests passed, 2026-11-04).
 
 ### Design decisions confirmed
 - Two-sided Grid Levels from actual Fill Price (Anchor) + Grid Step; Anchor is separate and supports Re-entry, excluded from ordinary LevelCount.

@@ -83,6 +83,16 @@ Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.
 
 **สถานะ Source/Validation:** Grid Level Engine Round 1 ปรับ `GridLevelEngine.mqh`, `GridTypes.mqh` และ enum validation ใน `GridPersistence.mqh` ตาม Design แล้ว และผู้ใช้ยืนยันว่า Compile และ Grid Regression Tests ครบ 11/11 ผ่านใน MetaEditor/MT5 เมื่อ 2026-11-04 ผลนี้ครอบคลุม Pure Engine และ Test contracts เท่านั้น ไม่ใช่ Production EA Integration
 
+## Grid Level Runtime Coordinator — Round 1 (Design Locked; Awaiting Baseline)
+
+Design Contract: [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
+
+- ผู้ใช้ยืนยันให้หนึ่ง Instance มี Unresolved Entry Request ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้ (BUY ราคาต่ำสุด / SELL ราคาสูงสุด)
+- Position-to-Level Mapping ต้องระบุจาก Integration Layer ด้วย Anchor flag หรือ Level Index; Coordinator ไม่เดา Mapping จากราคา Fill
+- ACTIVE จะเกิดขึ้นเมื่อ Reconciliation ยืนยัน Position ที่ตรงกับ Request และ Mapping เท่านั้น; Accepted/Placed ไม่ใช่หลักฐานว่าเปิด Position แล้ว
+- Partial Close ที่ยังมี Volume เหลือต้องคง ACTIVE; Full Close ต้องมี Close Reason ที่ resolve แล้วก่อนเรียก Engine
+- Phase นี้ยังไม่ส่ง Entry ผ่าน CTrade และไม่เชื่อม Production EA Event Handler
+
 ## ขอบเขตที่ยังไม่เสร็จ
 
 - Grid Runtime Orchestration Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-30
