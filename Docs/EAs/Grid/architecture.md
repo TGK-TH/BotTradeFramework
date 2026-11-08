@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-04
+อัปเดตล่าสุด: 2026-11-07
 
 ## ขอบเขตของเอกสาร
 
@@ -30,6 +30,14 @@ EA / Test EA
    |       +--> Read-only position scan filtered by Symbol + Magic
    |       +--> Close-attempt/reconciliation policy
    |
+   +--> CTGKGridLevelEngine
+   |       +--> Pure Two-sided Level calculation and Candidate selection
+   |
+   +--> CTGKGridLevelRuntimeCoordinator
+   |       +--> Entry Request serialization and Deferred Candidate
+   |       +--> Explicit Position-to-Level reconciliation
+   |       +--> No Trade/Account API
+   |
    +--> CTGKGridOrderExecutionAdapter
    |       +--> Live scan and ticket-specific batch close
    |       +--> Reports aggregate result to Runtime
@@ -57,6 +65,7 @@ MQL5 Test EAs
 |---|---|
 | `Include/BotTrade/Grid/GridTypes.mqh` | ประกาศ Enum และโครงสร้างข้อมูลที่ใช้แทนสถานะของ Grid |
 | `Include/BotTrade/Grid/GridLevelEngine.mqh` | Pure Two-sided Level calculation, Anchor/Level State และ Entry Candidate selection; ไม่เรียก Trade API |
+| `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh` | ประสาน Price Update, Candidate, serialized Entry Request, Deferred Candidate และ explicit Position-to-Level reconciliation; ไม่เรียก Trade/Account API |
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
@@ -83,9 +92,18 @@ Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.
 
 **สถานะ Source/Validation:** Grid Level Engine Round 1 ปรับ `GridLevelEngine.mqh`, `GridTypes.mqh` และ enum validation ใน `GridPersistence.mqh` ตาม Design แล้ว และผู้ใช้ยืนยันว่า Compile และ Grid Regression Tests ครบ 11/11 ผ่านใน MetaEditor/MT5 เมื่อ 2026-11-04 ผลนี้ครอบคลุม Pure Engine และ Test contracts เท่านั้น ไม่ใช่ Production EA Integration
 
-## Grid Level Runtime Coordinator — Round 1 (Design Locked; Awaiting Baseline)
+## Grid Level Runtime Coordinator — Round 1 (Implementation Added; Awaiting MT5 Validation)
 
-Design Contract: [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
+Design Contract and implementation notes: [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
+
+- Source: `GridLevelRuntimeCoordinator.mqh`; Test EA: `test_grid_level_runtime_coordinator.mq5`
+- One offered Candidate at a time, one unresolved Entry Request maximum, and one best Deferred Candidate retained while waiting
+- BUY deferred selection prefers lower price; SELL prefers higher price
+- Accepted Request is not a fill; only a matching Position Snapshot confirms the Candidate and sets ACTIVE
+- Position Snapshot uses explicit Anchor/Level mapping and exact Symbol + Magic identity
+- Initial Anchor Position must be registered through `RegisterInitialAnchorPosition()` before the first snapshot reconciliation
+- Partial close retains ACTIVE; disappearance requires an explicit TP/Non-TP Close Event
+- Source and test have been added, but MetaEditor/MT5 compile/runtime validation is still pending
 
 - ผู้ใช้ยืนยันให้หนึ่ง Instance มี Unresolved Entry Request ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้ (BUY ราคาต่ำสุด / SELL ราคาสูงสุด)
 - Position-to-Level Mapping ต้องระบุจาก Integration Layer ด้วย Anchor flag หรือ Level Index; Coordinator ไม่เดา Mapping จากราคา Fill

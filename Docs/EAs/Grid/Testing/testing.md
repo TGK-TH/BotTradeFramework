@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-04
+อัปเดตล่าสุด: 2026-11-07
 
 ## ก่อนเริ่ม
 
@@ -23,9 +23,10 @@
 
 | ไฟล์ | สิ่งที่ทดสอบ | ผลที่ผู้ใช้รายงาน |
 |---|---|---|
-| `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | PASS ก่อนเพิ่ม WAIT_ACTIVATION; รอ Regression ใหม่ |
-| `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS ก่อนเพิ่ม WAIT_ACTIVATION; รอ Regression ใหม่ |
-| `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | รอผู้ใช้ Compile/Run |
+| `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
+| `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
+| `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
+| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | รอผู้ใช้ Compile/Run |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -232,11 +233,12 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
-## Grid Level Runtime Coordinator — Round 1 (Design Locked; Awaiting Baseline)
+## Grid Level Runtime Coordinator — Round 1 (Implementation Added; Awaiting MT5 Validation)
 
 เอกสาร Contract และ Test Plan: [phase-grid-level-runtime-coordinator-round-1.md](../Phases/phase-grid-level-runtime-coordinator-round-1.md)
 
-Test EA ที่จะเพิ่ม: Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5
+Source: `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh`
+Test EA: `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5`
 
 ขอบเขต Test สำคัญ:
 - Serialized Entry Request: หนึ่ง unresolved request ต่อ Instance
@@ -246,7 +248,9 @@ Test EA ที่จะเพิ่ม: Experts/TGK/Tests/Grids/test_grid_level_
 - Partial Close คง ACTIVE; Full Close ต้องทราบ TP/Non-TP ก่อนเปลี่ยน State
 - Coordinator ไม่มี Trade API หรือ Live Account API
 
-**Implementation Gate:** ก่อนแก้ Source Code ให้ผู้ใช้ Compile/Run Grid Regression Tests ทั้ง 11 ไฟล์ปัจจุบันและยืนยัน PASS ก่อน
+**Baseline:** ผู้ใช้ยืนยันว่า Grid Regression Tests เดิมครบ 11 ไฟล์ผ่านทั้งหมดเมื่อ 2026-11-07 ก่อนเริ่ม Implementation
+
+**Validation Gate:** รอผู้ใช้ Compile/Run Test EA ใหม่และ Regression Tests เดิมทั้ง 11 ไฟล์ใน MetaEditor/MT5; ยังไม่มีผล Compile/Runtime สำหรับ Coordinator ณ วันที่อัปเดตนี้
 
 ## Grid Level Engine — Round 1 Test Plan (ผ่านตามผลผู้ใช้รายงาน 2026-11-04)
 

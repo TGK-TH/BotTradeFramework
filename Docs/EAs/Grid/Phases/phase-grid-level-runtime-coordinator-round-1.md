@@ -2,7 +2,7 @@
 
 อัปเดตล่าสุด: 2026-11-07
 
-**สถานะ: Integration Contract และ Test Design ได้รับการยืนยันแล้ว — รอ Regression Baseline ก่อน Implementation**
+**สถานะ: Implementation Round 1 เพิ่ม Source และ Test EA แล้ว — รอผู้ใช้ Compile/Run Test ใหม่และ Regression Tests ใน MetaEditor/MT5**
 
 ผู้ใช้ยืนยันแนวทางเมื่อ 2026-11-07:
 1. หนึ่ง Grid Instance มี Entry Request ที่ยัง unresolved ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้
@@ -180,13 +180,43 @@ Position ที่ Reconciliation ใช้ยืนยัน Entry ต้อง
 - แก้ไฟล์เดิมเฉพาะเมื่อ Test/Contract พิสูจน์ว่าจำเป็น
 - อัปเดต Architecture, Testing, README, PROJECT_STATUS และ Serena current-phase memory
 
-## 7. Implementation Gate
+## 7. Implementation Round 1 — Source Added (2026-11-07)
 
-ก่อนแก้ Source Code ผู้ใช้ต้อง Compile/Run Grid Regression Baseline ทั้ง 11 Tests ปัจจุบันและยืนยันผลผ่านก่อน หากพบ Fail ให้หยุดและวิเคราะห์ก่อนเริ่ม Implementation
+เพิ่มไฟล์:
+- `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh`
+- `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5`
+
+Implementation ปัจจุบัน:
+- Initialize Engine พร้อม Symbol/Magic identity และเก็บ Previous/Current Bid/Ask
+- Public `UpdatePrice()` รับ 4 Parameters เท่านั้น: `current_bid, current_ask, result, candidate`; Previous Quote เป็น State ภายใน Coordinator และส่งให้ Engine เอง
+- รองรับ `RegisterInitialAnchorPosition()` เพื่อให้ Integration Layer ลงทะเบียน Position แรกที่เปิดจาก Initial Fill ด้วย Anchor mapping (`is_anchor=true, level_index=-1`)
+- ส่ง Candidate จาก Engine เพียงครั้งเดียวต่อการเสนอ; ระหว่างรอ acknowledgement จะไม่ส่ง Candidate เดิมซ้ำ
+- จำกัด unresolved Entry Request หนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดตาม Mode
+- Accepted Request จะยังไม่เปลี่ยน Level เป็น ACTIVE; ต้องรอ Position Snapshot ที่ Symbol/Magic และ Anchor/Level mapping ตรงกัน
+- Terminal no-position/no-order เท่านั้นจึงเรียก RecordEntryFailed สำหรับ Request ที่ Accepted
+- ตรวจ Position Snapshot: Ticket ซ้ำ, Mapping ซ้ำ, Symbol/Magic mismatch, invalid Anchor/Level index และ Volume <= 0
+- Full Close ต้องมี Close Event ที่ mapping ตรงกับ Position เดิมและระบุ TP/Non-TP; Unknown หรือ missing reason ทำให้คืน ERROR
+- Partial Close ที่ยังมี Position mapping เดิมและ Volume > 0 คง ACTIVE
+- ไม่มี CTrade, Position scan หรือ Account API ใน Coordinator
+
+ข้อจำกัด/ข้อควรตรวจใน Compile/Run:
+- Snapshot ต้องเป็นรายการ Position ของ Instance ที่ครบถ้วน และ Close Events ต้องส่งโดย Integration Layer เมื่อ Logical Position หายไปจาก Snapshot
+- Restart persistence ของ unresolved request/deferred candidate ยังอยู่นอก Scope
+- Source/LSP inspection ไม่ใช่ผล MetaEditor compile
+
+## 8. Implementation Gate
+
+ผู้ใช้ยืนยันว่า Regression Baseline เดิมทั้ง 11 Tests ผ่านทั้งหมดเมื่อ 2026-11-07 ก่อน Source implementation
+
+ขั้นต่อไปผู้ใช้ต้อง Compile/Run:
+1. `test_grid_level_runtime_coordinator.mq5`
+2. Grid Regression Tests เดิมทั้ง 11 ไฟล์
+
+หากพบ Compile/Runtime Fail ให้หยุดและแก้ไขก่อนเริ่ม Phase ถัดไป
 
 Assistant ไม่ได้รัน MetaEditor/MT5 เอง; Compile/Runtime acceptance ต้องมาจากผลที่ผู้ใช้รายงาน
 
-## 8. Completion Criteria
+## 9. Completion Criteria
 
 - Coordinator และ Unit Tests compile ผ่าน
 - Test ใหม่และ Regression Tests ทั้งหมดผ่านตามรายการที่ตกลง
