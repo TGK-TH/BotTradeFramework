@@ -3,10 +3,12 @@
 Last updated: 2026-11-09
 
 ## Current focus
-**Grid Level Runtime Coordinator — Round 1 completed; user-reported compile/runtime validation passed 12/12 Tests (2026-11-09).**
+**Grid Entry Execution Adapter — Round 1: Design agreed; implementation not started.** Persistent Mapping will use an append-only per-Instance journal under terminal `MQL5/Files`; identifiers are stored as decimal Strings. Order Comment is human-readable metadata only and is never used by system logic.
 
 ## Current phase
-**Grid Level Runtime Coordinator — Round 1: Completed (User Verified).** User reported on 2026-11-09 that the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5 (12/12 PASS). Assistant did not independently run MetaEditor/MT5. Do not begin the next phase until the user explicitly approves it.
+**Grid Entry Execution Adapter — Round 1: Design agreed; awaiting implementation baseline.** User approved Persistent Mapping separated from the existing `GridPersistence.mqh`. The design contract and test plan are in [phase-grid-entry-execution-adapter-round-1.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md). Before source changes, rerun the 12 Grid Regression Tests listed in that phase document. Implementation has not started; no new source or tests have been added, and no compile/runtime result exists for this phase.
+
+Most recently completed phase: **Grid Level Runtime Coordinator — Round 1: Completed (User Verified 12/12 PASS, 2026-11-09).** The user reported the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5.
 
 Previous completed phase: **Grid Level Engine — Round 1** (user-reported 11/11 tests passed, 2026-11-04).
 
