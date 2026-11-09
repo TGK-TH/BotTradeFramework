@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-07
+อัปเดตล่าสุด: 2026-11-09
 
 ## ก่อนเริ่ม
 
@@ -233,7 +233,7 @@ Test EA นี้แยกจาก EA หลักและส่งคำส�
 
 ผลนี้ยืนยันเส้นทาง Live Scan, ticket-specific `CTrade.PositionClose()` และ Runtime reconciliation ใน Demo Test Scenario เท่านั้น ไม่ใช่การยืนยันว่า Grid V1 ทั้งระบบเสร็จสมบูรณ์
 
-## Grid Level Runtime Coordinator — Round 1 (Implementation Added; Awaiting MT5 Validation)
+## Grid Level Runtime Coordinator — Round 1 (Completed — User Verified 12/12 PASS, 2026-11-09)
 
 เอกสาร Contract และ Test Plan: [phase-grid-level-runtime-coordinator-round-1.md](../Phases/phase-grid-level-runtime-coordinator-round-1.md)
 
@@ -250,7 +250,7 @@ Test EA: `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5`
 
 **Baseline:** ผู้ใช้ยืนยันว่า Grid Regression Tests เดิมครบ 11 ไฟล์ผ่านทั้งหมดเมื่อ 2026-11-07 ก่อนเริ่ม Implementation
 
-**Validation Gate:** รอผู้ใช้ Compile/Run Test EA ใหม่และ Regression Tests เดิมทั้ง 11 ไฟล์ใน MetaEditor/MT5; ยังไม่มีผล Compile/Runtime สำหรับ Coordinator ณ วันที่อัปเดตนี้
+**ผลการทดสอบ (ผู้ใช้รายงาน 2026-11-09): PASS 12/12** — `test_grid_level_runtime_coordinator.mq5` และ Grid Regression Tests เดิมทั้ง 11 ไฟล์ Compile และ Run ผ่านทั้งหมดใน MetaEditor/MT5 ผลนี้เป็นการยืนยันจากผู้ใช้; Assistant ไม่ได้รัน MetaEditor/MT5 เอง
 
 ## Grid Level Engine — Round 1 Test Plan (ผ่านตามผลผู้ใช้รายงาน 2026-11-04)
 

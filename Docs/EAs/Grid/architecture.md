@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-07
+อัปเดตล่าสุด: 2026-11-09
 
 ## ขอบเขตของเอกสาร
 
@@ -92,7 +92,7 @@ Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.
 
 **สถานะ Source/Validation:** Grid Level Engine Round 1 ปรับ `GridLevelEngine.mqh`, `GridTypes.mqh` และ enum validation ใน `GridPersistence.mqh` ตาม Design แล้ว และผู้ใช้ยืนยันว่า Compile และ Grid Regression Tests ครบ 11/11 ผ่านใน MetaEditor/MT5 เมื่อ 2026-11-04 ผลนี้ครอบคลุม Pure Engine และ Test contracts เท่านั้น ไม่ใช่ Production EA Integration
 
-## Grid Level Runtime Coordinator — Round 1 (Implementation Added; Awaiting MT5 Validation)
+## Grid Level Runtime Coordinator — Round 1 (Completed — User Verified 12/12 PASS, 2026-11-09)
 
 Design Contract and implementation notes: [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
 
@@ -103,7 +103,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Position Snapshot uses explicit Anchor/Level mapping and exact Symbol + Magic identity
 - Initial Anchor Position must be registered through `RegisterInitialAnchorPosition()` before the first snapshot reconciliation
 - Partial close retains ACTIVE; disappearance requires an explicit TP/Non-TP Close Event
-- Source and test have been added, but MetaEditor/MT5 compile/runtime validation is still pending
+- ผู้ใช้ยืนยันว่า Coordinator Test EA และ Grid Regression Tests เดิมทั้ง 11 ไฟล์ Compile/Run ผ่านใน MetaEditor/MT5 ครบ 12/12 เมื่อ 2026-11-09 (User-reported; Assistant did not independently run MT5)
 
 - ผู้ใช้ยืนยันให้หนึ่ง Instance มี Unresolved Entry Request ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้ (BUY ราคาต่ำสุด / SELL ราคาสูงสุด)
 - Position-to-Level Mapping ต้องระบุจาก Integration Layer ด้วย Anchor flag หรือ Level Index; Coordinator ไม่เดา Mapping จากราคา Fill
