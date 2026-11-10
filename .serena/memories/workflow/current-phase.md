@@ -3,8 +3,8 @@
 As of 2026-11-09, Grid Level Runtime Coordinator — Round 1 is completed and user-verified: the user reported 12/12 Grid tests passed in MetaEditor/MT5. Assistant did not independently run MT5.
 
 ## Current phase: Grid Entry Execution Adapter — Round 1
-Status: **Design agreed; implementation not started.**
-Design contract/test plan: `Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md`.
+Status: **Implementation in progress; Persistent Journal foundation added; awaiting user Compile/Run.**
+Design contract: `Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md`.
 
 User decisions:
 - Persistent Mapping is the only source of truth for Entry Request / Order / Deal / Position / Logical Level relationships.
@@ -17,7 +17,20 @@ User decisions:
 - One unresolved Entry Request per Instance; no approximate Fill Price inference.
 - Human-readable comments can show BUY/SELL and Anchor/Level labels; comment may be absent, truncated or changed without affecting system logic.
 
-Next step before any source edits: rerun the 12 Grid Regression Tests from the phase document as the implementation baseline. Then implement in test-first order: Mapping journal tests/storage, Entry policy tests, Adapter tests with a no-live-trade seam. Demo Integration is separate and requires explicit user approval. Do not start production EA event-handler integration in this phase.
+## Completed in the current phase (not yet user-verified)
+- Added `Include/BotTrade/Grid/GridEntryMappingStorage.mqh`: per Account/Server/Symbol/Instance journal in MQL5/Files, schema version, sequence, checksum, UTF-8 hex payload, strict replay, incomplete final tail handling, and checked write/flush result.
+- Added `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5`: no-trading tests for identity, append/replay, sequence, large decimal identifier strings, instance isolation, comment opacity, incomplete tail, and malformed complete record.
+- Updated `PROJECT_STATUS.md`, Grid architecture/testing docs, and phase document.
+- `git diff --check` passed after these edits. No MetaEditor/MT5 compile/runtime has been run or reported for the new files.
 
-## Most recently completed phase
-Grid Level Runtime Coordinator — Round 1, user-reported 12/12 PASS on 2026-11-09. The Coordinator remains pure: no CTrade or live Account scan.
+## Remaining work in Round 1
+1. User compiles/runs `test_grid_entry_mapping_storage.mq5` and the 12 Grid Regression Tests.
+2. Fix any compiler/runtime issues reported.
+3. Implement typed mapping payload/state validation and reducer, including conflicting Request/Deal/Position/Logical Target detection and failure-injection tests.
+4. Implement Entry Execution Policy + tests.
+5. Implement CTrade Adapter + no-live-trade seam tests; Intent must persist/flush before Trade API.
+6. Integrate Adapter with Coordinator mapping/reconciliation contract.
+7. Update docs/status and rerun regression; request user Compile/Run confirmation.
+8. Demo Integration is separate and requires explicit user approval. Do not start production EA event-handler integration in this phase.
+
+The generic journal foundation alone does not yet implement full Persistent Mapping semantics, Entry Policy, or trade execution.

@@ -49,6 +49,11 @@ EA / Test EA
    +--> CTGKGridStateMachine
    |       +--> Lifecycle transitions only (no order execution)
    |
+   +--> CTGKGridEntryMappingStorage
+   |       +--> Append-only Journal ใน Terminal MQL5/Files
+   |       +--> Version / Sequence / Checksum / strict Replay
+   |       +--> Opaque payload; no Trade API / no Comment parsing
+   |
    +--> CTGKGridPersistence
            +--> Terminal Global Variables สำหรับ Snapshot
            +--> Terminal Global Variables สำหรับสถานะของแต่ละ Level
@@ -68,6 +73,7 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh` | ประสาน Price Update, Candidate, serialized Entry Request, Deferred Candidate และ explicit Position-to-Level reconciliation; ไม่เรียก Trade/Account API |
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
+| `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay; Payload ยังเป็น Opaque String ไม่ได้ทำ Mapping Reducer หรือ Trade Execution |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |

@@ -1,6 +1,6 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Design ตกลงแล้ว — ยังไม่เริ่มแก้ Source Code**
+สถานะ: **Implementation in progress — Persistent Journal foundation added; ยังไม่ผ่าน Compile/Runtime จากผู้ใช้**
 
 อัปเดตล่าสุด: 2026-11-09
 
@@ -96,7 +96,9 @@ Comment:
 
 ## Test Plan
 
-ไฟล์ Unit Test เป้าหมาย: `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`
+ไฟล์ Unit Test:
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Policy/Adapter (ยังไม่สร้าง)
 
 ### A. Entry Execution Policy
 
@@ -166,6 +168,25 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 6. Review ผลรวม, Docs และ Regression
 7. ขอผู้ใช้ Compile/Run Unit + Regression ใน MetaEditor/MT5
 8. หลัง PASS จึงเสนอ Demo Integration แยกต่างหาก
+
+## ความคืบหน้า Implementation — Persistent Journal Foundation (2026-11-09)
+
+เพิ่ม Source/Test เบื้องต้นแล้ว แต่ยังไม่ถือว่า Storage หรือ Phase นี้เสร็จสมบูรณ์:
+
+- `Include/BotTrade/Grid/GridEntryMappingStorage.mqh`
+  - `CTGKGridEntryMappingStorage` จัดเก็บ Journal แยกตาม Account Login, Server, Symbol และ Instance ID ภายใต้ Terminal `MQL5/Files`; ไม่ใช้ `FILE_COMMON`
+  - ใช้ Append-only Binary File ที่เก็บ Record เป็นบรรทัด ASCII; Payload เข้ารหัส UTF-8 เป็น Hex เพื่อไม่ให้ delimiter/newline ในข้อมูลทำให้ Record แตก
+  - แต่ละ Record มี Schema Version, Sequence, Record Type และ Checksum
+  - `Replay()` ตรวจ Schema, Sequence ต่อเนื่อง, Record Type, Checksum และ Payload encoding; Record สมบูรณ์ที่ผิดรูปแบบทำให้ Replay ล้มเหลว
+  - ยอมละเว้นเฉพาะท้ายไฟล์ที่ไม่มี newline ปิด Record และ `Append()` จะตัด Incomplete Tail ก่อนเขียน Record ใหม่
+  - `Append()` ตรวจผล `FileWriteArray`, `GetLastError()` และ `FileFlush` ก่อนคืนค่า success
+  - Storage รับ Payload เป็น Opaque String; Identifier ใน Payload ต้องเป็น Decimal String ตาม Contract และ Storage ไม่แปลงเป็นตัวเลข
+  - Storage ไม่ Parse หรือใช้ Order Comment ใน Logic ใด ๆ
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5`
+  - ทดสอบ Identity validation, Append/Replay, Sequence, Identifier ที่เกิน (2^{53}), Instance isolation, Comment independence, Incomplete Tail และ Malformed Complete Record
+  - เป็น Test EA ที่ไม่มี Trade Request
+- ขอบเขตที่ยังไม่ทำใน Foundation นี้: Typed Mapping Payload Codec/Reducer ที่ตรวจ Request/Deal/Position/Logical Target conflicts, Failure Injection สำหรับ Write/Flush, Entry Policy, CTrade Adapter และ Coordinator Integration
+- ยังไม่มีผล Compile/Runtime จาก MetaEditor/MT5; ต้องรอผู้ใช้ Compile/Run Test ใหม่และ Regression 12 ไฟล์
 
 ## Acceptance Criteria
 
