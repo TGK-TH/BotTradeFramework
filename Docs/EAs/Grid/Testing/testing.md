@@ -27,7 +27,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
 | `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | PASS (ผู้ใช้ยืนยัน Regression 12/12 เมื่อ 2026-11-09) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | รอผู้ใช้ Compile/Run |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -38,9 +38,9 @@
 
 ผลทั้งหมดข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant
 
-## Grid Entry Mapping Storage — implementation foundation (2026-11-09)
+## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 
-เพิ่ม Test EA `test_grid_entry_mapping_storage.mq5` สำหรับ Append/Replay Journal โดยไม่มี Trade Request:
+เพิ่ม Test EA `test_grid_entry_mapping_storage.mq5` สำหรับ Append/Replay Journal โดยไม่มี Trade Request ผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-11-12: PASS ทั้ง Test ใหม่นี้และ Grid Regression Tests ทั้ง 12 ไฟล์ (รวม 13 Test EAs):
 - Validate Symbol/Instance identity และชื่อไฟล์แยก Instance
 - Append หลาย Record และตรวจ Sequence
 - Round-trip Identifier ที่เกิน (2^{53}) ในรูป Decimal String
@@ -48,7 +48,7 @@
 - Ignore เฉพาะ Incomplete Tail และตัด Tail ก่อน Append ครั้งถัดไป
 - Reject Complete Malformed Record
 
-สถานะ: Source/Test ถูกเพิ่มแล้ว แต่ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5 จึงยังไม่มีผล PASS/FAIL ที่ยืนยันได้ การทดสอบนี้ยังไม่ครอบคลุม Typed Mapping Reducer, Write/Flush Failure Injection, Entry Policy หรือ CTrade Adapter
+สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-12** — Compile ผ่านและ Test EA นี้พร้อม Grid Regression Tests ทั้ง 12 ไฟล์ผ่านใน MetaEditor/MT5 ผลนี้ยังไม่ครอบคลุม Typed Mapping Reducer, Write/Flush Failure Injection, Entry Policy หรือ CTrade Adapter
 
 ## Grid Order Execution Adapter — Round 1 (2026-10-31)
 

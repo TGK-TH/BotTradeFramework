@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-09
+Last updated: 2026-11-12
 
 ## Current focus
-**Grid Entry Execution Adapter — Round 1: Persistent Journal foundation implemented; awaiting user Compile/Run.** Persistent Mapping remains separate from `GridPersistence.mqh`; identifiers are opaque decimal Strings inside journal payloads. Order Comment is human-readable metadata only and is never used by system logic.
+**Grid Entry Execution Adapter — Round 1: Persistent Journal foundation implemented and user-verified.** Persistent Mapping remains separate from `GridPersistence.mqh`; identifiers are opaque decimal Strings inside journal payloads. Order Comment is human-readable metadata only and is never used by system logic.
 
 ## Current phase
-**Grid Entry Execution Adapter — Round 1: Implementation in progress.** User reported that all 12 Grid Regression Tests passed before source changes on 2026-11-09. Added `GridEntryMappingStorage.mqh` and `test_grid_entry_mapping_storage.mq5` as the first test-first implementation slice. The Journal supports per Account/Server/Symbol/Instance files under terminal `MQL5/Files`, versioned/sequenced/checksummed records, strict replay, and incomplete-tail handling. Typed Mapping validation/reducer, failure-injection tests, Entry Policy, CTrade Adapter, and Coordinator integration are not implemented. No MetaEditor compile/runtime result exists yet for the new files. Exact design and progress: [phase-grid-entry-execution-adapter-round-1.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md).
+**Grid Entry Execution Adapter — Round 1: Implementation in progress.** User reported that all 12 Grid Regression Tests passed before source changes on 2026-11-09. Added `GridEntryMappingStorage.mqh` and `test_grid_entry_mapping_storage.mq5` as the first test-first implementation slice. The Journal supports per Account/Server/Symbol/Instance files under terminal `MQL5/Files`, versioned/sequenced/checksummed records, strict replay, and incomplete-tail recovery using a flushed temporary file followed by replacement. The user confirmed on 2026-11-12 that `GridEntryMappingStorage.mqh` compiled and its Unit Test plus all 12 Grid Regression Tests passed in MetaEditor/MT5. Typed Mapping validation/reducer, failure-injection tests, Entry Policy, CTrade Adapter, and Coordinator integration are not implemented. This completes and validates the Persistent Journal foundation slice, not the full Entry Execution Adapter phase. Exact design and progress: [phase-grid-entry-execution-adapter-round-1.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md).
 
 Most recently completed phase: **Grid Level Runtime Coordinator — Round 1: Completed (User Verified 12/12 PASS, 2026-11-09).** The user reported the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5.
 
