@@ -287,6 +287,37 @@ Test EA ที่เตรียมไว้: `Experts/TGK/Tests/Grids/test_grid
 
 ผลนี้เป็นการยืนยันจากผู้ใช้ ไม่ใช่การรัน MetaEditor/MT5 โดย Assistant และยังไม่ครอบคลุม Production EA Event Handler หรือ Live Grid V1 Integration
 
+
+## Persistent Entry Mapping — Typed Reducer และ Snapshot/Rotation Test Contract
+
+Design/Retention Policy: [Grid Entry Execution Adapter — Round 1](../Phases/phase-grid-entry-execution-adapter-round-1.md)
+
+### Typed Mapping Payload & State Reducer (ลำดับถัดไป)
+
+Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`
+
+- ใช้ Record fixtures เท่านั้น ไม่มี Trade Request หรือ CTrade
+- ทดสอบ Payload validation, deterministic replay, Request/Logical Target uniqueness และ unresolved-request limit
+- ทดสอบ Deal association หลาย Deal ต่อ Position Identifier เดียว และตรวจ conflict ของ Request/Deal/Position
+- ทดสอบ Symbol + Magic + Position Identifier + Logical Target validation
+- ทดสอบ Accepted/Placed ที่ยังไม่ถือเป็น Fill, Partial Close และ Full Close หลัง Reconciliation
+- เมื่อ Position ปิดและ Reconciliation ยืนยันแล้ว ต้องลบ Position Mapping แต่คง Grid Level State
+- Comment ต้องไม่ส่งผลต่อ Reducer; Identifier ต้องคงเป็น Decimal String
+- Conflict หรือ Invalid Transition ต้องทำให้ Restore ล้มเหลวอย่างปลอดภัย
+
+### Snapshot + Journal Rotation (หลัง Reducer ผ่าน)
+
+Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` (ชื่อไฟล์รอยืนยันเมื่อเริ่ม Slice)
+
+- Snapshot เก็บ Current State เท่านั้น ไม่สะสม Closed Trade/Deal History
+- เก็บ Level State แม้ไม่มี Position; Prune Level หลัง Mode/Step Reset สำเร็จและไม่มี Position/Request เก่าค้างเท่านั้น
+- Level นอก Bounds ไม่ถูกลบเพียงเพราะอยู่นอก Bounds
+- ทดสอบ 16 MiB Journal Threshold, Sequence Continuity, Restart และ Snapshot Integrity
+- Failure/Crash Injection ครอบคลุม Snapshot Write/Flush/Validation/Commit, Journal Switch และ Old Journal Cleanup
+- ต้อง Recover เป็น State ที่สมบูรณ์ได้ทุก Crash Point และห้ามลบ Generation เก่าก่อน Generation ใหม่ผ่านการตรวจสอบ
+
+ผล Compile/Runtime ของ Test ทั้งสองชุด: ยังไม่เริ่มและยังไม่มีการยืนยันจากผู้ใช้
+
 ## นโยบาย Regression Test
 
 ก่อนเริ่มพัฒนาหรือ Refactor Grid feature ให้ระบุ Regression Tests ที่เกี่ยวข้องและรันก่อนแก้โค้ด หากพฤติกรรมที่กำลังจะเปลี่ยนยังไม่มี Test รองรับ ให้ตกลงและเพิ่ม Test ก่อนหรือเป็นส่วนหนึ่งของงานตามขอบเขตที่อนุมัติ
