@@ -161,7 +161,31 @@ Recovery หลัง Restart:
 - Orphan/Temporary Files ลบได้เมื่อยืนยันแล้วว่า Current Manifest และ Data Set ปัจจุบันผ่าน Validation
 - หาก Cleanup ล้มเหลว ให้แจ้ง Recovery/Maintenance Error; ห้ามลบไฟล์อื่นเพื่อพยายามบังคับให้เหลือจำนวนไฟล์ตาม Policy
 
-ข้อที่ยังต้องกำหนดก่อน Implementation: Hard Limit ของ Snapshot Size และจำนวน Records/Levels/Positions/Unresolved Requests ที่ยอมรับได้ ต้องเป็นค่าคงที่ที่ Validate ได้และทดสอบ Boundary ได้; ห้ามปล่อยให้ Snapshot โตโดยไม่มีขอบเขต และห้ามเริ่ม Rotation หาก Snapshot ใหม่เกิน Limit
+#### Capacity Limits และ Overflow Policy — ข้อตกลงที่ยืนยันแล้ว (2026-11-14)
+
+| รายการ | Hard Limit | ขอบเขต |
+|---|---:|---|
+| Grid Levels | 1,000 | ต่อ Grid Instance; คำนวณจำนวนจริงจาก Bounds, Grid Step และ Anchor โดยนับ Anchor เป็นหนึ่ง Level และรวมทั้งสองฝั่ง |
+| Position Mappings | 1,000 | ต่อ Grid Instance; หนึ่ง Logical Grid Level มี Position Mapping ได้ไม่เกินหนึ่งรายการ |
+| Deal Associations | 100 | ต่อ Request; รองรับ Partial Fills หลาย Deals |
+| Unresolved Requests | 1 | ต่อ Grid Instance |
+| Snapshot File | 16 MiB | ขนาดไฟล์สูงสุด |
+| Active Journal Segment | 16 MiB | ขนาดไฟล์สูงสุดต่อ Segment |
+| Serialized Record | 64 KiB | ขนาดหลัง Serialize รวม Metadata, Checksum และ Record Delimiter; ใช้กับ Journal และ Snapshot |
+| String Field | 4 KiB | ความยาวสูงสุดต่อ String Field หลัง Encode ตามรูปแบบ Serialization |
+| Serialization Buffer | 16 MiB | Buffer สูงสุดสำหรับการ Serialize |
+
+กติกาเพิ่มเติม:
+- Grid Level Capacity คำนวณจาก Geometry จริง ห้ามตัด Level ให้เหลือเท่าที่ Capacity รองรับ; หากจำนวนที่ต้องใช้เกิน 1,000 ให้ปฏิเสธการสร้างหรือ Reset Grid
+- เมื่อ `POSITION_MAPPING` ผ่าน Validation แล้ว ให้ Prune Deal Associations ที่ไม่จำเป็นต่อ Recovery ออกจาก Current State
+- ขนาด Record ให้นับ Byte หลัง Serialize ไม่ใช่จำนวนตัวอักษร; String Field ให้วัดตาม Byte ที่ใช้ใน Encoding ของ Storage
+- หาก Field, Record, Buffer, Snapshot, Journal หรือ State Count เกิน Limit ให้ปฏิเสธการดำเนินการที่ทำให้เกินขอบเขต ห้าม Truncate หรือ Prune ข้อมูลที่ยังจำเป็นต่อ Recovery
+- Snapshot/Rotation ที่เกิน Limit ต้องไม่ Commit Generation ใหม่ และต้องคง Generation เดิมที่ Valid ไว้
+- หากไม่สามารถรักษา State ภายในขอบเขตได้อย่างปลอดภัย ให้เข้า Recovery/Maintenance Error และห้ามส่ง Entry Request ใหม่
+
+Boundary Tests ต้องครอบคลุมค่าต่ำกว่า/เท่ากับ/เกิน Limit, ขนาด Record และ String ที่ตรงขอบเขตและเกินหนึ่ง Byte, จำนวน Level/Mapping/Deal Association สูงสุด, Snapshot/Buffer เต็ม และการยืนยันว่า Rotation ที่เกิน Limit ไม่ทำลาย Generation เดิม
+
+กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
 
 กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
 ### 6. Order Comment

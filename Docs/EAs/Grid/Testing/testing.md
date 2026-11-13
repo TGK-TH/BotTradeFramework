@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-12
+อัปเดตล่าสุด: 2026-11-14
 
 ## ก่อนเริ่ม
 
@@ -91,7 +91,9 @@ Recovery Contract:
 - Crash ก่อน Commit ใช้ Old Generation; Crash หลัง Commit ใช้ New Generation และทำ Cleanup ซ้ำได้
 - หากไม่มี Manifest/Data Set ที่ Valid ให้ Recovery Error และห้าม Trade
 - หลัง Cleanup ต้องตรวจว่าคงเหลือ Snapshot 1 + Journal 1 + Manifest 2 Slots; Cleanup failure ต้องไม่ลบ Active Data
-- Snapshot ต้องมี Size/Count Hard Limit ซึ่งยังต้องกำหนดก่อน Implementation
+- Capacity Limits ที่ตกลงแล้ว: Grid Levels 1,000/Instance (คำนวณจาก Bounds + Grid Step + Anchor, รวม Anchor และทั้งสองฝั่ง), Position Mappings 1,000/Instance, Deal Associations 100/Request, Unresolved Requests 1/Instance, Snapshot 16 MiB, Active Journal 16 MiB, Serialized Record 64 KiB (รวม Metadata/Checksum/Delimiter), String Field 4 KiB และ Serialization Buffer 16 MiB
+- หากเกิน Limit ให้ปฏิเสธการเขียน/Rotation โดยไม่ Truncate และไม่ลบข้อมูลที่ยังจำเป็นต่อ Recovery; คง Generation เดิมไว้ และเข้า Recovery/Maintenance Error เมื่อไม่สามารถดำเนินการอย่างปลอดภัย
+- หลัง Position Mapping ผ่าน Validation ให้ Prune Deal Associations ที่ไม่จำเป็นต่อ Recovery ออกจาก Current State
 
 Crash Test ขั้นต่ำ: crash/failure ระหว่าง Snapshot temp write/flush/read-back, Journal generation creation/validation, Manifest inactive-slot write/flush/read-back, Commit, การลบ Old Snapshot/Journal และ Startup Cleanup; ทุกกรณีต้องพิสูจน์ว่าเลือก Old หรือ New Generation ได้ตาม Commit Point โดยไม่ผสม Generation และไม่ทำ Sequence ซ้ำ/หาย
 

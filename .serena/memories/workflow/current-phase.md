@@ -15,7 +15,10 @@ User-approved retention contract:
 - Crash before Commit -> old generation; crash after Commit -> new generation; crash during cleanup -> new generation plus repeatable cleanup.
 - If no complete valid manifest/data set exists, enter Recovery Error and do not trade.
 - Cleanup failure must not delete active data or force deletion to meet the file-count target.
-- Snapshot Size/Count hard limits remain to be decided before implementation.
+- User-approved Capacity Limits (2026-11-14): 1,000 Grid Levels per Instance (dynamic count from Bounds + Grid Step + Anchor; includes Anchor and both sides), 1,000 Position Mappings per Instance, 100 Deal Associations per Request, 1 unresolved Request per Instance, 16 MiB Snapshot, 16 MiB active Journal, 64 KiB serialized Record (including metadata/checksum/delimiter), 4 KiB per String Field, and 16 MiB Serialization Buffer.
+- After Position Mapping is validated, prune Deal Associations no longer needed for Recovery from Current State.
+- Overflow policy: reject the operation/rotation without truncation; preserve the prior valid generation and all recovery-critical state; enter Recovery/Maintenance Error and block new entries if safe continuation is impossible.
+- Remaining design/test work: validate MQL5 File API generation/manifest replacement and deletion semantics; define and run boundary/failure-injection tests for all agreed limits.
 
 The generation/manifest protocol and crash matrix are documented in:
 - Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md
@@ -27,7 +30,7 @@ The generation/manifest protocol and crash matrix are documented in:
 - GridEntryMappingReducer.mqh and test_grid_entry_mapping_reducer.mq5: user reported compile/test pass plus all historical/Grid Regression Tests on 2026-11-14.
 
 ## Remaining sequence
-1. Finalize Snapshot Size/Count Hard Limits and validate MQL5 file API behavior for generation files, manifest slots, safe cleanup, and failure recovery.
+1. Validate MQL5 File API behavior for generation files, manifest slots, safe cleanup, and failure recovery; prepare boundary/failure-injection tests for all agreed Capacity Limits.
 2. Add Snapshot Serialization + Journal Rotation implementation and fixture/failure-injection tests; no trade APIs.
 3. User compiles/runs new Snapshot test and all current Grid Regression Tests.
 4. Only then proceed to Entry Execution Policy + tests, CTrade Adapter + no-live-trade seam tests, and Coordinator integration.
