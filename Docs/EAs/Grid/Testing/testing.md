@@ -28,7 +28,8 @@
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
 | `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | PASS (ผู้ใช้ยืนยัน Regression 12/12 เมื่อ 2026-11-09) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention และ conflict rejection; ไม่มี Trade Request | สร้างแล้ว 2026-11-12; ยังไม่ Compile/Run โดยผู้ใช้ |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention และ conflict rejection; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression ทั้งหมด 2026-11-14) |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Snapshot serialization, dual Manifest Slot, Journal generation rotation, crash recovery และ bounded retention; ไม่มี Trade Request | ยังไม่สร้าง |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -52,7 +53,7 @@
 สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-12** — Compile ผ่านและ Test EA นี้พร้อม Grid Regression Tests ทั้ง 12 ไฟล์ผ่านใน MetaEditor/MT5 ผลนี้ยังไม่ครอบคลุม Typed Mapping Reducer, Write/Flush Failure Injection, Entry Policy หรือ CTrade Adapter
 
 
-## Grid Entry Mapping Typed Reducer — implementation pending user verification (2026-11-12)
+## Grid Entry Mapping Typed Reducer — ผ่านตามผลผู้ใช้รายงาน (2026-11-14)
 
 เพิ่ม:
 - `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` — Pure Current-State Reducer สำหรับ Typed Payload v1; ไม่มี CTrade/OrderSend dependency และไม่อ่าน Order Comment
@@ -69,7 +70,30 @@ Test cases ที่เขียนไว้:
 
 ผลตรวจจาก Assistant: ตรวจ whitespace/final newline, delimiter balance และยืนยันว่าไฟล์ใหม่ไม่มี Trade API call ผ่าน; ไม่ได้ Compile หรือ Run ใน MetaEditor/MT5
 
-สถานะ: **Implementation เขียนแล้ว แต่ยังไม่ถือว่าผ่านจนกว่าผู้ใช้ Compile/Run Test EA ใหม่นี้และ Grid Regression Tests ใน MetaEditor/MT5**
+ผู้ใช้ยืนยันเมื่อ 2026-11-14 ว่า Compile/Run Test EA นี้และ Historical/Grid Regression Tests ทั้งหมดผ่านใน MetaEditor/MT5
+
+สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-14**
+
+## Snapshot Serialization + Journal Rotation — Design Contract (ตกลง 2026-11-14; ยังไม่ Implement)
+
+Retention หลัง Rotation/Cleanup สำเร็จ:
+- Snapshot Current State 1 ไฟล์ และ Active Journal 1 ไฟล์
+- ไม่มี Old Journal Generation หรือ Temporary Data File ค้างหลัง Cleanup
+- Manifest Slot คงที่ 2 ไฟล์ (manifest_A.dat, manifest_B.dat) เขียนทับสลับกัน
+- ระหว่าง Rotation อนุญาตให้ Old/New Generation อยู่ร่วมกันชั่วคราว
+- ลบ Old Generation ได้หลัง New Snapshot + Journal ผ่าน Flush, Read-back Validation และ Manifest Commit เท่านั้น
+
+Recovery Contract:
+- Manifest ระบุ Storage Identity, Commit Epoch, Snapshot/Journal Generation, Snapshot Checkpoint Sequence, Schema และ Checksum
+- เขียน Manifest Slot ที่ไม่ Active; Slot Active เดิมต้องยังใช้ได้หากการเขียน Slot ใหม่ล้มเหลว
+- Commit สำเร็จเมื่อ Manifest ใหม่ Flush และ Read-back Validation ผ่าน และ Data Files ที่อ้างถึงผ่าน Validation แล้ว
+- Recovery เลือก Manifest ที่ Valid และ Commit Epoch สูงสุด จากนั้น Restore Snapshot ณ N และ Replay Journal ต่อจาก N+1
+- Crash ก่อน Commit ใช้ Old Generation; Crash หลัง Commit ใช้ New Generation และทำ Cleanup ซ้ำได้
+- หากไม่มี Manifest/Data Set ที่ Valid ให้ Recovery Error และห้าม Trade
+- หลัง Cleanup ต้องตรวจว่าคงเหลือ Snapshot 1 + Journal 1 + Manifest 2 Slots; Cleanup failure ต้องไม่ลบ Active Data
+- Snapshot ต้องมี Size/Count Hard Limit ซึ่งยังต้องกำหนดก่อน Implementation
+
+Crash Test ขั้นต่ำ: crash/failure ระหว่าง Snapshot temp write/flush/read-back, Journal generation creation/validation, Manifest inactive-slot write/flush/read-back, Commit, การลบ Old Snapshot/Journal และ Startup Cleanup; ทุกกรณีต้องพิสูจน์ว่าเลือก Old หรือ New Generation ได้ตาม Commit Point โดยไม่ผสม Generation และไม่ทำ Sequence ซ้ำ/หาย
 
 ## Grid Order Execution Adapter — Round 1 (2026-10-31)
 

@@ -1,8 +1,8 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Implementation in progress — Persistent Journal foundation user-verified; Typed Mapping Reducer and its Unit Test implemented, pending user Compile/Run verification.**
+สถานะ: **Implementation in progress — Persistent Journal foundation และ Typed Mapping Reducer user-verified; Snapshot + Journal Rotation protocol agreed at design level, implementation pending.**
 
-อัปเดตล่าสุด: 2026-11-12
+อัปเดตล่าสุด: 2026-11-14
 
 ## เป้าหมาย
 
@@ -101,7 +101,69 @@ Position/Deal/Request metadata ในอดีตลบออกจาก Snapsh
 - Recovery ต้องรองรับ Crash ทุกจุดระหว่าง Snapshot Write, Snapshot Commit, Journal Generation Switch และ Cleanup โดยต้องเลือกชุดข้อมูลที่สมบูรณ์ชุดหนึ่งได้เสมอ; ห้ามเกิดช่วงที่ทั้ง Snapshot และ Journal ที่จำเป็นต่อการกู้คืนหายไป
 - Snapshot ต้องมี Size/Count Validation ของตัวเองด้วย เพราะขนาด Snapshot สัมพันธ์กับจำนวน Grid Levels, Active Positions และ unresolved Requests ไม่ใช่จำนวน Trades แต่ไม่ถือว่า Snapshot มีขนาดคงที่แบบไม่มีขีดจำกัด
 
-รายละเอียดกลไก Commit/Generation Switch และ Crash Matrix จะถูกออกแบบและทดสอบใน Snapshot + Journal Rotation slice หลัง Typed Mapping Reducer ผ่านการทดสอบ
+#### Generation, Manifest และ Commit Protocol — ข้อตกลงเพิ่มเติม (2026-11-14)
+
+Retention หลัง Rotation และ Cleanup สำเร็จต้องมีขอบเขตชัดเจน:
+
+- มี Committed Snapshot ปัจจุบัน 1 ไฟล์
+- มี Active Journal ปัจจุบัน 1 ไฟล์
+- ไม่มี Journal Generation เก่าหรือ Temporary Data File ค้างหลัง Cleanup สำเร็จ
+- มี Manifest Slot คงที่ 2 ไฟล์ คือ manifest_A.dat และ manifest_B.dat; ทั้งสองไฟล์เป็น metadata slot ที่เขียนทับสลับกัน ไม่ใช่ประวัติสะสม
+- ระหว่าง Rotation อนุญาตให้ Generation เก่าและใหม่อยู่ร่วมกันชั่วคราว เพื่อรักษาความสามารถในการกู้คืน
+
+รูปแบบชื่อไฟล์เชิงแนวคิด:
+- snapshot_<generation>.dat
+- journal_<generation>.log
+- manifest_A.dat
+- manifest_B.dat
+
+Manifest ต้องระบุอย่างน้อย Schema Version, Storage Identity, Commit Epoch, Snapshot Generation, Journal Generation, Snapshot Checkpoint Sequence และ Integrity Checksum โดยต้องตรวจ Identity ให้ตรงกับ Account/Server/Symbol/Instance ก่อนใช้
+
+ลำดับ Rotation:
+1. หยุด Append ชั่วคราวและใช้ Reducer Current State ณ Sequence N เป็น Checkpoint
+2. Serialize Snapshot generation ใหม่ลง Temporary File; Flush, ปิดไฟล์, อ่านกลับ และตรวจ Schema/Identity/Sequence/Checksum/State
+3. สร้าง Journal generation ใหม่ที่เริ่มรับ Record ถัดไปจาก Sequence N+1; Flush, ปิดไฟล์, อ่านกลับ และตรวจ Header/Base Sequence/Identity/Integrity
+4. เลือก Manifest Slot ที่ไม่ใช่ Slot ของ Manifest ปัจจุบัน แล้วเขียน Commit Metadata ชุดใหม่ลง Slot นั้น
+5. Flush, ปิดไฟล์ และอ่าน Manifest กลับมาตรวจทุก Field และ Checksum อีกครั้ง; เมื่อ Manifest ใหม่สมบูรณ์และชี้ไปยัง Snapshot/Journal ที่ตรวจผ่านแล้ว ถือว่า Commit สำเร็จ
+6. หลัง Commit เท่านั้น จึงลบ Snapshot/Journal generation เก่าที่ไม่ถูกอ้างถึงโดย Current Manifest
+7. ตรวจ Directory อีกครั้ง; เมื่อ Cleanup สำเร็จต้องเหลือ Snapshot/Journal ปัจจุบันอย่างละหนึ่งไฟล์ และไม่มี Temporary/Old Generation Data File
+
+Manifest Slot ที่ไม่ได้ Active อาจยังมี Metadata ของ Generation ก่อนหน้าได้ แม้ Data File ของ Generation นั้นถูก Cleanup แล้ว; ตอนเลือก Manifest ต้องตรวจว่า Data Files ที่ถูกอ้างถึงมีอยู่และผ่าน Validation ด้วย การมี Manifest เก่าเพียงอย่างเดียวไม่ใช่เหตุให้เก็บ Old Generation Data Files ไว้ตลอดไป
+
+Commit Point คือการที่ Manifest Slot ใหม่ถูกเขียน, Flush และอ่านกลับแล้วผ่าน Validation ไม่ใช่เพียงการสร้าง Snapshot หรือ Journal ใหม่เสร็จ หาก Manifest ใหม่ไม่ผ่าน Validation ให้ใช้ Generation เดิมและห้าม Cleanup ข้อมูลเดิม
+
+Recovery หลัง Restart:
+- ตรวจ Manifest ทั้งสอง Slot แล้ว Validate Schema, Identity, Checksum และ Data Files ที่แต่ละ Slot อ้างถึง
+- เลือก Manifest ที่ Valid และมี Commit Epoch สูงสุด
+- ตรวจ Snapshot และ Journal Generation ที่ Manifest นั้นอ้างถึง แล้ว Restore Snapshot ณ Sequence N และ Replay Journal ต่อจาก N+1
+- หาก Manifest ใหม่ยังไม่ Commit หรือไม่สมบูรณ์ ให้ใช้ Manifest เก่าที่ยัง Valid
+- หาก Manifest ใหม่ Commit แล้ว แต่เกิด Crash ระหว่าง Cleanup ให้ใช้ Generation ใหม่และทำ Cleanup ซ้ำ
+- หากไม่มี Manifest/Data Set ที่ Valid ให้เข้า Recovery Error และห้ามส่ง Trade Request; ห้ามเดาหรือประกอบ State จากไฟล์คนละ Generation
+
+#### Crash Recovery Matrix
+
+| จุดที่เกิด Crash | สิ่งที่อาจเหลืออยู่ | Recovery ที่คาดหวัง |
+|---|---|---|
+| ระหว่างเขียน Snapshot Temporary | Old Generation + Snapshot temp บางส่วน | ใช้ Old Manifest/Generation; ละทิ้ง temp |
+| Snapshot Flush/Read-back ก่อนผ่าน Validation | Old Generation + Snapshot temp | ใช้ Old Generation; ห้าม Commit |
+| หลัง Snapshot ผ่าน แต่ก่อน Journal ใหม่ผ่าน Validation | Old Generation + New Snapshot/Journal บางส่วน | ใช้ Old Generation |
+| หลัง Data Files ใหม่ผ่าน Validation แต่ก่อนเขียน Manifest | Old Generation + New Data Files | ใช้ Old Generation; New Files เป็น Orphan ที่ Cleanup ได้ภายหลัง |
+| ระหว่างเขียน Manifest Slot ใหม่ | Old Manifest ที่ Active + Manifest Slot ใหม่อาจไม่สมบูรณ์ | ใช้ Old Manifest; ห้ามลบ Old Data |
+| Manifest ใหม่เขียน/Flush/Read-back ผ่านแล้ว แต่ยังไม่ Cleanup | Old + New Generations และ Manifest ใหม่ | ใช้ New Generation; ทำ Cleanup ต่อ |
+| ระหว่างลบ Old Generation | New Generation สมบูรณ์ + Old Files บางส่วน | ใช้ New Generation; ทำ Cleanup ซ้ำ |
+| หลัง Cleanup สำเร็จ | New Snapshot + New Journal + Manifest Slots 2 ไฟล์ | ใช้ New Generation ตามปกติ |
+
+ข้อกำหนดเพิ่มเติม:
+- การเขียน Manifest ใหม่ต้องไม่ทำลาย Manifest Slot ที่กำลัง Active; หาก Slot ใหม่เขียนไม่สมบูรณ์ Slot Active เดิมต้องยังอ่านได้
+- Generation ที่ Manifest ปัจจุบันอ้างถึงต้องเป็น Immutable สำหรับ Snapshot; Journal เป็น Append-only
+- การ Append หลัง Commit ต้องเริ่มที่ Sequence N+1 เท่านั้น
+- การ Cleanup ต้องไม่ลบ Data File ที่ Current Manifest อ้างถึง
+- Orphan/Temporary Files ลบได้เมื่อยืนยันแล้วว่า Current Manifest และ Data Set ปัจจุบันผ่าน Validation
+- หาก Cleanup ล้มเหลว ให้แจ้ง Recovery/Maintenance Error; ห้ามลบไฟล์อื่นเพื่อพยายามบังคับให้เหลือจำนวนไฟล์ตาม Policy
+
+ข้อที่ยังต้องกำหนดก่อน Implementation: Hard Limit ของ Snapshot Size และจำนวน Records/Levels/Positions/Unresolved Requests ที่ยอมรับได้ ต้องเป็นค่าคงที่ที่ Validate ได้และทดสอบ Boundary ได้; ห้ามปล่อยให้ Snapshot โตโดยไม่มีขอบเขต และห้ามเริ่ม Rotation หาก Snapshot ใหม่เกิน Limit
+
+กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
 ### 6. Order Comment
 
 Comment สร้างจากข้อมูล Candidate ที่ระบบมีอยู่ก่อนส่ง Request เช่น:
@@ -142,7 +204,8 @@ Comment:
 
 ไฟล์ Unit Test:
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation (ผู้ใช้ยืนยัน PASS)
-- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` — Typed Mapping Reducer (สร้างแล้ว; รอผู้ใช้ Compile/Run)
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` — Typed Mapping Reducer (ผู้ใช้ยืนยัน Compile/Run และ Regression ผ่าน 2026-11-14)
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — Snapshot Serialization/Rotation (ยังไม่สร้าง)
 - `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Policy/Adapter (ยังไม่สร้าง)
 
 ### A. Entry Execution Policy
@@ -238,7 +301,16 @@ Reducer rules:
 - Level อยู่นอก Bounds ต้องไม่ถูก Prune ด้วยเหตุผลด้าน Bounds เพียงอย่างเดียว
 - Snapshot ที่ Identity, Schema, Checksum, Sequence หรือ State ไม่ถูกต้องต้องถูกปฏิเสธ
 - Rotation เมื่อ Journal ถึง 16 MiB ต้องรักษา Sequence ต่อเนื่องและไม่ Apply Event ซ้ำหรือทำ Event สูญหาย
-- Failure/Crash Injection ทุกจุดระหว่าง Snapshot temp write, flush, validation, commit, journal generation switch และ old journal cleanup ต้อง Recover เป็น State ที่สมบูรณ์ได้
+- Failure/Crash Injection ทุกจุดระหว่าง Snapshot temp write, flush, validation, Journal generation creation, Manifest Slot write/flush/read-back/commit และ Old Generation cleanup ต้อง Recover เป็น State ที่สมบูรณ์ได้
+- Manifest สอง Slot ต้องสลับ Commit ได้ โดยการเขียน Slot ที่ไม่ Active ล้มเหลวแล้ว Slot Active เดิมยังใช้ Restore ได้
+- Manifest ที่ Schema/Identity/Checksum ผิด, อ้างถึง Data File ที่หาย หรืออ้างถึง Generation ที่ Validation ไม่ผ่าน ต้องไม่ถูกเลือกเป็น Current
+- เลือก Manifest ที่ Valid และมี Commit Epoch สูงสุด; ห้ามนำ Snapshot จาก Generation หนึ่งไป Replay กับ Journal อีก Generation
+- Crash ก่อน Manifest Commit ต้อง Restore Old Generation; Crash หลัง Manifest Commit ต้อง Restore New Generation
+- Crash ระหว่าง Cleanup ต้อง Restore New Generation และ Cleanup ซ้ำได้โดยไม่ทำลาย Active Data
+- หลัง Cleanup สำเร็จต้องเหลือ Snapshot 1 ไฟล์ + Active Journal 1 ไฟล์ + Manifest 2 Slots และไม่มี Old/Temporary Data Files
+- Orphan/Temporary Files ลบได้เฉพาะเมื่อ Current Manifest/Data Set ผ่าน Validation แล้ว
+- Journal ของ Generation ใหม่ต้องเริ่ม Sequence N+1 ต่อจาก Snapshot checkpoint N และต้องไม่ Replay Event ซ้ำหรือข้าม Sequence
+- Snapshot Size/Count Limit ต้องปฏิเสธข้อมูลเกินขอบเขตอย่างปลอดภัย โดยไม่ทำลาย Snapshot/Journal generation ที่ใช้งานได้
 - Snapshot และ Journal generation ใหม่ต้องตรวจอ่านกลับได้ก่อนลบข้อมูล generation เก่า
 - Snapshot Size/Count Limit ต้องปฏิเสธข้อมูลเกินขอบเขตอย่างปลอดภัย โดยไม่ทำลาย Snapshot/Journal generation ที่ใช้งานได้
 - Restart หลัง Rotation ต้องได้ Current State เท่ากับ State ก่อน Restart
@@ -263,7 +335,7 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 
 ## Implementation Progress — 2026-11-12
 
-### Completed in source; awaiting MetaEditor/MT5 verification
+### Completed and user-verified
 
 - `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` adds a pure typed Current-State Reducer for payload schema `v1`.
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` adds fixture-only tests; it does not call CTrade, OrderSend, PositionClose or send any Trade Request.
@@ -271,15 +343,15 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 - Position Mapping is created only after accepted execution result plus consistent Deal Association; `PLACED` alone remains unresolved and does not activate a Level.
 - Partial close updates remaining volume and retains ACTIVE Mapping. Confirmed `POSITION_CLOSED` removes Position/Deal/Request mapping data while preserving the Level State. A completed `RESET_COMMITTED` prunes old Level States only when no active Position or unresolved Request remains.
 - Typed payload excludes Order Comment; Comment remains separate human-readable metadata.
-- No MetaEditor/MT5 compile or runtime test has been performed by Assistant. The new Reducer EA and the 12 existing Grid Regression EAs are pending user verification after this source change.
+- User reported on 2026-11-14 that `test_grid_entry_mapping_reducer.mq5` compiled and ran successfully and all historical/Grid Regression Tests passed. This is user-reported validation; Assistant did not independently run MetaEditor/MT5.
 
 ## ลำดับงานที่เสนอ
 
 1. **Typed Mapping Contract** — กำหนด Typed Payload Schema v1, legal state transitions และ Reducer output แล้ว
 2. **Reducer Unit Tests ก่อน Source** — สร้าง `test_grid_entry_mapping_reducer.mq5` ด้วย Record fixtures ครอบคลุม partial fill/close, Request lifecycle, conflict, reset retention และ Sequence validation แล้ว
 3. **Typed Mapping Reducer** — Implement Payload validation และ deterministic Current-State reduction แล้ว; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5 โดยไม่มี Trade Request
-4. **Snapshot Serialization + Journal Rotation Design/Test** — กำหนด Snapshot schema, generation/commit protocol และ Crash Recovery Matrix จาก Reducer State
-5. **Snapshot + Rotation Implementation** — เพิ่ม Snapshot/Rotation และ Failure/Crash Injection Tests; รักษา Journal 16 MiB เป็น Threshold ต่อ Active Segment
+4. **Snapshot Serialization + Journal Rotation Design/Test** — กำหนด Snapshot schema, bounded retention, dual Manifest Slot, generation/commit protocol และ Crash Recovery Matrix จาก Reducer State แล้ว; ยังต้องกำหนด Snapshot Size/Count Hard Limit และพิสูจน์ File API ด้วย Tests
+5. **Snapshot + Rotation Implementation** — เพิ่ม Snapshot/Rotation และ Failure/Crash Injection Tests; รักษา Journal 16 MiB เป็น Threshold ต่อ Active Segment; หลัง Cleanup สำเร็จเหลือ Snapshot 1 + Journal 1 + Manifest 2 Slots
 6. **Entry Execution Policy + Tests**
 7. **CTrade Adapter + no-live-trade seam tests** — Intent ต้อง Persist/Flush ก่อนเรียก Trade API
 8. **Coordinator Integration, Docs และ Regression** — ทบทวนผลรวมและให้ผู้ใช้ Compile/Run ใน MetaEditor/MT5
