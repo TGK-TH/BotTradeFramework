@@ -362,6 +362,12 @@ Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_ma
 - ทดสอบ 16 MiB Journal Threshold, Sequence Continuity, Restart และ Snapshot Integrity
 - Failure/Crash Injection ครอบคลุม Snapshot Write/Flush/Validation/Commit, Journal Switch และ Old Journal Cleanup
 - ต้อง Recover เป็น State ที่สมบูรณ์ได้ทุก Crash Point และห้ามลบ Generation เก่าก่อน Generation ใหม่ผ่านการตรวจสอบ
+- Boundary Tests สำหรับทุก Hard Limit: ต่ำกว่า/เท่ากับ/เกิน Limit รวมถึง String/Record ที่เกินขอบเขต 1 Byte
+- Position Mappings ครบ 1,000 หรือ Deal Associations ครบ 100 ต่อ Request: ปฏิเสธรายการใหม่, เข้า `RECOVERY_ERROR`, บล็อก Entry ใหม่ และเก็บข้อมูลเดิมทั้งหมด
+- Journal เต็ม: Pause Append, ทำ Rotation ก่อน Append ถัดไป; หาก Rotation ล้มเหลวให้เข้า `MAINTENANCE_ERROR` และคง Generation เดิม
+- Snapshot/Buffer/Record/String เกิน Limit: ยกเลิกก่อน Commit/Write ตามจุดที่เหมาะสม โดยไม่ Truncate หรือทำลาย Generation เดิม
+- ทดสอบ Status `NORMAL`, `MAINTENANCE_ERROR`, `RECOVERY_ERROR` รวมถึงการบล็อก Entry ใหม่ แต่ยัง Inspection/Reconciliation Position เดิมได้
+- ห้ามลบ Position Mapping ที่ยังมี Position เปิดอยู่หรือ Unresolved Request เพื่อแก้ Capacity Overflow
 
 ผล Compile/Runtime ของ Test ทั้งสองชุด: ยังไม่เริ่มและยังไม่มีการยืนยันจากผู้ใช้
 

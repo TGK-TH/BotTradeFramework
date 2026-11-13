@@ -185,7 +185,33 @@ Recovery หลัง Restart:
 
 Boundary Tests ต้องครอบคลุมค่าต่ำกว่า/เท่ากับ/เกิน Limit, ขนาด Record และ String ที่ตรงขอบเขตและเกินหนึ่ง Byte, จำนวน Level/Mapping/Deal Association สูงสุด, Snapshot/Buffer เต็ม และการยืนยันว่า Rotation ที่เกิน Limit ไม่ทำลาย Generation เดิม
 
-กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
+#### Overflow, Journal Full และ Recovery Status — ข้อตกลงที่ยืนยันแล้ว (2026-11-14)
+
+**กติกาเมื่อ Capacity เต็ม**
+- Grid Levels เกิน 1,000: ปฏิเสธ Grid Initialization/Reset; ห้ามตัดจำนวน Level ให้เหลือ 1,000
+- Position Mappings ครบ 1,000: ปฏิเสธ `POSITION_MAPPING` รายการใหม่, เข้า `RECOVERY_ERROR` และบล็อก Entry ใหม่; เก็บ Mapping เดิมทั้งหมดไว้
+- Deal Associations ครบ 100 ต่อ Request: ปฏิเสธ Association ใหม่, เข้า `RECOVERY_ERROR` และบล็อก Entry ใหม่; ห้ามเดาหรือเลือก Position Identifier เอง
+- Snapshot เกิน 16 MiB: ยกเลิก Rotation ก่อน Commit และคง Generation เดิมที่ Valid
+- Serialization Buffer เกิน 16 MiB: ยกเลิก Serialization ก่อนเขียนไฟล์
+- Serialized Record เกิน 64 KiB หรือ String Field เกิน 4 KiB: ปฏิเสธ Record โดยไม่ Truncate
+- ทุกกรณีต้องรักษาข้อมูลที่จำเป็นต่อ Recovery; ห้ามลบ Position Mapping ที่ยังมี Position เปิดอยู่หรือ Unresolved Request เพื่อให้ผ่าน Capacity
+
+**Active Journal เต็ม**
+- ก่อน Append ต้องตรวจขนาด Record และขนาด Journal รวมหลัง Append
+- หาก Append ถัดไปทำให้ Journal เกิน 16 MiB ให้ Pause Append และทำ Snapshot + Rotation ก่อน
+- หลัง Rotation Commit สำเร็จ จึง Append Record ลง Journal Generation ใหม่
+- หาก Rotation ไม่สำเร็จ ให้เข้า `MAINTENANCE_ERROR`, บล็อก Entry Request ใหม่ และคง Generation เดิมไว้; ห้ามลบ Journal เดิมเพื่อเปิดพื้นที่
+
+**Recovery Status**
+| Status | ความหมายและพฤติกรรม |
+|---|---|
+| `NORMAL` | State และ Storage ผ่าน Validation; ทำงานและอนุญาต Entry ใหม่ตามปกติ |
+| `MAINTENANCE_ERROR` | Storage, Rotation หรือ Cleanup มีปัญหา แต่ Current State ที่ Commit แล้วยังตรวจสอบได้; บล็อก Entry ใหม่ แต่ยังอนุญาต Inspection และ Reconciliation ของ Position เดิม |
+| `RECOVERY_ERROR` | ไม่สามารถยืนยัน Current State/Mapping ได้ เช่น Mapping หรือ Deal Association Capacity เต็ม; บล็อก Entry ใหม่และต้องตรวจสอบก่อน Resume |
+
+การบล็อก Entry ใหม่ไม่ใช่การละทิ้ง Position ที่เปิดอยู่: การตรวจสอบและ Reconciliation/การดูแล Position เดิมต้องแยกจาก Permission ในการเปิด Position ใหม่ และห้าม Error Status ทำให้ระบบลืม Position เดิม
+
+Boundary/Failure Tests ต้องตรวจทั้ง Status Transition, การบล็อก Entry ใหม่, ความสามารถในการ Inspection/Reconciliation ของ Position เดิม, การคงข้อมูลเดิม และ Recovery หลัง Restart
 
 กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
 ### 6. Order Comment
