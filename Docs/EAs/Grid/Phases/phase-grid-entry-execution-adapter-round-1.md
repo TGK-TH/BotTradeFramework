@@ -1,6 +1,6 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Implementation in progress — Persistent Journal foundation implemented and user-verified.**
+สถานะ: **Implementation in progress — Persistent Journal foundation user-verified; Typed Mapping Reducer and its Unit Test implemented, pending user Compile/Run verification.**
 
 อัปเดตล่าสุด: 2026-11-12
 
@@ -33,7 +33,7 @@ Phase นี้เป็น Adapter/Mapping Round 1 ไม่ใช่ Productio
 ใช้ Append-only journal แบบ record ต่อบรรทัด เพื่อให้การบันทึกสถานะใหม่ไม่ต้องเขียนทับข้อมูลเดิมทั้งไฟล์
 
 Record ขั้นต่ำที่ต้องรองรับ:
-- Entry intent: Request ID, Instance ID, Symbol, Magic, Direction, Anchor/Level Index, Requested Volume, Comment metadata และสถานะเริ่มต้น
+- Entry intent: Request ID, Instance ID, Symbol, Magic, Direction, Anchor/Level Index, Requested Volume และสถานะเริ่มต้น; Order Comment สร้าง/จัดการแยกจาก Typed Mapping Payload
 - Execution result: Request ID, request outcome, retcode, Order Ticket และ Deal Ticket เมื่อมี
 - Deal association: Deal Ticket และ Position Identifier ที่ได้จากประวัติ Deal
 - Position mapping: Position Identifier, Anchor flag หรือ Level Index, Symbol, Magic และ Volume ที่ยืนยันแล้ว
@@ -141,7 +141,8 @@ Comment:
 ## Test Plan
 
 ไฟล์ Unit Test:
-- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation (ผู้ใช้ยืนยัน PASS)
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` — Typed Mapping Reducer (สร้างแล้ว; รอผู้ใช้ Compile/Run)
 - `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Policy/Adapter (ยังไม่สร้าง)
 
 ### A. Entry Execution Policy
@@ -186,18 +187,44 @@ Comment:
 
 ### E. Typed Mapping Payload & State Reducer — Test Contract
 
+#### Typed Payload Schema v1 (Reducer Round 1)
+
+Reducer consumes `STGKGridMappingJournalRecord` and requires exact field count/order. Payload values are pipe-delimited; identifiers remain decimal Strings and are never converted to numeric types. Unknown fields, empty fields, unsupported versions, invalid enums, or malformed numeric tokens reject Replay.
+
+| Journal Record Type | Payload fields (after `v1`) |
+|---|---|
+| `ENTRY_INTENT` | `request_id, symbol, magic, mode, target_kind, level_index, requested_volume, config_epoch, instance_id` |
+| `EXECUTION_RESULT` | `request_id, outcome, order_ticket, deal_ticket` |
+| `DEAL_ASSOCIATION` | `request_id, deal_ticket, position_identifier, deal_volume` |
+| `POSITION_MAPPING` | `request_id, symbol, magic, target_kind, level_index, position_identifier, position_ticket, reconciled_volume, config_epoch, instance_id` |
+| `LIFECYCLE_UPDATE / RESET_COMMITTED` | `config_epoch, mode, grid_step, lower_bound, upper_bound, anchor_price, level_count` |
+| `LIFECYCLE_UPDATE / LEVEL_STATE` | `config_epoch, level_index, level_state` |
+| `LIFECYCLE_UPDATE / POSITION_VOLUME` | `position_identifier, remaining_volume` |
+| `LIFECYCLE_UPDATE / POSITION_TICKET` | `position_identifier, current_position_ticket` |
+| `LIFECYCLE_UPDATE / POSITION_CLOSED` | `position_identifier, close_reason, next_level_state` (`NONE` for Anchor) |
+
+Reducer rules:
+- `RESET_COMMITTED` establishes a new configuration epoch and may prune old Level State only when there are no active Positions or unresolved Requests.
+- `ENTRY_INTENT` is accepted only for the active configuration and a valid logical target; one unresolved Request is allowed.
+- `PLACED`, `DONE`, `DONE_PARTIAL` and `ACCEPTED` remain unresolved until validated Position Mapping; `FAILED`, `REJECTED` and `MARKET_CLOSED` resolve the Request without creating a Position.
+- Deal Associations for one Request may contain multiple Deal Tickets, but all must share one Position Identifier and total associated volume cannot exceed requested volume.
+- `POSITION_MAPPING` requires an accepted execution result and at least one consistent Deal Association, validates Instance ID + Symbol + Magic + Position Identifier + Position Ticket + Logical Target, and changes a Level to `ACTIVE` only after this reconciliation event.
+- Partial close reduces remaining volume while preserving Position Mapping and `ACTIVE`; `POSITION_TICKET` may refresh the execution handle while preserving Position Identifier; `POSITION_CLOSED` represents confirmed zero-volume reconciliation, removes Position/Deal/Request mapping data, and retains the Level State supplied by the lifecycle outcome.
+- Order Comment is not a Typed Payload field and is not read by Reducer. It remains separate human-readable metadata.
+- Any invalid transition or conflict makes the Reducer Replay fail; it does not skip invalid complete records.
+
 เพิ่ม Test EA แยกสำหรับ Typed Mapping Reducer โดยใช้ Record fixtures เท่านั้นและห้ามส่ง Trade Request จริง:
 
 - Decode/Validate Payload ทุก Record Type และปฏิเสธ field ที่ขาด, type ผิด, enum ไม่รองรับ หรือ identifier ที่ไม่ใช่ Decimal String
 - Replay Event ตาม Sequence แล้วได้ Current State ที่ deterministic และเทียบเท่ากันเมื่อสร้าง Reducer ใหม่
-- Request ID ต้องไม่ซ้ำ; หนึ่ง Instance มี Unresolved Entry Request ได้ไม่เกินหนึ่งรายการ
+- Request ID ต้อง unique ต่อ Instance โดย Adapter ต้องสร้าง ID แบบ monotonic/unique เพื่อไม่ต้องเก็บประวัติ Request ที่จบแล้วไว้ตลอดไป; Reducer ปฏิเสธ ID ที่ซ้ำใน Current State และหนึ่ง Instance มี Unresolved Entry Request ได้ไม่เกินหนึ่งรายการ
 - หนึ่ง Request ต้องอ้างถึง Logical Target ได้เพียงหนึ่งรายการ (Anchor หรือ Level) และห้ามมี Request/Mapping ขัดแย้งกัน
 - Execution Accepted/Placed ต้องยังเป็น Pending/Reconciliation Required ไม่ใช่ Position Mapping ที่ยืนยันแล้ว
 - รองรับหลาย Deal ต่อ Position Identifier เดียวจาก Partial Fill; ปฏิเสธ Deal/Request ที่ชี้ไปยัง Position Identifier ที่ขัดแย้งกัน
-- Position Mapping ต้องตรวจ Instance, Symbol, Magic, Position Identifier และ Logical Target; ปฏิเสธ Position Identifier หรือ Active Logical Target ที่ถูกผูกซ้ำ
+- Position Mapping ต้องตรวจ Instance ID, Symbol, Magic, Position Identifier, Position Ticket และ Logical Target; ปฏิเสธ Position Identifier, Position Ticket หรือ Active Logical Target ที่ถูกผูกซ้ำ
 - Partial Close ปรับ Volume แต่ยังคง Active Mapping; Full Close จะถอด Position Mapping ได้เมื่อ Reconciliation ยืนยันว่าไม่มี Volume เหลือและ Lifecycle outcome ถูก Resolve แล้ว
 - เมื่อถอด Position Mapping แล้ว ต้องคง Grid Level Index/State ตาม Retention Policy
-- Comment ว่าง, เปลี่ยน หรือบอก Level ผิด ต้องไม่เปลี่ยนผล Reducer
+- Order Comment ไม่ใช่ Typed Payload field; Reducer ไม่มี input/API สำหรับ Comment และห้ามใช้ Comment ในการสร้าง Mapping
 - Identifier ที่มากกว่า 2^53 ต้อง Round-trip เป็น Decimal String ได้ครบทุกหลัก
 - Invalid transition, duplicate event, out-of-order/conflicting association หรือ corrupted typed payload ต้องทำให้ Restore ล้มเหลวอย่างปลอดภัย ไม่ข้ามเงียบ ๆ
 - Test ทุกกรณีเป็น Pure Unit Test และไม่มี CTrade/OrderSend/PositionClose
@@ -234,11 +261,23 @@ Comment:
 
 Unit Tests ต้องไม่ส่ง Trade Request จริง การ Demo Integration Test จะเป็นขั้นตอนแยกและต้องได้รับการยืนยันจากผู้ใช้ก่อนเริ่ม
 
+## Implementation Progress — 2026-11-12
+
+### Completed in source; awaiting MetaEditor/MT5 verification
+
+- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` adds a pure typed Current-State Reducer for payload schema `v1`.
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` adds fixture-only tests; it does not call CTrade, OrderSend, PositionClose or send any Trade Request.
+- Reducer validates exact payload field count/version, Instance ID + Symbol + Magic, Request/Logical Target uniqueness, one unresolved Request, accepted-vs-failed execution outcomes, multiple Deal Tickets sharing one Position Identifier, decimal-string identifiers, reconciled Position Mapping, partial/full close transitions, configuration reset and continuous Journal Sequence.
+- Position Mapping is created only after accepted execution result plus consistent Deal Association; `PLACED` alone remains unresolved and does not activate a Level.
+- Partial close updates remaining volume and retains ACTIVE Mapping. Confirmed `POSITION_CLOSED` removes Position/Deal/Request mapping data while preserving the Level State. A completed `RESET_COMMITTED` prunes old Level States only when no active Position or unresolved Request remains.
+- Typed payload excludes Order Comment; Comment remains separate human-readable metadata.
+- No MetaEditor/MT5 compile or runtime test has been performed by Assistant. The new Reducer EA and the 12 existing Grid Regression EAs are pending user verification after this source change.
+
 ## ลำดับงานที่เสนอ
 
-1. **Typed Mapping Contract** — กำหนด Typed Payload Schema, legal state transitions และ Reducer output โดยไม่ผูกกับ Trade API
-2. **Reducer Unit Tests ก่อน Source** — เพิ่ม `test_grid_entry_mapping_reducer.mq5` ด้วย Record fixtures ครอบคลุม normal flow, partial fill/close, duplicate และ conflict cases
-3. **Typed Mapping Reducer** — Implement Payload validation และ deterministic Current-State reduction; ทดสอบร่วมกับ Storage โดยไม่ส่ง Trade Request
+1. **Typed Mapping Contract** — กำหนด Typed Payload Schema v1, legal state transitions และ Reducer output แล้ว
+2. **Reducer Unit Tests ก่อน Source** — สร้าง `test_grid_entry_mapping_reducer.mq5` ด้วย Record fixtures ครอบคลุม partial fill/close, Request lifecycle, conflict, reset retention และ Sequence validation แล้ว
+3. **Typed Mapping Reducer** — Implement Payload validation และ deterministic Current-State reduction แล้ว; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5 โดยไม่มี Trade Request
 4. **Snapshot Serialization + Journal Rotation Design/Test** — กำหนด Snapshot schema, generation/commit protocol และ Crash Recovery Matrix จาก Reducer State
 5. **Snapshot + Rotation Implementation** — เพิ่ม Snapshot/Rotation และ Failure/Crash Injection Tests; รักษา Journal 16 MiB เป็น Threshold ต่อ Active Segment
 6. **Entry Execution Policy + Tests**
