@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-14
+อัปเดตล่าสุด: 2026-11-15
 
 ## ก่อนเริ่ม
 
@@ -28,7 +28,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
 | `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | PASS (ผู้ใช้ยืนยัน Regression 12/12 เมื่อ 2026-11-09) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count และ Snapshot codec; ไม่มี Trade Request | เดิมเคย PASS; แก้ Assertion ให้คาดหวัง READY สำหรับ Level ใหม่หลัง RESET_COMMITTED (2026-11-14); รอ Compile/Run ซ้ำ |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count และ Snapshot codec; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run ซ้ำและ Grid Regression Tests ทั้งหมด 2026-11-15) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |

@@ -1,8 +1,12 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-11-14, Grid Entry Execution Adapter — Round 1 remains in progress. Persistent Journal foundation and Typed Mapping Reducer had user-reported Compile/Run PASS before the current Snapshot implementation. Snapshot Serialization + Journal Rotation source and tests have now been added; user Compile/Run validation is pending.
+As of 2026-11-15, Grid Entry Execution Adapter — Round 1's current slice (Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation) is user-verified PASS. The user reported that the corrected Reducer Test and all current Grid Regression Tests passed after the Snapshot Test had also passed. This completes the current persistence/mapping foundation slice. Do not begin Entry Execution Policy until the user explicitly approves the next phase.
 
-## Current slice: Snapshot Serialization + Journal Rotation — implementation draft
+## Completed slice: Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation
+
+User validation: PASS (2026-11-15). Snapshot Test passed on 2026-11-14; corrected Reducer Test and all current Grid Regression Tests passed on 2026-11-15.
+
+
 
 User-approved retention contract:
 - Snapshot stores Current State only, not Trade History.
@@ -20,29 +24,26 @@ User-approved retention contract:
 - Overflow policy: reject without truncation; preserve the prior valid generation and all recovery-critical state. If Position Mappings reach 1,000 or Deal Associations reach 100/request, reject the new item, enter RECOVERY_ERROR, block new entries, and preserve existing data. Journal full signals Rotation before the next Append. Rotation failure enters MAINTENANCE_ERROR and blocks new entries while preserving the old generation. Snapshot >16 MiB rejects Rotation before Commit; Serialization Buffer >16 MiB aborts before file write; Record >64 KiB or String Field >4 KiB is rejected without truncation.
 - Recovery statuses: NORMAL; MAINTENANCE_ERROR (Storage/Rotation/Cleanup issue; block new Entry Intent but permit safe inspection/reconciliation and non-entry state updates when Journal remains writable); RECOVERY_ERROR (Current State/Mapping unverifiable; block new entries pending inspection). Blocking new entries must never abandon existing open positions or their reconciliation. Never delete active Position Mappings or unresolved Requests to free capacity.
 - Grid Level Count must match `floor((UpperBound-Anchor)/GridStep) + floor((Anchor-LowerBound)/GridStep) + 1`; Anchor is included. Anchor uses `level_index=-1`; non-anchor Levels use zero-based indices `0..level_count-2`. RESET_COMMITTED initializes READY State for every non-anchor Level so Snapshot retains Levels even when no Position is open.
-- User reported `test_grid_entry_mapping_snapshot.mq5` passed all tests on 2026-11-14. The first rerun of `test_grid_entry_mapping_reducer.mq5` found one assertion mismatch: after RESET_COMMITTED, a Level that existed before Reset is recreated in the new configuration as READY (enum value 0), not absent (`-1`). The test assertion was corrected to expect `TGK_GRID_LEVEL_READY`; user Compile/Run of the corrected Reducer Test and the full Grid Regression suite remains pending. Actual MQL5 File API replacement/deletion semantics are being validated by the Snapshot Test run.
+- User reported `test_grid_entry_mapping_snapshot.mq5` passed all tests on 2026-11-14, then reported on 2026-11-15 that the corrected `test_grid_entry_mapping_reducer.mq5` and all current Grid Regression Tests passed. The corrected assertion verifies that a Level index in the new geometry is initialized to `TGK_GRID_LEVEL_READY` after `RESET_COMMITTED`. Snapshot Test results validate the MQL5 file rotation/recovery behavior covered by its tests.
 
 The generation/manifest protocol and crash matrix are documented in:
 - Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md
 - Docs/EAs/Grid/Testing/testing.md
 - PROJECT_STATUS.md
 
-## Completed and user-verified before this slice
+## Earlier components also user-verified
+
 - `GridEntryMappingStorage.mqh` and `test_grid_entry_mapping_storage.mq5`: user reported compile/test pass plus 12 Grid Regression Tests on 2026-11-12.
 - `GridEntryMappingReducer.mqh` and `test_grid_entry_mapping_reducer.mq5`: user reported compile/test pass plus historical/Grid Regression Tests on 2026-11-14. Reducer source changed again during the current Snapshot implementation, so its test must be rerun.
 
-## Implementation added in the current slice (2026-11-14; user validation pending)
+## Implemented in the completed slice (2026-11-14; user validation completed 2026-11-15)
 - `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh`: dual Manifest slots, immutable Snapshot/Journal generations, Checksum/Identity/Sequence validation, Flush + Read-back, Commit Point, restart Recovery, repeatable Cleanup, incomplete Journal tail recovery/repair, and Journal size preflight.
 - `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`: `ExportSnapshot()` / `RestoreSnapshot()` for Config, every non-anchor Level State, active Position Mappings, and unresolved Request/Deal Associations; validates geometry-derived Level Count and mapping relationships.
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5`: no-trading test EA for Snapshot round-trip, Journal N+1 replay, Manifest alternation, Rotation, cleanup, fallback to an older valid generation, crash injection, incomplete-tail repair, Journal/Snapshot/Record/String limits, and Mapping/Deal boundaries.
 - Assistant ran static checks only: `git diff --check`, final newline, delimiter balance, and feature/failure-matrix token checks. No MetaEditor/MT5 compile/runtime was run. Actual MQL5 File API replacement/deletion semantics still require user validation.
 
-## User validation required next
-1. Compile/run `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5`.
-2. Recompile/run `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` because Reducer source changed.
-3. Run all current Grid Regression Tests, including `test_grid_entry_mapping_storage.mq5`.
-4. Report compile errors, failing assertions, Journal size/Rotation issues, or unexpected files left in MQL5/Files.
-5. Do not start Entry Execution Policy until this slice passes and the user explicitly approves the next phase.
+## Next phase (requires explicit user approval)
+The next proposed slice is Entry Execution Policy + dedicated Unit Tests. Before changing any Grid source, run the latest Grid Regression Tests. Do not start this slice until the user explicitly approves.
 
 No trade APIs or real/demo Trade Requests are part of this slice.
 

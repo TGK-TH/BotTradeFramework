@@ -1,8 +1,8 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Implementation in progress — Snapshot Test ผ่านตามผลผู้ใช้รายงาน 2026-11-14; Reducer Test มีการแก้ Assertion หลังพบ expected state ไม่ตรงกับ Reset semantics และรอ Compile/Run ซ้ำ.**
+สถานะ: **Persistence/Mapping foundation slice ผ่านครบตามผลผู้ใช้รายงาน 2026-11-15 — Snapshot Test, corrected Reducer Test และ Grid Regression Tests ทั้งหมด PASS. Entry Execution Policy และ CTrade Adapter ยังไม่เริ่ม.**
 
-อัปเดตล่าสุด: 2026-11-14
+อัปเดตล่าสุด: 2026-11-15
 
 ## เป้าหมาย
 
@@ -282,7 +282,7 @@ Comment:
 ไฟล์ Unit Test:
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation (ผู้ใช้ยืนยัน PASS)
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` — Typed Mapping Reducer (ผู้ใช้ยืนยัน Compile/Run และ Regression ผ่าน 2026-11-14)
-- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — Snapshot Serialization/Rotation (ยังไม่สร้าง)
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — Snapshot Serialization/Rotation (ผู้ใช้ยืนยัน PASS 2026-11-14)
 - `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Policy/Adapter (ยังไม่สร้าง)
 
 ### A. Entry Execution Policy
