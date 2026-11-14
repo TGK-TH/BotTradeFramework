@@ -28,8 +28,8 @@
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
 | `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | PASS (ผู้ใช้ยืนยัน Regression 12/12 เมื่อ 2026-11-09) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention และ conflict rejection; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression ทั้งหมด 2026-11-14) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Snapshot serialization, dual Manifest Slot, Journal generation rotation, crash recovery และ bounded retention; ไม่มี Trade Request | ยังไม่สร้าง |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count และ Snapshot codec; ไม่มี Trade Request | เดิมเคย PASS; แก้ Assertion ให้คาดหวัง READY สำหรับ Level ใหม่หลัง RESET_COMMITTED (2026-11-14); รอ Compile/Run ซ้ำ |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -339,9 +339,9 @@ Test EA ที่เตรียมไว้: `Experts/TGK/Tests/Grids/test_grid
 
 Design/Retention Policy: [Grid Entry Execution Adapter — Round 1](../Phases/phase-grid-entry-execution-adapter-round-1.md)
 
-### Typed Mapping Payload & State Reducer (ลำดับถัดไป)
+### Typed Mapping Payload & State Reducer (เดิมผ่านตามผลผู้ใช้รายงาน; ปรับ Source เพิ่ม Snapshot Codec — รอ Compile/Run ซ้ำ)
 
-Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`
 
 - ใช้ Record fixtures เท่านั้น ไม่มี Trade Request หรือ CTrade
 - ทดสอบ Payload validation, deterministic replay, Request/Logical Target uniqueness และ unresolved-request limit
@@ -352,9 +352,9 @@ Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_ma
 - Comment ต้องไม่ส่งผลต่อ Reducer; Identifier ต้องคงเป็น Decimal String
 - Conflict หรือ Invalid Transition ต้องทำให้ Restore ล้มเหลวอย่างปลอดภัย
 
-### Snapshot + Journal Rotation (หลัง Reducer ผ่าน)
+### Snapshot + Journal Rotation (Implementation Draft; รอ Compile/Run)
 
-Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` (ชื่อไฟล์รอยืนยันเมื่อเริ่ม Slice)
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5`
 
 - Snapshot เก็บ Current State เท่านั้น ไม่สะสม Closed Trade/Deal History
 - เก็บ Level State แม้ไม่มี Position; Prune Level หลัง Mode/Step Reset สำเร็จและไม่มี Position/Request เก่าค้างเท่านั้น
@@ -369,7 +369,14 @@ Test EA ที่วางแผน: `Experts/TGK/Tests/Grids/test_grid_entry_ma
 - ทดสอบ Status `NORMAL`, `MAINTENANCE_ERROR`, `RECOVERY_ERROR` รวมถึงการบล็อก Entry ใหม่ แต่ยัง Inspection/Reconciliation Position เดิมได้
 - ห้ามลบ Position Mapping ที่ยังมี Position เปิดอยู่หรือ Unresolved Request เพื่อแก้ Capacity Overflow
 
-ผล Compile/Runtime ของ Test ทั้งสองชุด: ยังไม่เริ่มและยังไม่มีการยืนยันจากผู้ใช้
+Implementation ที่เพิ่มแล้ว:
+- `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh`: Snapshot/Journal generation files, Manifest A/B, checksum/identity/sequence validation, Flush + Read-back, Commit Point, Recovery, repeatable Cleanup และ incomplete-tail repair
+- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`: `ExportSnapshot()` / `RestoreSnapshot()`; Snapshot เก็บ Config, Level State ทุก non-anchor Level, Active Position Mapping และ Unresolved Request/Deal Associations ที่ยังจำเป็น
+- Level Count ตรวจจาก Bounds + Grid Step + Anchor ตามสูตรที่ตกลง; Anchor เป็นหนึ่งใน 1,000 Levels, Level Index ของ non-anchor เป็น 0 ถึง `level_count-2`
+- Test ครอบคลุม Snapshot round-trip, Journal ต่อจาก N+1, Manifest alternation, pre/post-commit crash, cleanup interruption, fallback ไป Older Valid Generation, Recovery Error, Journal tail repair, 16 MiB Journal Rotation, Snapshot >16 MiB, 64 KiB Record, 4 KiB String Field, 1,000/1,001 Position Mappings และ 100/101 Deal Associations
+- Test EA ไม่มี CTrade, OrderSend หรือ Trade Request; ยังต้องพิสูจน์ MQL5 File API จริงใน MetaEditor/MT5
+
+ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
 ## นโยบาย Regression Test
 

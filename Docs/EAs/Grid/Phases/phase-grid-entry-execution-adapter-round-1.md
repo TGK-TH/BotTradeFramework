@@ -1,6 +1,6 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Implementation in progress — Persistent Journal foundation และ Typed Mapping Reducer user-verified; Snapshot + Journal Rotation protocol agreed at design level, implementation pending.**
+สถานะ: **Implementation in progress — Snapshot Test ผ่านตามผลผู้ใช้รายงาน 2026-11-14; Reducer Test มีการแก้ Assertion หลังพบ expected state ไม่ตรงกับ Reset semantics และรอ Compile/Run ซ้ำ.**
 
 อัปเดตล่าสุด: 2026-11-14
 
@@ -214,6 +214,33 @@ Boundary Tests ต้องครอบคลุมค่าต่ำกว่�
 Boundary/Failure Tests ต้องตรวจทั้ง Status Transition, การบล็อก Entry ใหม่, ความสามารถในการ Inspection/Reconciliation ของ Position เดิม, การคงข้อมูลเดิม และ Recovery หลัง Restart
 
 กลไกนี้เป็น Design Contract ที่ตกลงแล้ว ส่วนการพิสูจน์พฤติกรรม File API/การ Replace/การลบไฟล์และ Failure Injection จะอยู่ใน Implementation/Test slice
+
+#### Snapshot + Journal Rotation — Implementation Draft (2026-11-14)
+
+เพิ่ม Source:
+- `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` — dual Manifest slots, immutable Snapshot/Journal generations, Checksum/Identity/Sequence validation, Flush + Read-back, Commit Point, restart Recovery, repeatable Cleanup และ Journal tail repair
+- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` — เพิ่ม `ExportSnapshot()` / `RestoreSnapshot()` เพื่อ serialize Current State ของ Config, ทุก non-anchor Level State, Active Position Mappings และ Unresolved Request/Deal Associations ที่ยังจำเป็น
+- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — no-trading tests สำหรับ Snapshot/Rotation/Recovery/Capacity/Failure Injection
+
+กติกาใน Reducer ที่เพิ่มให้ตรงกับ Capacity Contract:
+- คำนวณจำนวน Level จาก `floor((UpperBound-Anchor)/GridStep) + floor((Anchor-LowerBound)/GridStep) + 1`; Anchor รวมอยู่ในจำนวน 1,000 Levels
+- `level_index=-1` สงวนให้ Anchor; Grid Level ใช้ Index ตั้งแต่ 0 ถึง `level_count-2`
+- เมื่อ `RESET_COMMITTED` สำเร็จ Reducer สร้าง READY State ให้ทุก non-anchor Level; Snapshot จึงเก็บ State ของทุก Level แม้ไม่มี Position
+- Position Mapping จำกัด 1,000; Deal Associations จำกัด 100 ต่อ Unresolved Request; หลัง Position Mapping สำเร็จให้ Prune Deal Associations ที่ไม่จำเป็นแล้ว
+- Snapshot Restore ตรวจ Identity, Checkpoint, Geometry/Level Count, Record Counts, Mapping Relationships และ Capacity ก่อนรับ State
+
+Coverage ที่เพิ่มใน Snapshot Test:
+- Current-State Snapshot round-trip ทั้ง Active Position, Level States และ Unresolved Request ที่มีหลาย Deal Associations
+- Snapshot Checkpoint N + Journal Replay เริ่ม N+1; Position Ticket refresh หลัง Restore
+- Rotation สลับ Manifest A/B, ลบ Old Generation และ Temporary Files หลัง Commit
+- Crash ก่อน Commit ใน Snapshot/Journal/Manifest Write และ Read-back; Crash หลัง Manifest Commit; Crash ระหว่าง Cleanup
+- Recovery เลือก Older Valid Generation เมื่อ Data Set ใหม่เสียหาย และเข้า `RECOVERY_ERROR` เมื่อไม่มี Valid Data Set
+- Incomplete Journal Tail ถูกละเว้นตอน Replay และซ่อมก่อน Append ครั้งถัดไป
+- Journal 16 MiB Rotation, Snapshot เกิน 16 MiB ต้องไม่ทำลาย Generation เดิม, Record 64 KiB, String Field 4 KiB, Position 1,000/1,001 และ Deal 100/101
+- `MAINTENANCE_ERROR` บล็อก Entry Intent ใหม่ แต่ยังรับ Lifecycle/Management Record ของ State เดิมได้เมื่อ Journal ยังเขียนได้
+
+**สถานะการตรวจสอบ:** Assistant ตรวจ `git diff --check`, final newline, delimiter balance และ feature/failure-matrix coverage แบบ Static เท่านั้น ยังไม่ได้ Compile หรือ Run MetaEditor/MT5 และยังไม่ได้พิสูจน์ File API บน Terminal จริง ผู้ใช้ต้อง Compile/Run `test_grid_entry_mapping_snapshot.mq5`, `test_grid_entry_mapping_reducer.mq5` (Reducer source เปลี่ยนเพิ่ม) และ Grid Regression Tests ทั้งหมดก่อนถือว่า Slice นี้ผ่าน ไม่มี CTrade/OrderSend หรือ Trade Request ใน Test ใหม่นี้
+
 ### 6. Order Comment
 
 Comment สร้างจากข้อมูล Candidate ที่ระบบมีอยู่ก่อนส่ง Request เช่น:
