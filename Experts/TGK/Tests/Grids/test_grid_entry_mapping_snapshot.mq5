@@ -501,7 +501,8 @@ int OnInit()
   Tests.AssertFalse(
     "old generation 1 Journal cleaned",
     FileIsExist(stem + "_journal_1.log"));
-  Tests.AssertTrue("both fixed Manifest slots exist", 
+  Tests.AssertTrue(
+    "both fixed Manifest slots exist",
     FileIsExist(stem + "_manifest_A.dat") &&
     FileIsExist(stem + "_manifest_B.dat"));
 
