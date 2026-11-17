@@ -22,7 +22,8 @@ Grid เป็น EA หนึ่งตัวใน BotTradeFramework ไม่�
 - [Grid Level Engine — Design Specification](Phases/phase-grid-level-engine-design.md) — Design ที่ตกลงแล้ว
 - [Grid Level Engine — Implementation Round 1](Phases/phase-grid-level-engine-implementation-round-1.md) — Completed; ผู้ใช้ยืนยัน Compile และ Regression Tests 11/11 ผ่านใน MT5 (2026-11-04)
 - [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md) — Completed; ผู้ใช้ยืนยัน Compile/Run Test ใหม่และ Regression Tests รวม 12/12 ผ่านใน MT5 (2026-11-09)
-- [Grid Entry Execution Adapter — Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md) — Design agreed; Persistent Mapping Journal แยกจาก Grid Snapshot, Identifier เป็น String และ Comment ใช้เพื่อมนุษย์เท่านั้น; ยังไม่เริ่ม Implementation
+- [Grid Entry Execution Adapter — Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md) — Persistence/Mapping foundation ผ่านตามผลผู้ใช้รายงาน 2026-11-15; Entry Execution Policy และ CTrade Adapter ยังไม่เริ่ม
+- [Grid Entry Execution Policy — Design Baseline และ Test Plan](Phases/phase-grid-entry-execution-policy.md) — Design/Test Plan อนุมัติแล้ว; Phase 2 Test-First รออนุมัติ
 
 ## ข้อกำหนด Grid V1 ที่ตกลงไว้ แต่ยังไม่เท่ากับการพัฒนาเสร็จ
 

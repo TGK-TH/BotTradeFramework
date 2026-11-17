@@ -378,6 +378,26 @@ Implementation ที่เพิ่มแล้ว:
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
+## Grid Entry Execution Policy — Design/Test Plan (อนุมัติแล้ว; ยังไม่ Implement)
+
+เอกสาร Design Baseline และ Test Plan ฉบับเต็ม: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
+
+Planned files:
+- `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
+
+Test Plan มี 40 Cases แบ่ง 6 Groups:
+- A: Valid Candidate (4)
+- B: Candidate Validation (9)
+- C: Identity & Execution State (6)
+- D: Request & Level Eligibility (9)
+- E: Decision Precedence (6)
+- F: Stateless & Deterministic (6)
+
+ขอบเขต Test: Pure Decision เท่านั้น ไม่มี Trade Request, CTrade, OrderSend, File I/O หรือ Persistent Storage dependency
+
+สถานะ: Design และ Test Plan ผ่านการอนุมัติแล้ว; ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และยืนยันให้ใช้เป็น Precondition สำหรับ Phase 2 แล้ว แต่ Phase 2 ยังรอคำอนุมัติโดยชัดเจน จึงยังไม่มี Test EA หรือ Policy Source ถูกสร้าง
+
 ## นโยบาย Regression Test
 
 ก่อนเริ่มพัฒนาหรือ Refactor Grid feature ให้ระบุ Regression Tests ที่เกี่ยวข้องและรันก่อนแก้โค้ด หากพฤติกรรมที่กำลังจะเปลี่ยนยังไม่มี Test รองรับ ให้ตกลงและเพิ่ม Test ก่อนหรือเป็นส่วนหนึ่งของงานตามขอบเขตที่อนุมัติ

@@ -1,6 +1,6 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-11-15, Grid Entry Execution Adapter — Round 1's current slice (Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation) is user-verified PASS. The user reported that the corrected Reducer Test and all current Grid Regression Tests passed after the Snapshot Test had also passed. This completes the current persistence/mapping foundation slice. Do not begin Entry Execution Policy until the user explicitly approves the next phase.
+As of 2026-11-17, Grid Entry Execution Adapter — Round 1 persistence/mapping foundation is user-verified PASS (2026-11-15). Grid Entry Execution Policy Design Baseline and Test Plan are now approved and documented at `Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md`; Trello card is in Ready: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests. User reported latest Grid Regression Tests all PASS on 2026-11-17 and explicitly accepted this as the Phase 2 precondition. Phase 2 Test-First Implementation is still awaiting separate explicit approval. Do not create the Policy source or dedicated Test EA until approval.
 
 ## Completed slice: Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation
 
