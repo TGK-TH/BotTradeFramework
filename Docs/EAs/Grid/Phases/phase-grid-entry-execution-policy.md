@@ -1,6 +1,6 @@
 # Grid Entry Execution Policy — Design Baseline และ Test Plan
 
-สถานะ: **Design และ Test Plan อนุมัติแล้ว; Phase 2 Test-First Implementation รออนุมัติแยกต่างหาก**
+สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized ตาม Contract ที่ผู้ใช้ออนุมัติและ Static Acceptance Checks; Phase 3 ยังไม่เริ่มและต้องอนุมัติแยกต่างหาก**
 
 อัปเดตล่าสุด: 2026-11-17
 
@@ -21,11 +21,13 @@
 - ไม่มี Internal State และไม่มีการ Mutation Input
 - ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency
 - Policy ไม่ Include หรือเรียกใช้ Mapping Reducer
-- ผู้เรียกส่ง Context ปัจจุบันเข้ามาให้ Policy ประเมิน
-- Mapping Reducer ยังคงเป็น Authority สำหรับการตรวจสอบและ Apply Position Mapping จริง
-- Policy ตรวจ Mapping เฉพาะ Target Level ของ Candidate ภายใน Instance ปัจจุบัน
+- Caller/Resolver รับผิดชอบ Resolve Level Context จาก `candidate.instance_id` และ Target Key (`is_anchor`, `level_index`) ของ Candidate เดียวกัน
+- Caller ต้องส่ง Context สดของ Target Level ใน Current Instance เท่านั้น และห้ามใช้ Context จาก Level หรือ Instance อื่นแทน
+- Policy อ่าน `has_position_mapping` จาก Level Context ที่ Caller ส่งให้เท่านั้น; Policy ไม่มี field สำหรับตรวจสอบ Context provenance และไม่ตรวจ provenance ด้วยตนเอง
+- Mapping Reducer ยังคงเป็น Authority สำหรับ Mapping validation และ State transition จริง
+- Resolver correctness ต้องตรวจด้วย Integration Tests แยกต่างหาก; Policy Unit Tests ไม่พิสูจน์ provenance correctness
 
-Policy ไม่ทำ Automatic Recovery หาก Context ไม่พร้อมหรือข้อมูลไม่ถูกต้องให้ Reject แบบ Fail Closed
+หาก Caller/Resolver Resolve Context ไม่สำเร็จ Caller ต้อง Fail Closed และ **ห้ามเรียก Policy**. ห้ามแทน Resolver failure ด้วย `has_position_mapping=false`. Policy ไม่ทำ Automatic Recovery.
 
 ## 3. Input Contract
 
@@ -52,7 +54,7 @@ Target Level ใช้รูปแบบเดียวกันทั้ง Anc
 
 Entry Price ต้องเป็น Finite Number และมีค่ามากกว่า 0 โดยใช้การตรวจลักษณะ Finite ของตัวเลขและเงื่อนไข `> 0` ไม่เพิ่ม Tick Size หรือ Digits validation
 
-Candidate ที่มี Identity/Config/Mode/Target ไม่ถูกต้อง หรือ Entry Price ไม่ถูกต้อง ต้องถูกปฏิเสธ
+Candidate ที่มี Identity/Config/Mode/Target ไม่ถูกต้อง, `magic_number <= 0`, `config_epoch <= 0` หรือ Entry Price ไม่ถูกต้อง ต้องถูกปฏิเสธ
 
 ### 3.2 Level Context
 
@@ -97,6 +99,10 @@ Output มี:
 
 ห้ามส่งหลาย Reason Codes ในผลลัพธ์เดียว เหตุผลที่คืนต้องเป็น Gate แรกที่ไม่ผ่านตาม Validation Order
 
+API Names ที่อนุมัติสำหรับ Test Contract: `CTGKGridEntryExecutionPolicy`, `STGKGridEntryExecutionCandidate`, `STGKGridEntryTargetLevel`, `STGKGridEntryExecutionLevelContext`, `STGKGridEntryExecutionContext`, `STGKGridEntryExecutionResult`, `ENUM_TGK_GRID_ENTRY_DECISION`, `ENUM_TGK_GRID_ENTRY_REASON` และ `ENUM_TGK_GRID_ENTRY_EXECUTION_STATE`.
+
+`Evaluate()` รับ Candidate, Level Context และ Execution Context เป็น `const` references; รับ Result เป็น output reference; return type เป็น `void`. ทุก call ต้องกำหนด `decision`, `reason_code` และ `target_level` ใหม่ในทุก path รวมถึง REJECT เพื่อไม่ให้มี output เก่าค้างอยู่.
+
 Reason Code ที่อนุมัติ:
 
 - `INVALID_CANDIDATE`
@@ -137,43 +143,49 @@ Reason Code ที่อนุมัติ:
 - การประเมินทุกครั้งใช้ Input Context ที่ส่งเข้ามาในครั้งนั้น
 - หาก Context เปลี่ยนจาก Blocked เป็น Normal สามารถประเมินใหม่ด้วย Context ใหม่ได้ทันที
 
-## 7. Test Plan — 40 Cases / 6 Groups
+## 7. Test Plan — 44 Cases / 6 Groups
 
-Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไม่มี Trade Request, CTrade หรือ File I/O
+Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไม่มี Trade Request, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage
 
 ### Group A — Valid Candidate (4)
 
 | ID | กรณี | Expected |
 |---|---|---|
-| A01 | Candidate ถูกต้อง, Level READY, BUY | ALLOW / ELIGIBLE |
-| A02 | Candidate ถูกต้อง, Level WAIT_RETURN | ALLOW / ELIGIBLE |
-| A03 | Candidate ถูกต้อง, Grid Mode BUY | ALLOW / ELIGIBLE |
-| A04 | Candidate ถูกต้อง, Grid Mode SELL | ALLOW / ELIGIBLE |
+| A01 | Candidate valid, Anchor (`is_anchor=true`, index `-1`), Level `READY`, Execution `NORMAL` | ALLOW / ELIGIBLE |
+| A02 | Candidate valid, Level `WAIT_RETURN`, Execution `NORMAL` | ALLOW / ELIGIBLE |
+| A03 | Candidate valid, Grid Mode `BUY`, Level `READY`, Execution `NORMAL` | ALLOW / ELIGIBLE |
+| A04 | Candidate valid, Grid Mode `SELL`, Level `READY`, Execution `NORMAL` | ALLOW / ELIGIBLE |
 
-### Group B — Candidate Validation (9)
+### Group B — Candidate Validation (13)
+
+ทุกกรณีใช้ Level `READY`, ไม่มี Mapping และ Execution `NORMAL` นอกจากค่าของ Candidate ที่กำลังทดสอบ
 
 | ID | กรณี | Expected |
 |---|---|---|
-| B01 | Instance ID ไม่ถูกต้อง | REJECT / INVALID_CANDIDATE |
+| B01 | Instance ID ว่าง | REJECT / INVALID_CANDIDATE |
 | B02 | Symbol ว่าง | REJECT / INVALID_CANDIDATE |
-| B03 | Magic Number ไม่ถูกต้อง | REJECT / INVALID_CANDIDATE |
-| B04 | Grid Mode ไม่ถูกต้อง | REJECT / INVALID_CANDIDATE |
-| B05 | Config Epoch ไม่ถูกต้อง | REJECT / INVALID_CANDIDATE |
-| B06 | Target Level representation ไม่ถูกต้อง | REJECT / INVALID_CANDIDATE |
+| B03 | Magic Number = 0 | REJECT / INVALID_CANDIDATE |
+| B04 | Grid Mode unknown/invalid | REJECT / INVALID_CANDIDATE |
+| B05 | Config Epoch = 0 | REJECT / INVALID_CANDIDATE |
+| B06 | Anchor representation ผิด (`is_anchor=true`, index `0`) | REJECT / INVALID_CANDIDATE |
 | B07 | Entry Price = 0 | REJECT / INVALID_CANDIDATE |
 | B08 | Entry Price ติดลบ | REJECT / INVALID_CANDIDATE |
-| B09 | Entry Price เป็น NaN/Infinity (ตรวจทั้งสองค่าในกรณีทดสอบนี้) | REJECT / INVALID_CANDIDATE |
+| B09 | Entry Price เป็น NaN | REJECT / INVALID_CANDIDATE |
+| B10 | Entry Price เป็น Infinity | REJECT / INVALID_CANDIDATE |
+| B11 | Magic Number ติดลบ | REJECT / INVALID_CANDIDATE |
+| B12 | Config Epoch ติดลบ | REJECT / INVALID_CANDIDATE |
+| B13 | Normal Level index ติดลบ (`is_anchor=false`, index `-1`) | REJECT / INVALID_CANDIDATE |
 
 ### Group C — Identity & Execution State (6)
 
 | ID | กรณี | Expected |
 |---|---|---|
-| C01 | Identity mismatch | REJECT / IDENTITY_MISMATCH |
-| C02 | Execution State = NORMAL | ผ่าน Execution Gate |
-| C03 | Execution State = MAINTENANCE_ERROR | REJECT / EXECUTION_BLOCKED |
-| C04 | Execution State = RECOVERY_ERROR | REJECT / EXECUTION_BLOCKED |
-| C05 | Execution State เป็น Unknown/Invalid | REJECT / EXECUTION_BLOCKED |
-| C06 | Identity mismatch พร้อม Execution Blocked | REJECT / IDENTITY_MISMATCH (ยืนยัน Precedence) |
+| C01 | Identity invalid/mismatch | REJECT / IDENTITY_MISMATCH |
+| C02 | Execution State `NORMAL` และ Gate อื่นผ่าน | ALLOW / ELIGIBLE |
+| C03 | Execution State `MAINTENANCE_ERROR` | REJECT / EXECUTION_BLOCKED |
+| C04 | Execution State `RECOVERY_ERROR` | REJECT / EXECUTION_BLOCKED |
+| C05 | Execution State unknown/invalid | REJECT / EXECUTION_BLOCKED |
+| C06 | Identity invalid พร้อม Execution blocked | REJECT / IDENTITY_MISMATCH |
 
 ### Group D — Request & Level Eligibility (9)
 
@@ -181,69 +193,93 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 |---|---|---|
 | D01 | มี Unresolved Request | REJECT / UNRESOLVED_REQUEST |
 | D02 | Target Level ไม่มีอยู่ | REJECT / LEVEL_NOT_FOUND |
-| D03 | Target Level = ACTIVE | REJECT / LEVEL_NOT_ELIGIBLE |
-| D04 | Target Level = WAIT_ACTIVATION | REJECT / LEVEL_NOT_ELIGIBLE |
-| D05 | Target Level เป็น Unknown State | REJECT / LEVEL_NOT_ELIGIBLE |
-| D06 | Target Level = READY และไม่มี Mapping | ALLOW / ELIGIBLE |
-| D07 | Target Level = WAIT_RETURN และไม่มี Mapping | ALLOW / ELIGIBLE |
+| D03 | Target Level `ACTIVE` | REJECT / LEVEL_NOT_ELIGIBLE |
+| D04 | Target Level `WAIT_ACTIVATION` | REJECT / LEVEL_NOT_ELIGIBLE |
+| D05 | Target Level มี Unknown State | REJECT / LEVEL_NOT_ELIGIBLE |
+| D06 | Target Level `READY`, ไม่มี Mapping | ALLOW / ELIGIBLE |
+| D07 | Target Level `WAIT_RETURN`, ไม่มี Mapping | ALLOW / ELIGIBLE |
 | D08 | Target Level มี Position Mapping | REJECT / ALREADY_MAPPED |
-| D09 | Level ไม่พบพร้อมกับ Mapping Flag = true | REJECT / LEVEL_NOT_FOUND |
+| D09 | Level ไม่พบพร้อม Mapping flag = true | REJECT / LEVEL_NOT_FOUND |
 
 ### Group E — Decision Precedence (6)
 
-แต่ละกรณีเปิดเงื่อนไข Failure สองข้อพร้อมกัน เพื่อยืนยันว่า Policy คืน Reason Code ของ Gate ที่มาก่อนเสมอ
+แต่ละ Test เปิด Failure Gate สองข้อพร้อมกัน เพื่อยืนยันว่าใช้ Reason Code จาก Gate ที่มาก่อน
 
-| ID | เงื่อนไขที่เกิดพร้อมกัน | Expected Reason |
+| ID | เงื่อนไขพร้อมกัน | Expected Reason |
 |---|---|---|
-| E01 | Invalid Candidate + Identity mismatch | INVALID_CANDIDATE |
-| E02 | Identity mismatch + Execution blocked | IDENTITY_MISMATCH |
-| E03 | Execution blocked + Unresolved Request | EXECUTION_BLOCKED |
-| E04 | Unresolved Request + Level not found | UNRESOLVED_REQUEST |
-| E05 | Level not found + Level not eligible | LEVEL_NOT_FOUND |
-| E06 | Level not eligible + Already mapped | LEVEL_NOT_ELIGIBLE |
+| E01 | INVALID_CANDIDATE + IDENTITY_MISMATCH | INVALID_CANDIDATE |
+| E02 | IDENTITY_MISMATCH + EXECUTION_BLOCKED | IDENTITY_MISMATCH |
+| E03 | EXECUTION_BLOCKED + UNRESOLVED_REQUEST | EXECUTION_BLOCKED |
+| E04 | UNRESOLVED_REQUEST + LEVEL_NOT_FOUND | UNRESOLVED_REQUEST |
+| E05 | LEVEL_NOT_FOUND + LEVEL_NOT_ELIGIBLE | LEVEL_NOT_FOUND |
+| E06 | LEVEL_NOT_ELIGIBLE + ALREADY_MAPPED | LEVEL_NOT_ELIGIBLE |
 
 ### Group F — Stateless & Deterministic (6)
 
-| ID | กรณี | Expected |
-|---|---|---|
-| F01 | Evaluate Input เดิมซ้ำ | Decision และ Reason Code เหมือนเดิม |
-| F02 | Evaluate Candidate แยกกัน | Candidate หนึ่งไม่กระทบอีก Candidate |
-| F03 | Repeated rejection | ไม่มี State เปลี่ยนใน Policy |
-| F04 | ตรวจ Input ก่อน/หลัง Evaluate | Input ไม่ถูก Mutation |
-| F05 | เปลี่ยน Execution Context จาก NORMAL เป็น Blocked | การ Evaluate ครั้งใหม่ Reject |
-| F06 | เปลี่ยน Execution Context จาก Blocked เป็น NORMAL | การ Evaluate ครั้งใหม่ประเมินจาก Context ใหม่และ Allow ได้เมื่อ Gate อื่นผ่าน |
+ทุก Evaluation ใน Group F ต้อง assert Decision, Reason Code และ Target Level ตาม Candidate ที่ส่งใน call นั้น
 
-**รวม 40 กรณี** (4 + 9 + 6 + 9 + 6 + 6)
+| ID | กรณีและ Expected |
+|---|---|
+| F01 | Evaluate valid inputs เดิมสองครั้ง; ทั้งสองผลเป็น ALLOW / ELIGIBLE และ `target_level` ถูก Copy ถูกต้อง |
+| F02 | Evaluate Candidate Level 0 ด้วย Context READY/unmapped -> ALLOW / ELIGIBLE; Candidate Level 7 ด้วย Context READY/mapped -> REJECT / ALREADY_MAPPED; Evaluate Level 0 ด้วย Context เดิมซ้ำ -> ALLOW / ELIGIBLE |
+| F03 | Evaluate Candidate ที่มี Unresolved Request สองครั้ง; ทั้งสองผล REJECT / UNRESOLVED_REQUEST และ Target Level ถูก Copy |
+| F04 | Evaluate valid Candidate/Contexts; ALLOW / ELIGIBLE, Target Level ถูก Copy และ Inputs ไม่ถูก Mutation |
+| F05 | Evaluate ด้วย Execution `NORMAL` -> ALLOW / ELIGIBLE; จากนั้น `MAINTENANCE_ERROR` -> REJECT / EXECUTION_BLOCKED; Target Level ถูก Copy ทั้งสองครั้ง |
+| F06 | Evaluate ด้วย `RECOVERY_ERROR` -> REJECT / EXECUTION_BLOCKED; จากนั้น `NORMAL` -> ALLOW / ELIGIBLE; Target Level ถูก Copy ทั้งสองครั้ง |
 
-### Test EA Interface Names — Provisional, Pending Review
+F02 ใช้ Level Context แยกกัน: Context ของ Level 0 ไม่มี Mapping และ Context ของ Level 7 มี Mapping พร้อมใช้ Result object ตัวเดียวกันตลอดทั้งสาม Evaluate calls. การ assert หลังทุก call ยืนยันว่า Policy เขียน Decision, Reason Code และ Target Level ใหม่ครบถ้วน ไม่มี stale output จาก call ก่อนหน้า และไม่มี mapping state รั่วระหว่างการประเมิน แต่ **ไม่พิสูจน์ว่า Caller/Resolver ให้ provenance ถูกต้อง**.
 
-เพื่อให้ Test-First Test EA อ้างอิง Contract ได้ ไฟล์ทดสอบกำหนดชื่อ MQL5 identifiers เบื้องต้นดังนี้:
+**รวม 44 Test IDs** (4 + 13 + 6 + 9 + 6 + 6)
 
-- Policy class: `CTGKGridEntryExecutionPolicy`
+### 7.1 API Contract ที่อนุมัติสำหรับ Phase 2 Test Contract
+
+ชื่อเหล่านี้เป็น API Names ที่ผู้ใช้ออนุมัติแล้วสำหรับ Test Contract; ยังไม่มี Policy implementation:
+
+- Class: `CTGKGridEntryExecutionPolicy`
 - Candidate: `STGKGridEntryExecutionCandidate`
 - Target: `STGKGridEntryTargetLevel`
 - Level Context: `STGKGridEntryExecutionLevelContext`
 - Execution Context: `STGKGridEntryExecutionContext`
 - Result: `STGKGridEntryExecutionResult`
-- Decision enum: `ENUM_TGK_GRID_ENTRY_DECISION`
-- Reason enum: `ENUM_TGK_GRID_ENTRY_REASON`
-- Execution State enum: `ENUM_TGK_GRID_ENTRY_EXECUTION_STATE`
-- Method: `Evaluate(candidate, level_context, execution_context, result)`
-- Result fields: `decision`, `reason_code`, `target_level`
+- Decision enum: `ENUM_TGK_GRID_ENTRY_DECISION` (`ALLOW`, `REJECT`)
+- Reason enum: `ENUM_TGK_GRID_ENTRY_REASON` (`INVALID_CANDIDATE`, `IDENTITY_MISMATCH`, `EXECUTION_BLOCKED`, `UNRESOLVED_REQUEST`, `LEVEL_NOT_FOUND`, `LEVEL_NOT_ELIGIBLE`, `ALREADY_MAPPED`, `ELIGIBLE`)
+- Execution State enum: `ENUM_TGK_GRID_ENTRY_EXECUTION_STATE` (`NORMAL`, `MAINTENANCE_ERROR`, `RECOVERY_ERROR`; unknown/invalid ต้อง Block)
 
-ชื่อเหล่านี้เป็น **ข้อเสนอระดับ Source API จาก Test EA เท่านั้น ยังไม่ใช่ Design Baseline ที่ผู้ใช้อนุมัติ**. ก่อน Phase 3 จะ Implement Policy ต้อง Review/ยืนยันชื่อและ Field Contract เหล่านี้ก่อน โดยห้ามเปลี่ยน Validation Order หรือ Semantics ที่อนุมัติแล้วโดยไม่มีการตกลงใหม่
+Candidate fields: `instance_id`, `symbol`, `magic_number`, `mode`, `config_epoch`, `target_level`, `entry_price`.
 
-## 8. Acceptance Criteria
+Target fields: `is_anchor`, `level_index`. Anchor ใช้ `true/-1`; Normal Level ใช้ `false/ >= 0`.
 
-- Test ทั้ง 40 กรณีผ่านใน Dedicated Test EA
-- Validation Order ตรงตาม Section 5
-- Output มี Reason Code เพียงหนึ่งค่า
-- READY และ WAIT_RETURN เป็น Eligible States เพียงสองค่า
-- Target Level Mapping Check จำกัดอยู่ที่ Candidate Target ภายใน Instance ปัจจุบัน
-- Invalid/Unknown State ต้อง Fail Closed
-- Statelessness, Determinism, Input Immutability และ Fresh Context Reevaluation มี Test ครอบคลุม
-- Policy ไม่มี Trade API, Storage หรือ File I/O dependency
-- ผู้ใช้ยืนยัน MetaEditor Compile/Runtime และ Grid Regression Tests ที่เกี่ยวข้องผ่านก่อนถือว่า Phase Implementation เสร็จ
+Level Context fields: `level_exists`, `level_state`, `has_position_mapping`.
+
+Execution Context fields: `has_unresolved_request`, `identity_valid`, `execution_state`.
+
+Result fields: `decision`, `reason_code`, `target_level`.
+
+`Evaluate()` contract: return type `void`; Candidate, Level Context และ Execution Context เป็น `const` references; Result เป็น output reference. ทุก call ต้องกำหนด Result ทั้งสาม field ใหม่ทุก path รวมถึง REJECT.
+
+Policy-specific enum numeric values ไม่ใช่ persistent contract ใน Phase 2; Test ใช้ symbolic values. Grid Mode และ Grid Level State ใช้ enums ที่มีอยู่ใน `GridTypes.mqh`.
+
+### 7.2 Caller / Resolver Contract สำหรับ Position Mapping
+
+- Caller/Resolver Resolve Level Context จาก `candidate.instance_id` และ Target Key (`is_anchor`, `level_index`).
+- Context ต้องเป็นของ Target Level ที่แน่นอนและ Current Instance เท่านั้น และต้องเป็น Fresh Context ทุก Evaluation.
+- ห้ามใช้ Context จาก Level หรือ Instance อื่นแทน.
+- Policy อ่าน `has_position_mapping` ที่ Caller ส่งมาเท่านั้น; Policy ตรวจ provenance เองไม่ได้ เพราะ Context ไม่มี identity/key/provenance fields.
+- หาก Resolver ทำงานไม่สำเร็จ Caller ต้อง Fail Closed และ **ห้ามเรียก Policy**; ห้ามแทน Resolve failure ด้วย `has_position_mapping=false`.
+- Resolver correctness ต้องทดสอบด้วย Integration Tests แยกต่างหาก; Policy Unit Tests ไม่พิสูจน์ provenance correctness.
+- Mapping Reducer ยังคงเป็น Authority สำหรับ Mapping validation และ State transitions.
+
+## 8. Acceptance Criteria — Phase 2 Test-First Specification
+
+- Test EA มี 44 Test IDs ไม่ซ้ำ และ Group counts 4/13/6/9/6/6.
+- Candidate boundary cases, แยก NaN/Infinity, และ E01–E06 precedence tests ตรงตาม Contract.
+- F01–F06 assert Decision, Reason Code และ Target Level ในทุก Evaluation; F02, F05 และ F06 reuse Result object เดิมข้าม Evaluate calls เพื่อทดสอบการเขียนทับ Output และป้องกัน stale result.
+- Test EA ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency.
+- Test EA ใช้ API Names และ Method Contract ที่อนุมัติ; ไม่มี Policy header/source implementation.
+- Static source checks ผ่าน รวมจำนวน/ลำดับ IDs, duplicate IDs, group counts, delimiter balance และ `git diff --check`.
+- Phase 2 เป็น Test-First Specification เท่านั้น; ไม่มีการ Compile/Run MetaEditor/MT5 และห้ามรายงาน Compile/Runtime PASS.
+- Caller/Resolver provenance เป็น precondition; Phase 2 Unit Tests ไม่ยืนยัน Resolver correctness.
+- Phase 3 ยังไม่เริ่มและต้องรอการอนุมัติแยกต่างหาก.
 
 ## 9. Phase Gate และสถานะ
 
@@ -251,10 +287,10 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 |---|---|---|
 | Phase 1 | ตรวจสอบ Design, Contract, Architecture และ Test Plan | Complete; ผู้ใช้อนุมัติ |
 | Precondition | Latest Grid Regression Tests | PASS ตามที่ผู้ใช้รายงาน 2026-11-17 |
-| Phase 2 | สร้าง Dedicated Test EA แบบ Test-First และตรวจ Coverage | กำลังดำเนินการ; Test EA สร้างแล้ว 40/40 Cases และ Static Checks ผ่าน; รอ Review ก่อนปิด Phase |
-| Phase 3 | Policy Implementation หลัง Test-First Gate ตามแผนที่ตกลง | ยังไม่เริ่ม |
+| Phase 2 | Test-First Specification, 44 Cases และ Static Review | Finalized ตาม Final Contract ที่ผู้ใช้อนุมัติ 2026-11-17; Static Checks ผ่านตามรายการใน Project Status |
+| Phase 3 | Policy Implementation | ยังไม่เริ่ม; ต้องได้รับอนุมัติแยกต่างหาก |
 
-ผู้ใช้อนุมัติ Phase 2 แล้วเมื่อ 2026-11-17. Test EA ถูกสร้างที่ `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` ครบ 40 Cases ตาม Group A–F และผ่าน Static Checks (`git diff --check`, จำนวน Test/Group, delimiter balance, duplicate local declaration scan และตรวจว่าไม่มี Trade API/File I/O call). ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. เนื่องจาก Policy Header/Contract ยังไม่ถูกสร้างตามขอบเขต Test-First Phase นี้ การ Compile/Run กับ Production Policy จะทำได้หลังมี Policy Contract ใน Phase ถัดไป; ห้ามนับ Static Checks เป็น Compile/Runtime PASS.
+Phase 2 ไม่สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` และ Test EA จึงยังไม่ Compile/Run กับ Production Policy. ผล Static Checks ไม่ใช่ Compile/Runtime PASS.
 
 ## 10. Related Files
 
@@ -263,4 +299,4 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 - [Grid Entry Execution Adapter — Round 1](phase-grid-entry-execution-adapter-round-1.md)
 - [Project status](../../../../PROJECT_STATUS.md)
 
-สถานะไฟล์ ณ 2026-11-17: Dedicated Test EA ถูกสร้างแล้ว; `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่ถูกสร้างและยังไม่มี Decision Logic.
+สถานะไฟล์ ณ 2026-11-17: Phase 2 Test-First Specification ถูก Finalize ตาม Contract ที่ผู้ใช้ออนุมัติ; Dedicated Test EA มี 44 Test IDs และผ่าน Static Acceptance Checks. `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่ถูกสร้างและยังไม่มี Decision Logic; Phase 3 ยังไม่เริ่ม.

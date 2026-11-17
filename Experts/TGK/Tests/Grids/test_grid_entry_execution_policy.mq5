@@ -67,6 +67,31 @@ void AssertEvaluation(
     1);
 }
 
+void AssertPolicyResult(
+  string assertion_prefix,
+  STGKGridEntryExecutionResult &result,
+  STGKGridEntryExecutionCandidate &candidate,
+  ENUM_TGK_GRID_ENTRY_DECISION expected_decision,
+  ENUM_TGK_GRID_ENTRY_REASON expected_reason
+)
+{
+  Tests.AssertEqualInt(
+    assertion_prefix + " decision",
+    (int)result.decision,
+    (int)expected_decision);
+  Tests.AssertEqualInt(
+    assertion_prefix + " reason",
+    (int)result.reason_code,
+    (int)expected_reason);
+  Tests.AssertEqualInt(
+    assertion_prefix + " target is copied",
+    result.target_level.is_anchor == candidate.target_level.is_anchor &&
+    result.target_level.level_index == candidate.target_level.level_index
+      ? 1
+      : 0,
+    1);
+}
+
 void AssertAllow(
   string assertion_prefix,
   STGKGridEntryExecutionCandidate &candidate,
@@ -159,7 +184,7 @@ int OnInit()
     execution_context);
   Tests.EndTest();
 
-  // Group B — Candidate Validation (9)
+  // Group B — Candidate Validation (13)
 
   Tests.BeginTest("B01 Empty Instance ID is invalid");
   SetValidCandidate(candidate);
@@ -187,13 +212,13 @@ int OnInit()
     TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
   Tests.EndTest();
 
-  Tests.BeginTest("B03 Non-positive Magic Number is invalid");
+  Tests.BeginTest("B03 Zero Magic Number is invalid");
   SetValidCandidate(candidate);
   candidate.magic_number = 0;
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
   AssertReject(
-    "invalid Magic",
+    "zero Magic",
     candidate,
     level_context,
     execution_context,
@@ -213,13 +238,13 @@ int OnInit()
     TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
   Tests.EndTest();
 
-  Tests.BeginTest("B05 Non-positive Config Epoch is invalid");
+  Tests.BeginTest("B05 Zero Config Epoch is invalid");
   SetValidCandidate(candidate);
   candidate.config_epoch = 0;
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
   AssertReject(
-    "invalid Config Epoch",
+    "zero Config Epoch",
     candidate,
     level_context,
     execution_context,
@@ -233,7 +258,7 @@ int OnInit()
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
   AssertReject(
-    "invalid Target Level",
+    "invalid Anchor Target Level",
     candidate,
     level_context,
     execution_context,
@@ -266,7 +291,7 @@ int OnInit()
     TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
   Tests.EndTest();
 
-  Tests.BeginTest("B09 NaN and Infinity Entry Prices are invalid");
+  Tests.BeginTest("B09 NaN Entry Price is invalid");
   SetValidCandidate(candidate);
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
@@ -277,9 +302,55 @@ int OnInit()
     level_context,
     execution_context,
     TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
+  Tests.EndTest();
+
+  Tests.BeginTest("B10 Infinite Entry Price is invalid");
+  SetValidCandidate(candidate);
+  SetValidLevelContext(level_context);
+  SetValidExecutionContext(execution_context);
   candidate.entry_price = MathExp(1000.0);
   AssertReject(
-    "Infinity Entry Price",
+    "Infinite Entry Price",
+    candidate,
+    level_context,
+    execution_context,
+    TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
+  Tests.EndTest();
+
+  Tests.BeginTest("B11 Negative Magic Number is invalid");
+  SetValidCandidate(candidate);
+  candidate.magic_number = -1;
+  SetValidLevelContext(level_context);
+  SetValidExecutionContext(execution_context);
+  AssertReject(
+    "negative Magic",
+    candidate,
+    level_context,
+    execution_context,
+    TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
+  Tests.EndTest();
+
+  Tests.BeginTest("B12 Negative Config Epoch is invalid");
+  SetValidCandidate(candidate);
+  candidate.config_epoch = -1;
+  SetValidLevelContext(level_context);
+  SetValidExecutionContext(execution_context);
+  AssertReject(
+    "negative Config Epoch",
+    candidate,
+    level_context,
+    execution_context,
+    TGK_GRID_ENTRY_REASON_INVALID_CANDIDATE);
+  Tests.EndTest();
+
+  Tests.BeginTest("B13 Negative Normal Level index is invalid");
+  SetValidCandidate(candidate);
+  candidate.target_level.is_anchor = false;
+  candidate.target_level.level_index = -1;
+  SetValidLevelContext(level_context);
+  SetValidExecutionContext(execution_context);
+  AssertReject(
+    "negative Normal Level index",
     candidate,
     level_context,
     execution_context,
@@ -570,7 +641,7 @@ int OnInit()
 
   // Group F — Stateless & Deterministic (6)
 
-  Tests.BeginTest("F01 Repeated evaluation is deterministic");
+  Tests.BeginTest("F01 Repeated evaluation is deterministic and writes all outputs");
   SetValidCandidate(candidate);
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
@@ -586,51 +657,71 @@ int OnInit()
     level_context,
     execution_context,
     second_result);
-  Tests.AssertEqualInt("same Decision",
-    (int)second_result.decision, (int)first_result.decision);
-  Tests.AssertEqualInt("same Reason",
-    (int)second_result.reason_code, (int)first_result.reason_code);
-  Tests.AssertEqualInt("same Target Level",
-    second_result.target_level.level_index, first_result.target_level.level_index);
+  AssertPolicyResult(
+    "first evaluation",
+    first_result,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
+  AssertPolicyResult(
+    "second evaluation",
+    second_result,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
   Tests.EndTest();
 
-  Tests.BeginTest("F02 Evaluating one Candidate does not affect another Candidate");
+  Tests.BeginTest("F02 Mapping Context is evaluated independently for each Target Level");
   SetValidCandidate(candidate);
-  SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
-  STGKGridEntryExecutionResult first_candidate_result;
+  STGKGridEntryExecutionLevelContext level_0_context;
+  SetValidLevelContext(level_0_context);
+  STGKGridEntryExecutionResult result_f02;
   Policy.Evaluate(
     candidate,
-    level_context,
+    level_0_context,
     execution_context,
-    first_candidate_result);
-  STGKGridEntryExecutionCandidate second_candidate;
-  SetValidCandidate(second_candidate);
-  second_candidate.target_level.level_index = 7;
-  second_candidate.entry_price = 4030.0;
-  STGKGridEntryExecutionResult second_candidate_result;
+    result_f02);
+  AssertPolicyResult(
+    "Level 0 first evaluation",
+    result_f02,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
+
+  STGKGridEntryExecutionCandidate level_7_candidate;
+  SetValidCandidate(level_7_candidate);
+  level_7_candidate.target_level.level_index = 7;
+  level_7_candidate.entry_price = 4030.0;
+  STGKGridEntryExecutionLevelContext level_7_context;
+  SetValidLevelContext(level_7_context);
+  level_7_context.has_position_mapping = true;
   Policy.Evaluate(
-    second_candidate,
-    level_context,
+    level_7_candidate,
+    level_7_context,
     execution_context,
-    second_candidate_result);
-  STGKGridEntryExecutionResult first_candidate_recheck;
+    result_f02);
+  AssertPolicyResult(
+    "Level 7 mapped evaluation",
+    result_f02,
+    level_7_candidate,
+    TGK_GRID_ENTRY_DECISION_REJECT,
+    TGK_GRID_ENTRY_REASON_ALREADY_MAPPED);
+
   Policy.Evaluate(
     candidate,
-    level_context,
+    level_0_context,
     execution_context,
-    first_candidate_recheck);
-  Tests.AssertEqualInt("first Candidate remains eligible",
-    (int)first_candidate_result.reason_code, (int)TGK_GRID_ENTRY_REASON_ELIGIBLE);
-  Tests.AssertEqualInt("first Candidate remains deterministic after second evaluation",
-    (int)first_candidate_recheck.reason_code, (int)first_candidate_result.reason_code);
-  Tests.AssertEqualInt("second Candidate independently eligible",
-    (int)second_candidate_result.reason_code, (int)TGK_GRID_ENTRY_REASON_ELIGIBLE);
-  Tests.AssertEqualInt("second Target Level is preserved",
-    second_candidate_result.target_level.level_index, 7);
+    result_f02);
+  AssertPolicyResult(
+    "Level 0 reevaluation",
+    result_f02,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
   Tests.EndTest();
 
-  Tests.BeginTest("F03 Repeated rejection does not mutate Policy or input contexts");
+  Tests.BeginTest("F03 Repeated unresolved request rejection writes all outputs");
   SetValidCandidate(candidate);
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
@@ -647,15 +738,21 @@ int OnInit()
     level_context,
     execution_context,
     rejected_twice);
-  Tests.AssertEqualInt("first rejection reason",
-    (int)rejected_once.reason_code, (int)TGK_GRID_ENTRY_REASON_UNRESOLVED_REQUEST);
-  Tests.AssertEqualInt("second rejection reason",
-    (int)rejected_twice.reason_code, (int)TGK_GRID_ENTRY_REASON_UNRESOLVED_REQUEST);
-  Tests.AssertTrue("unresolved flag remains set", execution_context.has_unresolved_request);
-  Tests.AssertTrue("identity remains valid", execution_context.identity_valid);
+  AssertPolicyResult(
+    "first unresolved rejection",
+    rejected_once,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_REJECT,
+    TGK_GRID_ENTRY_REASON_UNRESOLVED_REQUEST);
+  AssertPolicyResult(
+    "second unresolved rejection",
+    rejected_twice,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_REJECT,
+    TGK_GRID_ENTRY_REASON_UNRESOLVED_REQUEST);
   Tests.EndTest();
 
-  Tests.BeginTest("F04 Evaluate does not mutate Candidate or Context inputs");
+  Tests.BeginTest("F04 Evaluate writes all outputs without mutating inputs");
   SetValidCandidate(candidate);
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
@@ -679,6 +776,12 @@ int OnInit()
     level_context,
     execution_context,
     result);
+  AssertPolicyResult(
+    "valid evaluation",
+    result,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
   Tests.AssertEqualString(
     "Instance ID unchanged",
     candidate.instance_id,
@@ -722,25 +825,31 @@ int OnInit()
   SetValidCandidate(candidate);
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
-  STGKGridEntryExecutionResult normal_result;
+  STGKGridEntryExecutionResult result_f05;
   Policy.Evaluate(
     candidate,
     level_context,
     execution_context,
-    normal_result);
+    result_f05);
+  AssertPolicyResult(
+    "NORMAL context",
+    result_f05,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
+
   execution_context.execution_state = TGK_GRID_ENTRY_EXECUTION_MAINTENANCE_ERROR;
-  STGKGridEntryExecutionResult blocked_result;
   Policy.Evaluate(
     candidate,
     level_context,
     execution_context,
-    blocked_result);
-  Tests.AssertEqualInt("NORMAL context allows",
-    (int)normal_result.decision, (int)TGK_GRID_ENTRY_DECISION_ALLOW);
-  Tests.AssertEqualInt("Blocked fresh context rejects",
-    (int)blocked_result.decision, (int)TGK_GRID_ENTRY_DECISION_REJECT);
-  Tests.AssertEqualInt("Blocked reason is explicit",
-    (int)blocked_result.reason_code, (int)TGK_GRID_ENTRY_REASON_EXECUTION_BLOCKED);
+    result_f05);
+  AssertPolicyResult(
+    "MAINTENANCE_ERROR context",
+    result_f05,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_REJECT,
+    TGK_GRID_ENTRY_REASON_EXECUTION_BLOCKED);
   Tests.EndTest();
 
   Tests.BeginTest("F06 Fresh NORMAL Context reevaluates after a prior Blocked result");
@@ -748,25 +857,31 @@ int OnInit()
   SetValidLevelContext(level_context);
   SetValidExecutionContext(execution_context);
   execution_context.execution_state = TGK_GRID_ENTRY_EXECUTION_RECOVERY_ERROR;
-  STGKGridEntryExecutionResult prior_blocked_result;
+  STGKGridEntryExecutionResult result_f06;
   Policy.Evaluate(
     candidate,
     level_context,
     execution_context,
-    prior_blocked_result);
+    result_f06);
+  AssertPolicyResult(
+    "RECOVERY_ERROR context",
+    result_f06,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_REJECT,
+    TGK_GRID_ENTRY_REASON_EXECUTION_BLOCKED);
+
   execution_context.execution_state = TGK_GRID_ENTRY_EXECUTION_NORMAL;
-  STGKGridEntryExecutionResult fresh_normal_result;
   Policy.Evaluate(
     candidate,
     level_context,
     execution_context,
-    fresh_normal_result);
-  Tests.AssertEqualInt("prior Blocked context rejected",
-    (int)prior_blocked_result.reason_code, (int)TGK_GRID_ENTRY_REASON_EXECUTION_BLOCKED);
-  Tests.AssertEqualInt("fresh NORMAL context allows",
-    (int)fresh_normal_result.decision, (int)TGK_GRID_ENTRY_DECISION_ALLOW);
-  Tests.AssertEqualInt("fresh NORMAL reason is ELIGIBLE",
-    (int)fresh_normal_result.reason_code, (int)TGK_GRID_ENTRY_REASON_ELIGIBLE);
+    result_f06);
+  AssertPolicyResult(
+    "fresh NORMAL context",
+    result_f06,
+    candidate,
+    TGK_GRID_ENTRY_DECISION_ALLOW,
+    TGK_GRID_ENTRY_REASON_ELIGIBLE);
   Tests.EndTest();
 
   Tests.EndSuite();

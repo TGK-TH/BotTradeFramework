@@ -3,17 +3,17 @@
 Last updated: 2026-11-17
 
 ## Current focus
-**Grid Entry Execution Policy — Phase 2 Test-First กำลังดำเนินการ**
+**Grid Entry Execution Policy — Phase 2 Test-First Specification เสร็จสิ้นตาม Contract ที่ผู้ใช้ออนุมัติ; Phase 3 ยังไม่เริ่มและรออนุมัติแยกต่างหาก**
 
 Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
 
 เอกสารหลัก: [phase-grid-entry-execution-policy.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
 
-Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — สร้างแล้วครบ 40 Cases / 6 Groups (A–F). Static Checks ผ่าน: 40 Test Cases, Group counts 4/9/6/9/6/6, delimiter balance, no duplicate local declarations, no Trade API/File I/O calls, และ `git diff --check`.
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / 6 Groups (A–F): 4/13/6/9/6/6. Static Acceptance Checks ผ่านเมื่อ 2026-11-17: 44 unique IDs, group counts, F02 Level 0/7 mapping-context sequence และ output assertions, F01/F03–F06 output assertions, NaN/Infinity แยก Test IDs, Candidate boundary cases, E01–E06 precedence, delimiter balance, no forbidden Trade API/File I/O/Persistent Storage dependencies, ไม่มี Policy header, `git diff --check`, และตรวจว่าแก้เฉพาะไฟล์ที่อนุญาต. ไม่มีการ Compile/Run MetaEditor/MT5.
 
 **Phase 1 — Design/Contract/Test Plan: Complete และผู้ใช้อนุมัติแล้ว.** ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และยืนยันให้ใช้ผลนี้เป็น Precondition สำหรับ Phase 2
 
-**Phase 2 — Test-First: กำลังดำเนินการ.** ผู้ใช้อนุมัติเมื่อ 2026-11-17; Test EA ถูกสร้างและผ่าน Static Checks. ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. Production Policy Header ยังไม่ถูกสร้างตามขอบเขต Test-First จึงยังไม่สามารถ Compile Test EA กับ Production Contract ได้. ต้อง Review Test Contract/coverage ก่อนปิด Phase 2.
+**Phase 2 — Test-First Specification: เสร็จสิ้นตาม Contract ที่ผู้ใช้ออนุมัติเมื่อ 2026-11-17.** Test EA มี 44 Cases และผ่าน Static Acceptance Checks ตามรายการด้านบน. Phase 2 เป็น Specification/Test EA เท่านั้น; ไม่มีการ Compile/Run ใน MetaEditor/MT5 และไม่ได้อ้างผล Compile/Runtime PASS. Production Policy Header ยังไม่ถูกสร้างตามขอบเขตที่อนุมัติ.
 
 **Phase 3 — Policy Implementation: ยังไม่เริ่มและต้องรออนุมัติแยกต่างหาก.**
 

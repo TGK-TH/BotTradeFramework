@@ -378,25 +378,29 @@ Implementation ที่เพิ่มแล้ว:
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
-## Grid Entry Execution Policy — Test-First (กำลังดำเนินการ)
+## Grid Entry Execution Policy — Phase 2 Test-First Specification (Finalized)
 
-เอกสาร Design Baseline และ Test Plan ฉบับเต็ม: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
+เอกสาร Design Baseline และ Test Contract: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
 
-Files:
-- `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — สร้างแล้ว; มี 40 Cases / 6 Groups
-- `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` — ยังไม่สร้าง; เป็น Production Policy Source ใน Phase ถัดไป
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 
-Test Plan มี 40 Cases แบ่ง 6 Groups:
+Production Policy: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่สร้าง; เป็นขอบเขต Phase 3 ซึ่งยังไม่เริ่ม
+
+Test Inventory: **44 Test IDs / 6 Groups**
 - A: Valid Candidate (4)
-- B: Candidate Validation (9)
+- B: Candidate Validation (13)
 - C: Identity & Execution State (6)
 - D: Request & Level Eligibility (9)
 - E: Decision Precedence (6)
 - F: Stateless & Deterministic (6)
 
-ขอบเขต Test: Pure Decision เท่านั้น ไม่มี Trade Request, CTrade, OrderSend, File I/O หรือ Persistent Storage dependency
+Test Contract ใช้ API Names ที่ผู้ใช้ออนุมัติ: `CTGKGridEntryExecutionPolicy`, `STGKGridEntryExecutionCandidate`, `STGKGridEntryTargetLevel`, `STGKGridEntryExecutionLevelContext`, `STGKGridEntryExecutionContext`, `STGKGridEntryExecutionResult` และ Policy enums ที่ระบุใน Phase document. `Evaluate()` ใช้ input const references, result output reference และ return type `void`; ต้องกำหนด Decision, Reason Code และ Target Level ทุก path.
 
-สถานะ: Design และ Test Plan ผ่านการอนุมัติแล้ว; ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และอนุมัติ Phase 2 แล้ว. Test EA ถูกสร้างและผ่าน Static Checks แต่ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. เนื่องจาก Production Policy Header ยังไม่ถูกสร้างตามขอบเขต Test-First จึงยังไม่สามารถ Compile Test EA กับ Production Contract ได้; ต้องไม่รายงานเป็น Compile/Runtime PASS.
+Caller/Resolver ต้อง Resolve Level Context ตาม `candidate.instance_id` และ target key แล้วส่ง Context สดของ Target Level ใน Current Instance เท่านั้น. เมื่อ Resolve ล้มเหลว Caller ต้อง Fail Closed และห้ามเรียก Policy; ห้ามแทน Resolve failure ด้วย mapping=false. Policy Unit Tests ยืนยันการใช้ Context ที่ส่งให้แต่ละ call แต่ไม่พิสูจน์ provenance correctness; ต้องมี Integration Tests แยกสำหรับ Resolver.
+
+ขอบเขต Test เป็น Pure Decision Specification เท่านั้น ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency. Phase 2 นี้ไม่มีการ Compile/Run ใน MetaEditor/MT5; Static Checks ไม่ใช่ Compile/Runtime PASS. Phase 3 ยังไม่เริ่ม.
+
+ผล Static Acceptance (2026-11-17): 44 unique Test IDs; Group counts 4/13/6/9/6/6; F02 ใช้ Context Level 0 unmapped, Level 7 mapped, แล้วประเมิน Level 0 ซ้ำ โดย reuse Result object เดิมและ assert ครบทุก output หลังแต่ละ call; F05/F06 reuse Result object ข้าม Execution State; boundary cases และ E01–E06 precedence ครบ; ไม่พบ forbidden dependencies; Policy header ยังไม่มี; `git diff --check` ผ่าน.
 
 ## นโยบาย Regression Test
 
