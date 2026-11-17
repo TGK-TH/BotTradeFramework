@@ -215,6 +215,24 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 
 **รวม 40 กรณี** (4 + 9 + 6 + 9 + 6 + 6)
 
+### Test EA Interface Names — Provisional, Pending Review
+
+เพื่อให้ Test-First Test EA อ้างอิง Contract ได้ ไฟล์ทดสอบกำหนดชื่อ MQL5 identifiers เบื้องต้นดังนี้:
+
+- Policy class: `CTGKGridEntryExecutionPolicy`
+- Candidate: `STGKGridEntryExecutionCandidate`
+- Target: `STGKGridEntryTargetLevel`
+- Level Context: `STGKGridEntryExecutionLevelContext`
+- Execution Context: `STGKGridEntryExecutionContext`
+- Result: `STGKGridEntryExecutionResult`
+- Decision enum: `ENUM_TGK_GRID_ENTRY_DECISION`
+- Reason enum: `ENUM_TGK_GRID_ENTRY_REASON`
+- Execution State enum: `ENUM_TGK_GRID_ENTRY_EXECUTION_STATE`
+- Method: `Evaluate(candidate, level_context, execution_context, result)`
+- Result fields: `decision`, `reason_code`, `target_level`
+
+ชื่อเหล่านี้เป็น **ข้อเสนอระดับ Source API จาก Test EA เท่านั้น ยังไม่ใช่ Design Baseline ที่ผู้ใช้อนุมัติ**. ก่อน Phase 3 จะ Implement Policy ต้อง Review/ยืนยันชื่อและ Field Contract เหล่านี้ก่อน โดยห้ามเปลี่ยน Validation Order หรือ Semantics ที่อนุมัติแล้วโดยไม่มีการตกลงใหม่
+
 ## 8. Acceptance Criteria
 
 - Test ทั้ง 40 กรณีผ่านใน Dedicated Test EA
@@ -233,10 +251,10 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 |---|---|---|
 | Phase 1 | ตรวจสอบ Design, Contract, Architecture และ Test Plan | Complete; ผู้ใช้อนุมัติ |
 | Precondition | Latest Grid Regression Tests | PASS ตามที่ผู้ใช้รายงาน 2026-11-17 |
-| Phase 2 | สร้าง Dedicated Test EA แบบ Test-First และตรวจ Coverage | รอผู้ใช้อนุมัติ; ยังไม่เริ่ม |
+| Phase 2 | สร้าง Dedicated Test EA แบบ Test-First และตรวจ Coverage | กำลังดำเนินการ; Test EA สร้างแล้ว 40/40 Cases และ Static Checks ผ่าน; รอ Review ก่อนปิด Phase |
 | Phase 3 | Policy Implementation หลัง Test-First Gate ตามแผนที่ตกลง | ยังไม่เริ่ม |
 
-ก่อนเริ่ม Phase 2 ต้องได้รับคำอนุมัติจากผู้ใช้โดยชัดเจน แม้ Regression Precondition จะผ่านแล้วก็ตาม
+ผู้ใช้อนุมัติ Phase 2 แล้วเมื่อ 2026-11-17. Test EA ถูกสร้างที่ `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` ครบ 40 Cases ตาม Group A–F และผ่าน Static Checks (`git diff --check`, จำนวน Test/Group, delimiter balance, duplicate local declaration scan และตรวจว่าไม่มี Trade API/File I/O call). ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. เนื่องจาก Policy Header/Contract ยังไม่ถูกสร้างตามขอบเขต Test-First Phase นี้ การ Compile/Run กับ Production Policy จะทำได้หลังมี Policy Contract ใน Phase ถัดไป; ห้ามนับ Static Checks เป็น Compile/Runtime PASS.
 
 ## 10. Related Files
 
@@ -245,4 +263,4 @@ Test EA ใช้ Fixtures และ Test Framework เท่านั้น ไ
 - [Grid Entry Execution Adapter — Round 1](phase-grid-entry-execution-adapter-round-1.md)
 - [Project status](../../../../PROJECT_STATUS.md)
 
-ไฟล์ Source และ Test ที่ระบุใน Section 1 เป็น Planned Files และยังไม่ถูกสร้าง ณ วันที่อัปเดตเอกสารนี้
+สถานะไฟล์ ณ 2026-11-17: Dedicated Test EA ถูกสร้างแล้ว; `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่ถูกสร้างและยังไม่มี Decision Logic.

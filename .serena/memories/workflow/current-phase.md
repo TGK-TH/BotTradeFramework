@@ -1,6 +1,6 @@
 # Current TGK BotTradeFramework Phase
 
-As of 2026-11-17, Grid Entry Execution Adapter — Round 1 persistence/mapping foundation is user-verified PASS (2026-11-15). Grid Entry Execution Policy Design Baseline and Test Plan are now approved and documented at `Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md`; Trello card is in Ready: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests. User reported latest Grid Regression Tests all PASS on 2026-11-17 and explicitly accepted this as the Phase 2 precondition. Phase 2 Test-First Implementation is still awaiting separate explicit approval. Do not create the Policy source or dedicated Test EA until approval.
+As of 2026-11-17, Grid Entry Execution Adapter — Round 1 persistence/mapping foundation is user-verified PASS (2026-11-15). Grid Entry Execution Policy Design Baseline and Test Plan are now approved and documented at `Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md`; Trello card is in In Progress: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests. User reported latest Grid Regression Tests all PASS on 2026-11-17 and explicitly accepted this as the Phase 2 precondition. User approved Phase 2 on 2026-11-17. Created `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` with 40 tests / 6 groups. Static checks passed: test/group counts, delimiter balance, no duplicate local declarations, no Trade API/File I/O, and `git diff --check`. Test EA has not been compiled/run in MT5. `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` is intentionally deferred to Phase 3; do not implement Policy logic until separate explicit Phase 3 approval.
 
 ## Completed slice: Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation
 
@@ -42,9 +42,7 @@ The generation/manifest protocol and crash matrix are documented in:
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5`: no-trading test EA for Snapshot round-trip, Journal N+1 replay, Manifest alternation, Rotation, cleanup, fallback to an older valid generation, crash injection, incomplete-tail repair, Journal/Snapshot/Record/String limits, and Mapping/Deal boundaries.
 - Assistant ran static checks only: `git diff --check`, final newline, delimiter balance, and feature/failure-matrix token checks. No MetaEditor/MT5 compile/runtime was run. Actual MQL5 File API replacement/deletion semantics still require user validation.
 
-## Next phase (requires explicit user approval)
-The next proposed slice is Entry Execution Policy + dedicated Unit Tests. Before changing any Grid source, run the latest Grid Regression Tests. Do not start this slice until the user explicitly approves.
+## Current work: Grid Entry Execution Policy — Phase 2 Test-First
+User approved Phase 2 on 2026-11-17. Created `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` with 40 cases across groups A–F. Static checks pass (40 ordered Test IDs; group counts 4/9/6/9/6/6; delimiter balance; no duplicate local declarations; no Trade API/File I/O; final newline/no trailing whitespace; `git diff --check`). The Test EA has not been compiled/run in MetaEditor/MT5. Its proposed MQL5 API identifiers are provisional and pending user review; the semantic Design Baseline remains unchanged. The Policy header/source `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` remains deferred to Phase 3; do not implement it until separate explicit user approval. The test file currently references the future Policy contract and therefore cannot compile until that header is introduced. User performs MetaEditor/MT5 compile/runtime tests; never claim these were run by Assistant.
 
 No trade APIs or real/demo Trade Requests are part of this slice.
-
-Before any Grid source changes, run the latest Grid Regression Tests. User performs MetaEditor/MT5 compile/runtime tests; never claim these were run by Assistant.

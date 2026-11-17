@@ -3,20 +3,21 @@
 Last updated: 2026-11-17
 
 ## Current focus
-**Grid Entry Execution Policy — Design และ Test Plan อนุมัติแล้ว; Trello Card และเอกสาร Design บันทึกแล้ว; Phase 2 Test-First รออนุมัติ**
+**Grid Entry Execution Policy — Phase 2 Test-First กำลังดำเนินการ**
 
-Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — อยู่ใน List `Ready` พร้อม Labels Architecture, Unit Test และ Documentation
+Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
 
-เอกสารหลัก: [phase-grid-entry-execution-policy.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md) — ระบุ Input/Output Contract, Validation Order, Fail-Closed Rules, 40 Test Cases และ Acceptance Criteria แล้ว
+เอกสารหลัก: [phase-grid-entry-execution-policy.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
 
-## Current phase
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — สร้างแล้วครบ 40 Cases / 6 Groups (A–F). Static Checks ผ่าน: 40 Test Cases, Group counts 4/9/6/9/6/6, delimiter balance, no duplicate local declarations, no Trade API/File I/O calls, และ `git diff --check`.
+
 **Phase 1 — Design/Contract/Test Plan: Complete และผู้ใช้อนุมัติแล้ว.** ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และยืนยันให้ใช้ผลนี้เป็น Precondition สำหรับ Phase 2
 
-**Phase 2 — Test-First Implementation: รออนุมัติโดยชัดเจน; ยังไม่เริ่ม.** Planned Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` (40 Cases / 6 Groups). หลังได้รับอนุมัติจึงสร้าง Test EA, ตรวจ Coverage และส่งให้ผู้ใช้ Compile/Run ใน MetaEditor/MT5 ก่อนพัฒนา Policy Source
+**Phase 2 — Test-First: กำลังดำเนินการ.** ผู้ใช้อนุมัติเมื่อ 2026-11-17; Test EA ถูกสร้างและผ่าน Static Checks. ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. Production Policy Header ยังไม่ถูกสร้างตามขอบเขต Test-First จึงยังไม่สามารถ Compile Test EA กับ Production Contract ได้. ต้อง Review Test Contract/coverage ก่อนปิด Phase 2.
+
+**Phase 3 — Policy Implementation: ยังไม่เริ่มและต้องรออนุมัติแยกต่างหาก.**
 
 **Design constraints:** Stateless Pure Decision Component; grouped inputs Candidate/Level Context/Execution Context; output Decision + single Reason Code + copied Target Level; Validation Order คือ INVALID_CANDIDATE → IDENTITY_MISMATCH → EXECUTION_BLOCKED → UNRESOLVED_REQUEST → LEVEL_NOT_FOUND → LEVEL_NOT_ELIGIBLE → ALREADY_MAPPED → ELIGIBLE; eligible states READY และ WAIT_RETURN; Entry Price finite และ > 0; Mapping check เฉพาะ Target Level ของ Candidate; Fail Closed, Fresh Context, no mutation; ไม่มี Trade API, CTrade, OrderSend, File I/O หรือ Persistent Storage dependency. Mapping Reducer ยังคงเป็น Authority เมื่อนำ Mapping ไป Apply จริง
-
-**ห้ามเริ่ม Phase 2 จนกว่าจะได้รับอนุมัติโดยชัดเจน.** ห้ามสร้าง Policy Source หรือ Test EA ก่อนการอนุมัติ
 
 Most recently completed phase: **Grid Level Runtime Coordinator — Round 1: Completed (User Verified 12/12 PASS, 2026-11-09).** The user reported the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5.
 

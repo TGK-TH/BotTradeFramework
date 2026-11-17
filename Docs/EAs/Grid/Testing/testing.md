@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-15
+อัปเดตล่าสุด: 2026-11-17
 
 ## ก่อนเริ่ม
 
@@ -378,13 +378,13 @@ Implementation ที่เพิ่มแล้ว:
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
-## Grid Entry Execution Policy — Design/Test Plan (อนุมัติแล้ว; ยังไม่ Implement)
+## Grid Entry Execution Policy — Test-First (กำลังดำเนินการ)
 
 เอกสาร Design Baseline และ Test Plan ฉบับเต็ม: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
 
-Planned files:
-- `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`
-- `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
+Files:
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — สร้างแล้ว; มี 40 Cases / 6 Groups
+- `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` — ยังไม่สร้าง; เป็น Production Policy Source ใน Phase ถัดไป
 
 Test Plan มี 40 Cases แบ่ง 6 Groups:
 - A: Valid Candidate (4)
@@ -396,7 +396,7 @@ Test Plan มี 40 Cases แบ่ง 6 Groups:
 
 ขอบเขต Test: Pure Decision เท่านั้น ไม่มี Trade Request, CTrade, OrderSend, File I/O หรือ Persistent Storage dependency
 
-สถานะ: Design และ Test Plan ผ่านการอนุมัติแล้ว; ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และยืนยันให้ใช้เป็น Precondition สำหรับ Phase 2 แล้ว แต่ Phase 2 ยังรอคำอนุมัติโดยชัดเจน จึงยังไม่มี Test EA หรือ Policy Source ถูกสร้าง
+สถานะ: Design และ Test Plan ผ่านการอนุมัติแล้ว; ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และอนุมัติ Phase 2 แล้ว. Test EA ถูกสร้างและผ่าน Static Checks แต่ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. เนื่องจาก Production Policy Header ยังไม่ถูกสร้างตามขอบเขต Test-First จึงยังไม่สามารถ Compile Test EA กับ Production Contract ได้; ต้องไม่รายงานเป็น Compile/Runtime PASS.
 
 ## นโยบาย Regression Test
 
