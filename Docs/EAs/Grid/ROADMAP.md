@@ -84,14 +84,15 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**Grid Entry Execution Policy — Phase 2 เสร็จสิ้น; ขั้นถัดไปคือ Phase 3 Policy Implementation**
+**WP-01 — Entry Execution Policy Implementation: Source/Static Review เสร็จ; รอ MetaEditor/MT5 Compile และ Test โดยผู้ใช้**
 
 - Contract และ Test Plan: `Phases/phase-grid-entry-execution-policy.md`
 - Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 - 44 Test IDs; Groups A–F = 4/13/6/9/6/6
 - Static checks ผ่านตาม `PROJECT_STATUS.md`
-- Policy Source ยังไม่มี: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`
-- Phase 3 ยังไม่เริ่ม; การเริ่มต้องอาศัย Kickoff Prompt/คำสั่งต่อเนื่องจากผู้ใช้ที่มอบอำนาจให้ทำ Grid V1 จนเสร็จ
+- Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; Static Review ผ่าน แต่ยังไม่ได้ Compile/Run
+- Baseline Regression 15 Test EAs ผู้ใช้รายงาน PASS เมื่อ 2026-11-17 ก่อนเพิ่ม Policy Header; ต้องรันซ้ำหลังเปลี่ยน Source
+- Gate ถัดไป: ผู้ใช้ Compile/Run Policy Test EA และ 15 Regression Test EAs; WP-02 เริ่มได้เมื่อผล PASS ได้รับการยืนยัน
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
@@ -108,7 +109,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 | ลำดับ | Work Package | สถานะ | ผลลัพธ์ที่ต้องส่งมอบ |
 |---|---|---|---|
-| WP-01 | Entry Execution Policy Implementation | NEXT | Implement Header ตาม Phase 2 Contract; Test EA 44 cases compile/run ผ่าน; ไม่มี Trade API/Mutation |
+| WP-01 | Entry Execution Policy Implementation | WAITING FOR USER MT5 TEST | Header ตาม Phase 2 Contract; ต้องยืนยัน Test EA 44 cases และ Full Regression ผ่าน; ไม่มี Trade API/Mutation |
 | WP-02 | Target-Level Resolver / Caller Integration | NOT STARTED | Resolve Candidate ไปยัง Level/Instance ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ F02 mapping scenario |
 | WP-03 | Entry CTrade Adapter | NOT STARTED | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | NOT STARTED | เชื่อม Engine Candidate → Resolver → Policy → Persistent Mapping/Reducer → CTrade Adapter → Runtime Coordinator; mapping จาก Deal/Position Identifier; ACTIVE หลัง reconciliation เท่านั้น |

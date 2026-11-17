@@ -61,7 +61,7 @@ EA / Test EA
    |       +--> Snapshot + Journal generations + dual Manifest slots
    |       +--> Commit / Recovery / Rotation / Cleanup
    |
-   +--> GridEntryExecutionPolicy (PLANNED; Phase 3 not implemented)
+   +--> CTGKGridEntryExecutionPolicy
    |       +--> Pure Entry decision; no Trade API / no persistence dependency
    |
    +--> CTGKGridPersistence
@@ -86,7 +86,7 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay |
 | `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping และ Level State transition |
 | `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
-| `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | **ยังไม่มีไฟล์**; Phase 1 Design และ Phase 2 Test-First Specification เสร็จแล้ว แต่ Phase 3 Implementation ยังไม่เริ่ม |
+| `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; WP-01 รอ Compile/Run ยืนยัน |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
@@ -103,11 +103,11 @@ MQL5 Test EAs
 - Mapping ใช้ Position Identifier เป็น Logical Key; Order Comment ไม่ใช่ Mapping Key และ Accepted/PLACED ไม่ใช่หลักฐานว่า Position เปิดแล้ว
 - ผู้ใช้รายงาน Compile/Runtime PASS ของ Snapshot/Reducer/Regression เมื่อ 2026-11-15; ดูรายละเอียดใน [Entry Adapter Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
 
-## Entry Execution Policy — Phase 2 Test-First
+## Entry Execution Policy — WP-01 Implementation
 
 - Design/Contract และ Test Plan ได้รับอนุมัติ; Test EA มี 44 Test IDs / 6 Groups
 - Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5
-- `GridEntryExecutionPolicy.mqh` ยังไม่มี; Phase 3 Implementation ยังไม่เริ่ม
+- `GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; ผลปัจจุบันเป็น Static Review เท่านั้น ยังไม่ยืนยัน Compile/Runtime
 - Resolver provenance เป็นความรับผิดชอบของ Caller และต้องทดสอบ Integration แยก; Resolve failure ต้อง Fail Closed และห้ามเรียก Policy
 - ดู Contract เต็มใน [Entry Execution Policy](Phases/phase-grid-entry-execution-policy.md)
 
@@ -152,7 +152,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Demo Integration Test EA แยกที่ `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` ผ่านตามผลที่ผู้ใช้รายงานเมื่อ 2026-11-02: Compile ผ่าน, ปิด Owned Positions จริงผ่าน Adapter บน Demo, ยืนยัน Foreign Position ไม่ถูกแตะต้อง และปิด Foreign Position ผ่านขั้นตอน Cleanup ที่ผู้ใช้กดเอง
 - ผล Demo นี้เสริม Unit/Regression Tests โดยยืนยัน Live Scan + ticket-specific close + Runtime reconciliation ใน Test Scenario ที่กำหนด; ไม่ได้หมายความว่า Grid V1 หรือ EA Event Handler Integration เสร็จสมบูรณ์
 - Entry Mapping Storage, Typed Reducer และ Snapshot/Journal Rotation มี Source แล้ว และผู้ใช้รายงานผล Compile/Runtime/Regression PASS เมื่อ 2026-11-15; ดูรายละเอียดใน `phase-grid-entry-execution-adapter-round-1.md`
-- Entry Execution Policy มี Design Baseline และ Test-First Specification 44 Cases แล้ว แต่ Production Policy Source ยังไม่ถูกสร้าง; Test EA ยังไม่ได้ Compile/Run ใน MT5
+- Entry Execution Policy มี Design Baseline, Test-First Specification 44 Cases และ Policy Source แล้ว; Test EA ยังไม่ได้ Compile/Run ใน MT5
 - ยังไม่มี CTrade Entry Adapter ที่ส่ง Initial/Level BUY/SELL Request โดย Persist Intent ก่อน Trade API
 - Caller/Resolver Integration สำหรับ Target Level Context และ fail-closed behavior ยังต้องทำ Integration Tests
 - ยังไม่มี EA Event Handler adapter ที่เชื่อม Orchestrator/Execution จาก OnInit/OnTick/OnTimer/OnTradeTransaction แบบครบวงจร

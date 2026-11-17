@@ -383,13 +383,13 @@ Implementation ที่เพิ่มแล้ว:
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
-## Grid Entry Execution Policy — Phase 2 Test-First Specification (Finalized)
+## Grid Entry Execution Policy — WP-01 Implementation (รอ MT5 Validation)
 
 เอกสาร Design Baseline และ Test Contract: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
 
 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 
-Production Policy: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่สร้าง; เป็นขอบเขต Phase 3 ซึ่งยังไม่เริ่ม
+Production Policy: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` สร้างแล้วตาม Contract; ยังไม่มีผล Compile/Runtime จาก MetaEditor/MT5
 
 Test Inventory: **44 Test IDs / 6 Groups**
 - A: Valid Candidate (4)
@@ -403,9 +403,11 @@ Test Contract ใช้ API Names ที่ผู้ใช้ออนุมั�
 
 Caller/Resolver ต้อง Resolve Level Context ตาม `candidate.instance_id` และ target key แล้วส่ง Context สดของ Target Level ใน Current Instance เท่านั้น. เมื่อ Resolve ล้มเหลว Caller ต้อง Fail Closed และห้ามเรียก Policy; ห้ามแทน Resolve failure ด้วย mapping=false. Policy Unit Tests ยืนยันการใช้ Context ที่ส่งให้แต่ละ call แต่ไม่พิสูจน์ provenance correctness; ต้องมี Integration Tests แยกสำหรับ Resolver.
 
-ขอบเขต Test เป็น Pure Decision Specification เท่านั้น ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency. Phase 2 นี้ไม่มีการ Compile/Run ใน MetaEditor/MT5; Static Checks ไม่ใช่ Compile/Runtime PASS. Phase 3 ยังไม่เริ่ม.
+ขอบเขต Policy/Test เป็น Pure Decision เท่านั้น ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency. WP-01 ผ่าน Static Review แต่ยังไม่มีการ Compile/Run ใน MetaEditor/MT5; Static Checks ไม่ใช่ Compile/Runtime PASS.
 
-ผล Static Acceptance (2026-11-17): 44 unique Test IDs; Group counts 4/13/6/9/6/6; F02 ใช้ Context Level 0 unmapped, Level 7 mapped, แล้วประเมิน Level 0 ซ้ำ โดย reuse Result object เดิมและ assert ครบทุก output หลังแต่ละ call; F05/F06 reuse Result object ข้าม Execution State; boundary cases และ E01–E06 precedence ครบ; ไม่พบ forbidden dependencies; Policy header ยังไม่มี; `git diff --check` ผ่าน.
+ผล Phase 2 Static Acceptance (2026-11-17): 44 unique Test IDs; Group counts 4/13/6/9/6/6; F02 ใช้ Context Level 0 unmapped, Level 7 mapped, แล้วประเมิน Level 0 ซ้ำ โดย reuse Result object เดิมและ assert ครบทุก output หลังแต่ละ call; F05/F06 reuse Result object ข้าม Execution State; boundary cases และ E01–E06 precedence ครบ.
+
+ผล WP-01 Static Review: Policy เรียง Validation ตาม Contract, เขียน Output ทั้งสาม field ทุก path และไม่มี Trade API, `CTrade`, `OrderSend`, File I/O, Persistent Storage หรือ Reducer dependency. ต้องให้ผู้ใช้ Compile/Run Test EA นี้และ 15 Grid Component/Regression Test EAs เพื่อยืนยัน WP-01; ห้ามนับผล baseline ก่อนเปลี่ยน Source เป็นผลหลัง WP-01.
 
 ## นโยบาย Regression Test
 

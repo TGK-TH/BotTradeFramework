@@ -4,19 +4,21 @@ Last updated: 2026-11-17
 
 ## Current focus
 
-**Grid V1 — Entry Execution Policy Phase 2 Test-First Specification เสร็จสิ้น; Phase 3 Implementation เป็นงานถัดไป แต่ยังไม่เริ่ม**
+**Grid V1 — WP-01 Entry Execution Policy Implementation: Source และ Static Review เสร็จ; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
 
 - Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
 - Current contract: [Grid Entry Execution Policy](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
-- Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / Groups A–F = 4/13/6/9/6/6; Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5
-- Next: เมื่อได้รับ Kickoff Prompt ที่มอบอำนาจให้ทำ Grid V1 ต่อเนื่อง ให้เริ่ม Phase 3 ตาม Contract; ก่อนแก้ Source ให้ยืนยัน Regression Baseline จากผู้ใช้และตรวจ Working Tree
+- Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / Groups A–F = 4/13/6/9/6/6; รอ Compile/Run พร้อม Policy Header
+- Next: ผู้ใช้ Compile/Run Policy Test EA และ Grid Regression suite 15 ไฟล์ใน MetaEditor/MT5; หากผ่าน ให้เดินหน้า WP-02 ตาม Roadmap
 
 ## Current phase evidence
 
 - Phase 1 Design/Contract/Test Plan: ผู้ใช้ออนุมัติแล้ว
 - Phase 2 Test-First Specification: Finalized; 44 cases; Static checks ผ่าน
-- Phase 3 Policy Implementation: ยังไม่เริ่ม; Production Header `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่มี
-- Latest pre-Phase-2 Grid Regression: ผู้ใช้รายงาน PASS เมื่อ 2026-11-17; นี่เป็นผลของ Regression suite ก่อนเพิ่ม Policy Test EA ไม่ใช่ผล Compile/Run ของ Policy Test
+- WP-01 Policy Implementation: สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; Static Review ผ่าน; ยังไม่มีผล Compile/Runtime
+- Regression baseline: ผู้ใช้รายงาน PASS เมื่อ 2026-11-17 สำหรับ 15 Component/Regression Tests ก่อน Policy Header; หลังการเปลี่ยน source รอบนี้ต้องรันซ้ำก่อนปิด WP-01
+- Checks รอบ WP-01: ตรวจ Contract/API, ลำดับ validation, output ทุก path, forbidden dependencies, delimiter/whitespace และ `git diff --check`; ไม่ได้ Compile/Run MetaEditor/MT5
+- Known issue/gate: ความถูกต้องด้าน Compiler/Runtime ของ Header และ Test EA ยังไม่ยืนยัน
 - Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
 
 ## Current implementation snapshot

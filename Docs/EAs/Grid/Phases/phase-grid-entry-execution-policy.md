@@ -1,6 +1,6 @@
 # Grid Entry Execution Policy — Design Baseline และ Test Plan
 
-สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized ตาม Contract ที่ผู้ใช้ออนุมัติและ Static Acceptance Checks; Phase 3 ยังไม่เริ่ม; เริ่มได้เมื่อผู้ใช้ให้ Explicit Authorization ซึ่งรวมถึง Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md**
+สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized; WP-01 Policy Implementation มี Source และผ่าน Static Review; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5 ก่อนปิด Work Package**
 
 อัปเดตล่าสุด: 2026-11-17
 
@@ -275,11 +275,11 @@ Policy-specific enum numeric values ไม่ใช่ persistent contract ใ�
 - Candidate boundary cases, แยก NaN/Infinity, และ E01–E06 precedence tests ตรงตาม Contract.
 - F01–F06 assert Decision, Reason Code และ Target Level ในทุก Evaluation; F02, F05 และ F06 reuse Result object เดิมข้าม Evaluate calls เพื่อทดสอบการเขียนทับ Output และป้องกัน stale result.
 - Test EA ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency.
-- Test EA ใช้ API Names และ Method Contract ที่อนุมัติ; ไม่มี Policy header/source implementation.
+- Test EA ใช้ API Names และ Method Contract ที่อนุมัติ; ข้อนี้อธิบายขอบเขตของ Phase 2 ซึ่งไม่มี implementation รวมอยู่ใน Test-First Specification.
 - Static source checks ผ่าน รวมจำนวน/ลำดับ IDs, duplicate IDs, group counts, delimiter balance และ `git diff --check`.
 - Phase 2 เป็น Test-First Specification เท่านั้น; ไม่มีการ Compile/Run MetaEditor/MT5 และห้ามรายงาน Compile/Runtime PASS.
 - Caller/Resolver provenance เป็น precondition; Phase 2 Unit Tests ไม่ยืนยัน Resolver correctness.
-- Phase 3 ยังไม่เริ่ม; รอ Explicit User Authorization (Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md ถือว่าเพียงพอ).
+- Phase 2 เป็น Test-First Specification เท่านั้น; Implementation เริ่มภายหลังภายใต้ WP-01 ตาม Grid V1 Kickoff Authorization.
 
 ## 9. Phase Gate และสถานะ
 
@@ -288,9 +288,9 @@ Policy-specific enum numeric values ไม่ใช่ persistent contract ใ�
 | Phase 1 | ตรวจสอบ Design, Contract, Architecture และ Test Plan | Complete; ผู้ใช้อนุมัติ |
 | Precondition | Latest Grid Regression Tests | PASS ตามที่ผู้ใช้รายงาน 2026-11-17 |
 | Phase 2 | Test-First Specification, 44 Cases และ Static Review | Finalized ตาม Final Contract ที่ผู้ใช้อนุมัติ 2026-11-17; Static Checks ผ่านตามรายการใน Project Status |
-| Phase 3 | Policy Implementation | ยังไม่เริ่ม; ต้องได้รับ Explicit User Authorization (Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md ถือว่าเพียงพอ) |
+| WP-01 | Policy Implementation | Source มีแล้ว; Static Review ผ่าน; รอผู้ใช้ Compile/Run Test EA 44 Cases และ Full Grid Regression |
 
-Phase 2 ไม่สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` และ Test EA จึงยังไม่ Compile/Run กับ Production Policy. ผล Static Checks ไม่ใช่ Compile/Runtime PASS.
+Phase 2 เองเป็น Test-First Specification และไม่ได้สร้าง Header; WP-01 สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract แล้ว. Test EA ยังไม่ Compile/Run กับ Production Policy และผล Static Checks ไม่ใช่ Compile/Runtime PASS.
 
 ## 10. Related Files
 
@@ -299,4 +299,4 @@ Phase 2 ไม่สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy
 - [Grid Entry Execution Adapter — Round 1](phase-grid-entry-execution-adapter-round-1.md)
 - [Project status](../../../../PROJECT_STATUS.md)
 
-สถานะไฟล์ ณ 2026-11-17: Phase 2 Test-First Specification ถูก Finalize ตาม Contract ที่ผู้ใช้ออนุมัติ; Dedicated Test EA มี 44 Test IDs และผ่าน Static Acceptance Checks. `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่ถูกสร้างและยังไม่มี Decision Logic; Phase 3 ยังไม่เริ่ม.
+สถานะไฟล์ ณ 2026-11-17: Phase 2 Test-First Specification มี 44 Test IDs และผ่าน Static Acceptance Checks. WP-01 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract; Static Review ผ่าน แต่ยังไม่มี Compile/Runtime ผลถัดไปคือผู้ใช้ Compile/Run Policy Test EA และ Full Regression.
