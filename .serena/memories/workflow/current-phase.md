@@ -1,48 +1,59 @@
-# Current TGK BotTradeFramework Phase
+# Current TGK BotTradeFramework / Grid V1 Phase
 
-As of 2026-11-17, Grid Entry Execution Adapter — Round 1 persistence/mapping foundation is user-verified PASS (2026-11-15). Grid Entry Execution Policy Design Baseline and Test Plan are now approved and documented at `Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md`; Trello card is in In Progress: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests. User reported latest Grid Regression Tests all PASS on 2026-11-17 and explicitly accepted this as the Phase 2 precondition. User approved Phase 2 on 2026-11-17. Created `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` with 40 tests / 6 groups. Static checks passed: test/group counts, delimiter balance, no duplicate local declarations, no Trade API/File I/O, and `git diff --check`. Test EA has not been compiled/run in MT5. `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` is intentionally deferred to Phase 3; do not implement Policy logic until separate explicit Phase 3 approval.
+อัปเดต: 2026-11-17
 
-## Completed slice: Persistent Journal + Typed Mapping Reducer + Snapshot Serialization/Journal Rotation
+## Repository and authority
+- Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
+- Source of Truth: Repository source/tests/docs.
+- Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
+- Current status: `PROJECT_STATUS.md`
+- Grid technical docs: `Docs/EAs/Grid/`
+- Current Trello card: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests
 
-User validation: PASS (2026-11-15). Snapshot Test passed on 2026-11-14; corrected Reducer Test and all current Grid Regression Tests passed on 2026-11-15.
+## Current Work Item
+Grid Entry Execution Policy:
+- Phase 1 Design/Contract/Test Plan: approved.
+- Phase 2 Test-First Specification: finalized on 2026-11-17.
+- Dedicated Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
+- 44 unique Test IDs across groups A-F: 4/13/6/9/6/6.
+- Final contract includes grouped Candidate/Level Context/Execution Context inputs; single Reason Code; eligible Level States READY and WAIT_RETURN; finite positive Entry Price; Target-Level-only mapping check; Validation Order INVALID_CANDIDATE -> IDENTITY_MISMATCH -> EXECUTION_BLOCKED -> UNRESOLVED_REQUEST -> LEVEL_NOT_FOUND -> LEVEL_NOT_ELIGIBLE -> ALREADY_MAPPED -> ELIGIBLE.
+- F02: Level 0 READY/unmapped ALLOW -> Level 7 READY/mapped REJECT ALREADY_MAPPED -> re-evaluate Level 0 ALLOW; same Result object across all three calls.
+- Resolver failure is Caller-owned Fail Closed; do not call Policy when Resolve fails.
+- Phase 2 Static Acceptance Checks passed 2026-11-17. No MetaEditor/MT5 compile/runtime was performed. The Policy production header does not exist yet.
+- Phase 3 Policy Implementation has NOT started. Do not claim the Policy Test EA has compiled or run.
 
+## Next Work
+- Next: Phase 3 implementation of `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` strictly against the approved contract and 44 tests.
+- Before source changes, ask the user to run the latest Grid Regression Tests and record the pre-change result. User reported the latest pre-Phase-2 Grid Regression suite passed on 2026-11-17.
+- After source changes, require static review/diff checks and user MetaEditor/MT5 compile/runtime results before marking the phase complete.
+- Then proceed through the remaining Work Packages in `Docs/EAs/Grid/ROADMAP.md`: Target-Level Resolver/Caller integration; Entry CTrade Adapter; Entry Pipeline integration; Close/Deal/Transaction reconciliation; Production EA event handlers; configuration/bounds/runtime safety; End-to-End tests; final Grid V1 acceptance.
+- Current test source inventory at 2026-11-17: 17 .mq5 files under `Experts/TGK/Tests/Grids/`: 15 existing component/regression tests, 1 Policy Test-First file not yet compiled/run, and 1 separate Demo Integration test. Always inspect directory; do not trust old hard-coded counts.
 
+## Existing verified foundations
+User-reported MetaEditor/MT5 validation (not independently run by Assistant):
+- Grid identity, persistence, state machine, lifecycle, position reconciler, runtime orchestrator and close execution adapter.
+- Close adapter Demo Integration Test FINAL PASS on 2026-11-02.
+- Two-sided Grid Level Engine Round 1: 11/11 tests PASS on 2026-11-04.
+- Grid Level Runtime Coordinator Round 1: new test + 11 regression tests, 12/12 PASS on 2026-11-09.
+- Entry Mapping Journal Storage tests and regression PASS on 2026-11-12.
+- Typed Mapping Reducer, Snapshot Serialization/Journal Rotation, and current Grid regression tests PASS as reported on 2026-11-15.
+- User reported latest Grid Regression tests PASS on 2026-11-17 as precondition for Policy Phase 2.
 
-User-approved retention contract:
-- Snapshot stores Current State only, not Trade History.
-- After successful Rotation and Cleanup: exactly one committed Snapshot, one active Journal, and two fixed Manifest metadata slots (manifest_A.dat, manifest_B.dat).
-- No old Journal generations or temporary data files remain after successful Cleanup.
-- Old and new generations may coexist temporarily during Rotation.
-- Never delete the old generation until the new Snapshot and Journal have passed Flush, Read-back Validation, and the new Manifest has been written, flushed, and read back successfully (Commit Point).
-- Manifest slots are alternated; writing the inactive slot must never destroy the currently active slot.
-- Recovery validates both manifests and referenced data sets, selects the valid manifest with the highest Commit Epoch, restores Snapshot at Sequence N, and replays Journal from N+1.
-- Crash before Commit -> old generation; crash after Commit -> new generation; crash during cleanup -> new generation plus repeatable cleanup.
-- If no complete valid manifest/data set exists, enter Recovery Error and do not trade.
-- Cleanup failure must not delete active data or force deletion to meet the file-count target.
-- User-approved Capacity Limits (2026-11-14): 1,000 Grid Levels per Instance (dynamic count from Bounds + Grid Step + Anchor; includes Anchor and both sides), 1,000 Position Mappings per Instance, 100 Deal Associations per Request, 1 unresolved Request per Instance, 16 MiB Snapshot, 16 MiB active Journal, 64 KiB serialized Record (including metadata/checksum/delimiter), 4 KiB per String Field, and 16 MiB Serialization Buffer.
-- After Position Mapping is validated, prune Deal Associations no longer needed for Recovery from Current State.
-- Overflow policy: reject without truncation; preserve the prior valid generation and all recovery-critical state. If Position Mappings reach 1,000 or Deal Associations reach 100/request, reject the new item, enter RECOVERY_ERROR, block new entries, and preserve existing data. Journal full signals Rotation before the next Append. Rotation failure enters MAINTENANCE_ERROR and blocks new entries while preserving the old generation. Snapshot >16 MiB rejects Rotation before Commit; Serialization Buffer >16 MiB aborts before file write; Record >64 KiB or String Field >4 KiB is rejected without truncation.
-- Recovery statuses: NORMAL; MAINTENANCE_ERROR (Storage/Rotation/Cleanup issue; block new Entry Intent but permit safe inspection/reconciliation and non-entry state updates when Journal remains writable); RECOVERY_ERROR (Current State/Mapping unverifiable; block new entries pending inspection). Blocking new entries must never abandon existing open positions or their reconciliation. Never delete active Position Mappings or unresolved Requests to free capacity.
-- Grid Level Count must match `floor((UpperBound-Anchor)/GridStep) + floor((Anchor-LowerBound)/GridStep) + 1`; Anchor is included. Anchor uses `level_index=-1`; non-anchor Levels use zero-based indices `0..level_count-2`. RESET_COMMITTED initializes READY State for every non-anchor Level so Snapshot retains Levels even when no Position is open.
-- User reported `test_grid_entry_mapping_snapshot.mq5` passed all tests on 2026-11-14, then reported on 2026-11-15 that the corrected `test_grid_entry_mapping_reducer.mq5` and all current Grid Regression Tests passed. The corrected assertion verifies that a Level index in the new geometry is initialized to `TGK_GRID_LEVEL_READY` after `RESET_COMMITTED`. Snapshot Test results validate the MQL5 file rotation/recovery behavior covered by its tests.
+## Grid V1 non-negotiable design
+- MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.
+- Anchor is actual initial Position Fill Price; two-sided levels derive from Anchor + Grid Step; Bounds are exact hard filters and do not shift levels.
+- Initial entry only inside Bounds; outside Bounds block new entries but existing positions/TP continue.
+- BUY uses Ask and SELL uses Bid; BUY selects lowest eligible crossed level, SELL highest; at most one candidate per price check.
+- TP close waits for return to same Entry Level; partial close keeps ACTIVE until no volume remains.
+- Accepted/PLACED is not proof of Fill; explicit Deal/Position reconciliation required before ACTIVE.
+- Persistent typed mapping is authoritative; never use Order Comment or approximate Fill Price as Mapping Key; use Position Identifier as logical key.
+- Persist/Flush Entry Intent before sending a Trade Request; one unresolved request per Instance; Fail Closed on identity/storage/resolver uncertainty.
+- Mode change closes old positions and waits for confirmed zero before new mode/Anchor; Step change closes and rebuilds levels from same Anchor.
+- New chart is a new Instance; restoring original chart/profile restores original Instance; never adopt foreign/manual positions.
 
-The generation/manifest protocol and crash matrix are documented in:
-- Docs/EAs/Grid/Phases/phase-grid-entry-execution-adapter-round-1.md
-- Docs/EAs/Grid/Testing/testing.md
-- PROJECT_STATUS.md
-
-## Earlier components also user-verified
-
-- `GridEntryMappingStorage.mqh` and `test_grid_entry_mapping_storage.mq5`: user reported compile/test pass plus 12 Grid Regression Tests on 2026-11-12.
-- `GridEntryMappingReducer.mqh` and `test_grid_entry_mapping_reducer.mq5`: user reported compile/test pass plus historical/Grid Regression Tests on 2026-11-14. Reducer source changed again during the current Snapshot implementation, so its test must be rerun.
-
-## Implemented in the completed slice (2026-11-14; user validation completed 2026-11-15)
-- `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh`: dual Manifest slots, immutable Snapshot/Journal generations, Checksum/Identity/Sequence validation, Flush + Read-back, Commit Point, restart Recovery, repeatable Cleanup, incomplete Journal tail recovery/repair, and Journal size preflight.
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`: `ExportSnapshot()` / `RestoreSnapshot()` for Config, every non-anchor Level State, active Position Mappings, and unresolved Request/Deal Associations; validates geometry-derived Level Count and mapping relationships.
-- `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5`: no-trading test EA for Snapshot round-trip, Journal N+1 replay, Manifest alternation, Rotation, cleanup, fallback to an older valid generation, crash injection, incomplete-tail repair, Journal/Snapshot/Record/String limits, and Mapping/Deal boundaries.
-- Assistant ran static checks only: `git diff --check`, final newline, delimiter balance, and feature/failure-matrix token checks. No MetaEditor/MT5 compile/runtime was run. Actual MQL5 File API replacement/deletion semantics still require user validation.
-
-## Current work: Grid Entry Execution Policy — Phase 2 Test-First
-User approved Phase 2 on 2026-11-17. Created `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` with 40 cases across groups A–F. Static checks pass (40 ordered Test IDs; group counts 4/9/6/9/6/6; delimiter balance; no duplicate local declarations; no Trade API/File I/O; final newline/no trailing whitespace; `git diff --check`). The Test EA has not been compiled/run in MetaEditor/MT5. Its proposed MQL5 API identifiers are provisional and pending user review; the semantic Design Baseline remains unchanged. The Policy header/source `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` remains deferred to Phase 3; do not implement it until separate explicit user approval. The test file currently references the future Policy contract and therefore cannot compile until that header is introduced. User performs MetaEditor/MT5 compile/runtime tests; never claim these were run by Assistant.
-
-No trade APIs or real/demo Trade Requests are part of this slice.
+## Workflow / safety
+- Grid is test-first. Before each new feature/refactor, remind user to run latest Grid Regression Tests; run relevant tests again after source changes.
+- User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
+- Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.
+- After each Work Package, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, and this memory. Preserve staged/unstaged work; do not commit/push unless asked.
+- A user-provided kickoff instruction that explicitly authorizes Grid V1 continuation through the ROADMAP is blanket authorization for ordinary in-scope Work Packages. Continue after each successful gate without asking for routine phase approval. This does not authorize Demo/Live trading, unresolved material design choices, scope changes, or destructive actions; pause and ask for those.

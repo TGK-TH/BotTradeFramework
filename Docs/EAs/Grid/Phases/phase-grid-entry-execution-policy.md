@@ -1,6 +1,6 @@
 # Grid Entry Execution Policy — Design Baseline และ Test Plan
 
-สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized ตาม Contract ที่ผู้ใช้ออนุมัติและ Static Acceptance Checks; Phase 3 ยังไม่เริ่มและต้องอนุมัติแยกต่างหาก**
+สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized ตาม Contract ที่ผู้ใช้ออนุมัติและ Static Acceptance Checks; Phase 3 ยังไม่เริ่ม; เริ่มได้เมื่อผู้ใช้ให้ Explicit Authorization ซึ่งรวมถึง Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md**
 
 อัปเดตล่าสุด: 2026-11-17
 
@@ -279,7 +279,7 @@ Policy-specific enum numeric values ไม่ใช่ persistent contract ใ�
 - Static source checks ผ่าน รวมจำนวน/ลำดับ IDs, duplicate IDs, group counts, delimiter balance และ `git diff --check`.
 - Phase 2 เป็น Test-First Specification เท่านั้น; ไม่มีการ Compile/Run MetaEditor/MT5 และห้ามรายงาน Compile/Runtime PASS.
 - Caller/Resolver provenance เป็น precondition; Phase 2 Unit Tests ไม่ยืนยัน Resolver correctness.
-- Phase 3 ยังไม่เริ่มและต้องรอการอนุมัติแยกต่างหาก.
+- Phase 3 ยังไม่เริ่ม; รอ Explicit User Authorization (Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md ถือว่าเพียงพอ).
 
 ## 9. Phase Gate และสถานะ
 
@@ -288,7 +288,7 @@ Policy-specific enum numeric values ไม่ใช่ persistent contract ใ�
 | Phase 1 | ตรวจสอบ Design, Contract, Architecture และ Test Plan | Complete; ผู้ใช้อนุมัติ |
 | Precondition | Latest Grid Regression Tests | PASS ตามที่ผู้ใช้รายงาน 2026-11-17 |
 | Phase 2 | Test-First Specification, 44 Cases และ Static Review | Finalized ตาม Final Contract ที่ผู้ใช้อนุมัติ 2026-11-17; Static Checks ผ่านตามรายการใน Project Status |
-| Phase 3 | Policy Implementation | ยังไม่เริ่ม; ต้องได้รับอนุมัติแยกต่างหาก |
+| Phase 3 | Policy Implementation | ยังไม่เริ่ม; ต้องได้รับ Explicit User Authorization (Blanket Authorization ผ่าน Grid V1 Kickoff Prompt ตาม ROADMAP.md ถือว่าเพียงพอ) |
 
 Phase 2 ไม่สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` และ Test EA จึงยังไม่ Compile/Run กับ Production Policy. ผล Static Checks ไม่ใช่ Compile/Runtime PASS.
 

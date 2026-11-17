@@ -1,8 +1,10 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะ: **Persistence/Mapping foundation slice ผ่านครบตามผลผู้ใช้รายงาน 2026-11-15 — Snapshot Test, corrected Reducer Test และ Grid Regression Tests ทั้งหมด PASS. Entry Execution Policy และ CTrade Adapter ยังไม่เริ่ม.**
+สถานะ: **Persistence/Mapping foundation ผ่านตามผลผู้ใช้รายงาน 2026-11-15; Entry Execution Policy Phase 1 Design และ Phase 2 Test-First Specification (44 Cases) Finalized เมื่อ 2026-11-17; Policy Implementation (Phase 3) และ CTrade Entry Adapter ยังไม่เริ่ม.**
 
-อัปเดตล่าสุด: 2026-11-15
+อัปเดตล่าสุด: 2026-11-17
+
+สำหรับรายละเอียด Policy ที่เป็น Authority ให้ใช้ [Grid Entry Execution Policy — Design Baseline และ Test Plan](phase-grid-entry-execution-policy.md) ซึ่งเป็นเอกสารใหม่กว่าและ supersede รายการ Policy Test เบื้องต้นในเอกสารนี้
 
 ## เป้าหมาย
 
@@ -283,7 +285,8 @@ Comment:
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` — Persistent Journal foundation (ผู้ใช้ยืนยัน PASS)
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` — Typed Mapping Reducer (ผู้ใช้ยืนยัน Compile/Run และ Regression ผ่าน 2026-11-14)
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — Snapshot Serialization/Rotation (ผู้ใช้ยืนยัน PASS 2026-11-14)
-- `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Policy/Adapter (ยังไม่สร้าง)
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — Pure Entry Execution Policy Test-First Specification (44 Cases; Phase 2 Finalized; ยังไม่ได้ Compile/Run ใน MT5)
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — CTrade Entry Adapter/Integration tests (ยังไม่สร้าง)
 
 ### A. Entry Execution Policy
 
@@ -424,17 +427,17 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 
 ## ลำดับงานที่เสนอ
 
-1. **Typed Mapping Contract** — กำหนด Typed Payload Schema v1, legal state transitions และ Reducer output แล้ว
-2. **Reducer Unit Tests ก่อน Source** — สร้าง `test_grid_entry_mapping_reducer.mq5` ด้วย Record fixtures ครอบคลุม partial fill/close, Request lifecycle, conflict, reset retention และ Sequence validation แล้ว
-3. **Typed Mapping Reducer** — Implement Payload validation และ deterministic Current-State reduction แล้ว; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5 โดยไม่มี Trade Request
-4. **Snapshot Serialization + Journal Rotation Design/Test** — กำหนด Snapshot schema, bounded retention, dual Manifest Slot, generation/commit protocol และ Crash Recovery Matrix จาก Reducer State แล้ว; ยังต้องกำหนด Snapshot Size/Count Hard Limit และพิสูจน์ File API ด้วย Tests
-5. **Snapshot + Rotation Implementation** — เพิ่ม Snapshot/Rotation และ Failure/Crash Injection Tests; รักษา Journal 16 MiB เป็น Threshold ต่อ Active Segment; หลัง Cleanup สำเร็จเหลือ Snapshot 1 + Journal 1 + Manifest 2 Slots
-6. **Entry Execution Policy + Tests**
-7. **CTrade Adapter + no-live-trade seam tests** — Intent ต้อง Persist/Flush ก่อนเรียก Trade API
-8. **Coordinator Integration, Docs และ Regression** — ทบทวนผลรวมและให้ผู้ใช้ Compile/Run ใน MetaEditor/MT5
-9. Demo Integration เป็นงานแยก ต้องได้รับอนุมัติจากผู้ใช้ก่อน
+1. **Typed Mapping Contract** — Completed.
+2. **Reducer Unit Tests ก่อน Source** — Completed; Test EA อยู่ที่ `test_grid_entry_mapping_reducer.mq5`.
+3. **Typed Mapping Reducer** — Implemented และผู้ใช้รายงาน Compile/Run + Regression PASS เมื่อ 2026-11-14.
+4. **Snapshot Serialization + Journal Rotation Design/Test** — Design, bounded retention, dual Manifest Slots, generation/commit protocol และ Crash Recovery Matrix เสร็จแล้ว.
+5. **Snapshot + Rotation Implementation** — Implemented; ผู้ใช้รายงาน Snapshot Test, corrected Reducer Test และ Grid Regression Tests ผ่านเมื่อ 2026-11-15. Capacity Limits/Failure semantics ดู Contract ในส่วนก่อนหน้าและ Testing Guide.
+6. **Entry Execution Policy + Tests** — Phase 1 Design และ Phase 2 Test-First Specification (44 Cases) Finalized 2026-11-17; Production Policy ยังไม่ Implement. รายละเอียดล่าสุดอยู่ใน `phase-grid-entry-execution-policy.md`.
+7. **CTrade Entry Adapter + no-live-trade seam tests** — ยังไม่เริ่ม; Intent ต้อง Persist + Flush ก่อนเรียก Trade API.
+8. **Caller/Resolver + Coordinator Integration, Runtime/EA Event Handler Integration, Docs และ Regression** — ยังไม่ครบ; ต้องพิสูจน์ fresh target-level context, fail-closed resolver และ end-to-end reconciliation.
+9. Demo Entry Integration เป็นงานแยก ต้องได้รับอนุมัติจากผู้ใช้ก่อนส่ง Trade Request จริง.
 
-ก่อนแก้ Source Code ในแต่ละ Slice ให้รัน Grid Regression Tests 12 ไฟล์ตามรายการด้านล่างก่อน และรันซ้ำหลังแก้ Source Code
+ก่อนแก้ Source Code ในแต่ละ Slice ให้ตรวจและรัน Grid Regression Tests ล่าสุดตาม `Docs/EAs/Grid/Testing/testing.md` ก่อนและหลัง Source changes; อย่า hard-code จำนวน Test Files จากบันทึกเก่า
 
 ## Acceptance Criteria
 

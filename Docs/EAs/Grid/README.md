@@ -2,31 +2,36 @@
 
 ## ขอบเขต
 
-เอกสารชุดนี้อธิบายการออกแบบและส่วนประกอบ Grid ในปัจจุบัน รวมถึงข้อกำหนดที่ตกลงไว้สำหรับ Grid V1 โดยแยกสิ่งที่มีใน Source Code แล้วออกจากสิ่งที่ยังรอพัฒนา
+เอกสารชุดนี้อธิบาย Grid ในฐานะ EA หนึ่งตัวภายใน BotTradeFramework ซึ่งเป็น Repository สำหรับหลาย EA ไม่ใช่ Framework ทั้งหมด เอกสารแยก Source/Behavior ที่ Implemented แล้วออกจาก Design ที่ตกลงแต่ยังไม่ Implement
 
-Grid เป็น EA หนึ่งตัวใน BotTradeFramework ไม่ใช่ขอบเขตของ Framework ทั้งหมด
+## จุดเริ่มต้นที่ควรอ่าน
 
-## เอกสาร
+1. [Master Roadmap และ Grid V1 Definition of Done](ROADMAP.md) — แผนหลักจน Grid V1 เสร็จและเกณฑ์ปิดงาน
+2. [Architecture](architecture.md) — ส่วนประกอบใน Source และ Dependency Boundaries
+3. [Grid Tests](Testing/testing.md) — Test Inventory, Regression Policy และผลที่ผู้ใช้รายงาน
+4. [Current Project Status](../../../PROJECT_STATUS.md) — Work Package ปัจจุบันและขั้นตอนถัดไป
 
-- [Architecture](architecture.md) — ภาพรวมส่วนประกอบและขอบเขตปัจจุบัน
+## เอกสารเฉพาะด้าน
+
 - [Identity](modules/identity.md) — Grid Instance ID และ Magic Number
 - [Persistence](modules/persistence.md) — Snapshot และการกู้คืนสถานะ
-- [Grid Tests](Testing/testing.md) — รายชื่อ Test EA ขั้นตอน และผลทดสอบที่ผู้ใช้รายงาน
 - [ADR-001: Identity และ Persistence](Decisions/ADR-001-grid-identity-and-persistence.md)
 - [ADR-002: Chart ID ไม่ใช่ Persistence Identity](Decisions/ADR-002-chart-id-is-not-persistence-identity.md)
-- [Phase: Grid Integration Testing](Phases/phase-grid-integration-testing.md)
-- [Phase: Grid State Machine](Phases/phase-grid-state-machine.md)
-- [Phase: Grid Lifecycle Integration](Phases/phase-grid-lifecycle-integration.md)
-- [Phase: Grid Order Execution](Phases/phase-grid-order-execution.md)
-- [Phase: Grid Order Execution — Demo Integration Test](Phases/phase-grid-order-execution-demo-integration.md)
-- [Grid Level Engine — Design Specification](Phases/phase-grid-level-engine-design.md) — Design ที่ตกลงแล้ว
-- [Grid Level Engine — Implementation Round 1](Phases/phase-grid-level-engine-implementation-round-1.md) — Completed; ผู้ใช้ยืนยัน Compile และ Regression Tests 11/11 ผ่านใน MT5 (2026-11-04)
-- [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md) — Completed; ผู้ใช้ยืนยัน Compile/Run Test ใหม่และ Regression Tests รวม 12/12 ผ่านใน MT5 (2026-11-09)
-- [Grid Entry Execution Adapter — Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md) — Persistence/Mapping foundation ผ่านตามผลผู้ใช้รายงาน 2026-11-15; Entry Execution Policy และ CTrade Adapter ยังไม่เริ่ม
-- [Grid Entry Execution Policy — Design Baseline และ Test Plan](Phases/phase-grid-entry-execution-policy.md) — Design/Test Plan อนุมัติแล้ว; Phase 2 Test-First รออนุมัติ
+- [Grid Integration Testing](Phases/phase-grid-integration-testing.md)
+- [Grid State Machine](Phases/phase-grid-state-machine.md)
+- [Grid Lifecycle Integration](Phases/phase-grid-lifecycle-integration.md)
+- [Grid Order Execution — Close Adapter](Phases/phase-grid-order-execution.md)
+- [Grid Order Execution — Demo Integration](Phases/phase-grid-order-execution-demo-integration.md)
+- [Grid Level Engine — Design](Phases/phase-grid-level-engine-design.md)
+- [Grid Level Engine — Implementation Round 1](Phases/phase-grid-level-engine-implementation-round-1.md)
+- [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
+- [Grid Entry Execution Adapter — Persistence/Mapping Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
+- [Grid Entry Execution Policy — Design, Contract และ Test-First](Phases/phase-grid-entry-execution-policy.md)
 
-## ข้อกำหนด Grid V1 ที่ตกลงไว้ แต่ยังไม่เท่ากับการพัฒนาเสร็จ
+## Current implementation boundary
 
-Grid ตั้งใจให้หนึ่ง EA/chart instance จัดการ Grid ของตัวเอง แยกด้วย Symbol และ Magic Number โดยใช้ Anchor จากราคาที่ Fill จริง จัดการระดับราคาและการเปิด Position ซ้ำหลัง TP รวมถึงจัดการการเปลี่ยน Mode/Step และการกู้คืนหลัง Restart
+มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Entry Mapping Storage/Reducer/Snapshot Rotation แล้ว โดยผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
 
-รายละเอียดเหล่านี้เป็นข้อกำหนดสำหรับการพัฒนาต่อ ไม่ใช่คำยืนยันว่า Grid State Machine หรือ Order Execution ทำงานครบถ้วนแล้ว ดูสถานะ Phase ล่าสุดใน `PROJECT_STATUS.md`
+Grid Entry Execution Policy Phase 1–2 ได้รับอนุมัติและ Finalized แล้ว; Test EA มี 44 Cases และผ่าน Static Acceptance Checks แต่ยังไม่ได้ Compile/Run ใน MetaEditor/MT5 และ Policy Production Header ยังไม่ถูกสร้าง Phase 3 คือขั้นถัดไปตาม Roadmap
+
+**ข้อสำคัญ:** การที่ Components แยกส่วนผ่าน Unit/Integration Tests ไม่ได้แปลว่า Grid V1 เสร็จ ต้องเชื่อม Production EA Event Handlers และทดสอบ End-to-End ตาม [Definition of Done](ROADMAP.md)

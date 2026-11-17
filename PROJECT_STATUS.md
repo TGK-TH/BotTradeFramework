@@ -3,23 +3,33 @@
 Last updated: 2026-11-17
 
 ## Current focus
-**Grid Entry Execution Policy — Phase 2 Test-First Specification เสร็จสิ้นตาม Contract ที่ผู้ใช้ออนุมัติ; Phase 3 ยังไม่เริ่มและรออนุมัติแยกต่างหาก**
 
-Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
+**Grid V1 — Entry Execution Policy Phase 2 Test-First Specification เสร็จสิ้น; Phase 3 Implementation เป็นงานถัดไป แต่ยังไม่เริ่ม**
 
-เอกสารหลัก: [phase-grid-entry-execution-policy.md](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
+- Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
+- Current contract: [Grid Entry Execution Policy](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
+- Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / Groups A–F = 4/13/6/9/6/6; Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5
+- Next: เมื่อได้รับ Kickoff Prompt ที่มอบอำนาจให้ทำ Grid V1 ต่อเนื่อง ให้เริ่ม Phase 3 ตาม Contract; ก่อนแก้ Source ให้ยืนยัน Regression Baseline จากผู้ใช้และตรวจ Working Tree
 
-Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / 6 Groups (A–F): 4/13/6/9/6/6. Static Acceptance Checks ผ่านเมื่อ 2026-11-17: 44 unique IDs, group counts, F02 Level 0/7 mapping-context sequence และ output assertions, F01/F03–F06 output assertions, NaN/Infinity แยก Test IDs, Candidate boundary cases, E01–E06 precedence, delimiter balance, no forbidden Trade API/File I/O/Persistent Storage dependencies, ไม่มี Policy header, `git diff --check`, และตรวจว่าแก้เฉพาะไฟล์ที่อนุญาต. ไม่มีการ Compile/Run MetaEditor/MT5.
+## Current phase evidence
 
-**Phase 1 — Design/Contract/Test Plan: Complete และผู้ใช้อนุมัติแล้ว.** ผู้ใช้รายงานว่า Grid Regression Tests ล่าสุดผ่านทั้งหมดเมื่อ 2026-11-17 และยืนยันให้ใช้ผลนี้เป็น Precondition สำหรับ Phase 2
+- Phase 1 Design/Contract/Test Plan: ผู้ใช้ออนุมัติแล้ว
+- Phase 2 Test-First Specification: Finalized; 44 cases; Static checks ผ่าน
+- Phase 3 Policy Implementation: ยังไม่เริ่ม; Production Header `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ยังไม่มี
+- Latest pre-Phase-2 Grid Regression: ผู้ใช้รายงาน PASS เมื่อ 2026-11-17; นี่เป็นผลของ Regression suite ก่อนเพิ่ม Policy Test EA ไม่ใช่ผล Compile/Run ของ Policy Test
+- Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
 
-**Phase 2 — Test-First Specification: เสร็จสิ้นตาม Contract ที่ผู้ใช้ออนุมัติเมื่อ 2026-11-17.** Test EA มี 44 Cases และผ่าน Static Acceptance Checks ตามรายการด้านบน. Phase 2 เป็น Specification/Test EA เท่านั้น; ไม่มีการ Compile/Run ใน MetaEditor/MT5 และไม่ได้อ้างผล Compile/Runtime PASS. Production Policy Header ยังไม่ถูกสร้างตามขอบเขตที่อนุมัติ.
+## Current implementation snapshot
 
-**Phase 3 — Policy Implementation: ยังไม่เริ่มและต้องรออนุมัติแยกต่างหาก.**
+มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Persistent Entry Mapping/Reducer/Snapshot Rotation ตาม Phase Notes แล้ว อย่างไรก็ตาม **ยังไม่มี Production Entry Policy, Entry CTrade Adapter, Resolver Integration และ Production EA Event Handler/End-to-End Grid V1** ตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
 
-**Design constraints:** Stateless Pure Decision Component; grouped inputs Candidate/Level Context/Execution Context; output Decision + single Reason Code + copied Target Level; Validation Order คือ INVALID_CANDIDATE → IDENTITY_MISMATCH → EXECUTION_BLOCKED → UNRESOLVED_REQUEST → LEVEL_NOT_FOUND → LEVEL_NOT_ELIGIBLE → ALREADY_MAPPED → ELIGIBLE; eligible states READY และ WAIT_RETURN; Entry Price finite และ > 0; Mapping check เฉพาะ Target Level ของ Candidate; Fail Closed, Fresh Context, no mutation; ไม่มี Trade API, CTrade, OrderSend, File I/O หรือ Persistent Storage dependency. Mapping Reducer ยังคงเป็น Authority เมื่อนำ Mapping ไป Apply จริง
+## Evidence rules
 
-Most recently completed phase: **Grid Level Runtime Coordinator — Round 1: Completed (User Verified 12/12 PASS, 2026-11-09).** The user reported the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5.
+ผล Compile/Runtime ใน Repository เป็นผลที่ผู้ใช้รายงาน; Static Checks และ Source Review ไม่ใช่หลักฐาน MetaEditor/MT5 Compile/Runtime PASS. ห้ามยกระดับสถานะเป็น Complete โดยไม่มีผลทดสอบที่เกี่ยวข้องและการยืนยันจากผู้ใช้
+
+---
+
+Historical milestone (2026-11-09): **Grid Level Runtime Coordinator — Round 1: Completed (User Verified 12/12 PASS, 2026-11-09).** The user reported the new Coordinator Test EA and all 11 existing Grid Regression Tests compiled and ran successfully in MetaEditor/MT5. Assistant did not independently run MetaEditor/MT5.
 
 Previous completed phase: **Grid Level Engine — Round 1** (user-reported 11/11 tests passed, 2026-11-04).
 

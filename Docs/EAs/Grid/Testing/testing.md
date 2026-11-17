@@ -30,6 +30,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count และ Snapshot codec; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run ซ้ำและ Grid Regression Tests ทั้งหมด 2026-11-15) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy Test-First Contract 44 Cases / 6 Groups; ไม่มี Policy Header, Trade API หรือ File I/O | Static Acceptance PASS (2026-11-17); ยังไม่ได้ Compile/Run MT5 |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -38,7 +39,11 @@
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
-ผลทั้งหมดข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant
+ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant; แถว Entry Execution Policy เป็น Static Acceptance เท่านั้นและยังไม่ใช่ Compile/Runtime PASS
+
+ณ 2026-11-17 มี Grid Test Sources 17 ไฟล์ใน Directory: 15 Component/Regression Tests ที่เป็น Baseline ก่อนเพิ่ม Policy Test, Policy Test-First 1 ไฟล์ที่ยังไม่ Compile/Run และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+
+ผู้ใช้รายงานว่า Latest Grid Regression Tests ก่อนเริ่ม Policy Phase 2 ผ่านทั้งหมดเมื่อ 2026-11-17; อย่ารวม Policy Test EA ใหม่เข้าในผล PASS นี้จนกว่าจะมีผู้ใช้รายงาน Compile/Run PASS ของไฟล์ดังกล่าว
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 

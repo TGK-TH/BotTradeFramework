@@ -1,6 +1,6 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-09
+อัปเดตล่าสุด: 2026-11-17
 
 ## ขอบเขตของเอกสาร
 
@@ -52,7 +52,17 @@ EA / Test EA
    +--> CTGKGridEntryMappingStorage
    |       +--> Append-only Journal ใน Terminal MQL5/Files
    |       +--> Version / Sequence / Checksum / strict Replay
-   |       +--> Opaque payload; no Trade API / no Comment parsing
+   |
+   +--> CTGKGridEntryMappingReducer
+   |       +--> Typed Payload validation และ deterministic Current-State reduction
+   |       +--> Position Mapping / Level State transition authority
+   |
+   +--> CTGKGridEntryMappingSnapshotStorage
+   |       +--> Snapshot + Journal generations + dual Manifest slots
+   |       +--> Commit / Recovery / Rotation / Cleanup
+   |
+   +--> GridEntryExecutionPolicy (PLANNED; Phase 3 not implemented)
+   |       +--> Pure Entry decision; no Trade API / no persistence dependency
    |
    +--> CTGKGridPersistence
            +--> Terminal Global Variables สำหรับ Snapshot
@@ -73,7 +83,10 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh` | ประสาน Price Update, Candidate, serialized Entry Request, Deferred Candidate และ explicit Position-to-Level reconciliation; ไม่เรียก Trade/Account API |
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
-| `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay; Payload ยังเป็น Opaque String ไม่ได้ทำ Mapping Reducer หรือ Trade Execution |
+| `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay |
+| `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping และ Level State transition |
+| `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
+| `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | **ยังไม่มีไฟล์**; Phase 1 Design และ Phase 2 Test-First Specification เสร็จแล้ว แต่ Phase 3 Implementation ยังไม่เริ่ม |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
@@ -82,6 +95,21 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridOrderExecutionAdapter.mqh` | Live adapter สำหรับปิด Position แบบ ticket-specific เมื่อ Runtime แจ้ง CLOSE_REQUIRED |
 | `Include/BotTrade/Testing/TestAssert.mqh` | ฟังก์ชัน Assertion พื้นฐาน |
 | `Include/BotTrade/Testing/TestRunner.mqh` | จัดกลุ่ม Test นับผล และพิมพ์ PASS/FAIL |
+
+## Entry Mapping และ Snapshot Rotation (อัปเดต 2026-11-17)
+
+- `GridEntryMappingStorage.mqh` จัดการ Append-only Journal; `GridEntryMappingReducer.mqh` แปลง Typed Records เป็น Current State และตรวจ Mapping/State transitions
+- `GridEntryMappingSnapshotStorage.mqh` จัดการ Snapshot, dual Manifest slots, Journal generation rotation, Commit/Recovery/Cleanup และ capacity limits
+- Mapping ใช้ Position Identifier เป็น Logical Key; Order Comment ไม่ใช่ Mapping Key และ Accepted/PLACED ไม่ใช่หลักฐานว่า Position เปิดแล้ว
+- ผู้ใช้รายงาน Compile/Runtime PASS ของ Snapshot/Reducer/Regression เมื่อ 2026-11-15; ดูรายละเอียดใน [Entry Adapter Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
+
+## Entry Execution Policy — Phase 2 Test-First
+
+- Design/Contract และ Test Plan ได้รับอนุมัติ; Test EA มี 44 Test IDs / 6 Groups
+- Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5
+- `GridEntryExecutionPolicy.mqh` ยังไม่มี; Phase 3 Implementation ยังไม่เริ่ม
+- Resolver provenance เป็นความรับผิดชอบของ Caller และต้องทดสอบ Integration แยก; Resolve failure ต้อง Fail Closed และห้ามเรียก Policy
+- ดู Contract เต็มใน [Entry Execution Policy](Phases/phase-grid-entry-execution-policy.md)
 
 ## Grid Level Engine — Design และ Round 1 Implementation
 
@@ -123,9 +151,13 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Grid Order Execution Adapter Round 1 ผ่านตามผล Compile/Runtime ที่ผู้ใช้รายงานเมื่อ 2026-10-31 (Unit Test ใหม่ + Grid Regression 9 ไฟล์ รวม 10 Tests)
 - Demo Integration Test EA แยกที่ `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` ผ่านตามผลที่ผู้ใช้รายงานเมื่อ 2026-11-02: Compile ผ่าน, ปิด Owned Positions จริงผ่าน Adapter บน Demo, ยืนยัน Foreign Position ไม่ถูกแตะต้อง และปิด Foreign Position ผ่านขั้นตอน Cleanup ที่ผู้ใช้กดเอง
 - ผล Demo นี้เสริม Unit/Regression Tests โดยยืนยัน Live Scan + ticket-specific close + Runtime reconciliation ใน Test Scenario ที่กำหนด; ไม่ได้หมายความว่า Grid V1 หรือ EA Event Handler Integration เสร็จสมบูรณ์
-- ยังไม่มี EA Event Handler adapter ที่เรียก Orchestrator/Execution จาก OnInit/OnTick/OnTimer
-- ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid ที่สมบูรณ์
-- ยังไม่มีการยืนยันจากเอกสารนี้ว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้ในโค้ดแล้ว
+- Entry Mapping Storage, Typed Reducer และ Snapshot/Journal Rotation มี Source แล้ว และผู้ใช้รายงานผล Compile/Runtime/Regression PASS เมื่อ 2026-11-15; ดูรายละเอียดใน `phase-grid-entry-execution-adapter-round-1.md`
+- Entry Execution Policy มี Design Baseline และ Test-First Specification 44 Cases แล้ว แต่ Production Policy Source ยังไม่ถูกสร้าง; Test EA ยังไม่ได้ Compile/Run ใน MT5
+- ยังไม่มี CTrade Entry Adapter ที่ส่ง Initial/Level BUY/SELL Request โดย Persist Intent ก่อน Trade API
+- Caller/Resolver Integration สำหรับ Target Level Context และ fail-closed behavior ยังต้องทำ Integration Tests
+- ยังไม่มี EA Event Handler adapter ที่เชื่อม Orchestrator/Execution จาก OnInit/OnTick/OnTimer/OnTradeTransaction แบบครบวงจร
+- ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid แบบ End-to-end ที่ผ่าน Acceptance Tests ครบ
+- ยังไม่มีการยืนยันว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้และผ่าน MT5 validation แล้ว
 - Lifecycle ที่ตกลงแล้ว: การเปิดกราฟใหม่ด้วยตนเองเป็น Grid Instance ใหม่และไม่ Adopt Position ของ Instance เดิม ส่วน Grid เดิมจะกลับมาทำงานเมื่อ Restore กราฟ/โปรไฟล์เดิมและกู้ Identity/Persistence ได้
 
 ## หลักการแยกความรับผิดชอบ
