@@ -86,7 +86,7 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay |
 | `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping และ Level State transition |
 | `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
-| `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; WP-01 รอ Compile/Run ยืนยัน |
+| `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; ผู้ใช้รายงาน WP-01 Compile/Runtime PASS |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
@@ -106,8 +106,11 @@ MQL5 Test EAs
 ## Entry Execution Policy — WP-01 Implementation
 
 - Design/Contract และ Test Plan ได้รับอนุมัติ; Test EA มี 44 Test IDs / 6 Groups
-- Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5
-- `GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; ผลปัจจุบันเป็น Static Review เท่านั้น ยังไม่ยืนยัน Compile/Runtime
+- Static Acceptance Checks ผ่าน 2026-11-17; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS
+- `GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
+- WP-02 Resolver/Caller ใช้ Runtime Coordinator สำหรับ Level State และ Mapping Reducer สำหรับ Instance/Mode/Config Epoch/Position Mapping; Resolver ปฏิเสธ disagreement และ Caller ไม่เรียก Policy เมื่อ Resolve ล้มเหลว
+- `GridEntryMappingReducer.mqh` เพิ่ม `MatchesContext()` และ `TryGetPositionMapping()` แบบ read-only; `GridLevelRuntimeCoordinator.mqh` เพิ่ม Mode match และ one-time `BindConfigEpoch()` เพื่อกัน stale runtime context
+- `GridEntryExecutionResolver.mqh` รวม Resolver กับ Caller; Test EA มี 17 cases และรอผู้ใช้ Compile/Run
 - Resolver provenance เป็นความรับผิดชอบของ Caller และต้องทดสอบ Integration แยก; Resolve failure ต้อง Fail Closed และห้ามเรียก Policy
 - ดู Contract เต็มใน [Entry Execution Policy](Phases/phase-grid-entry-execution-policy.md)
 
@@ -152,9 +155,9 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Demo Integration Test EA แยกที่ `Experts/TGK/Tests/Grids/test_grid_order_execution_demo.mq5` ผ่านตามผลที่ผู้ใช้รายงานเมื่อ 2026-11-02: Compile ผ่าน, ปิด Owned Positions จริงผ่าน Adapter บน Demo, ยืนยัน Foreign Position ไม่ถูกแตะต้อง และปิด Foreign Position ผ่านขั้นตอน Cleanup ที่ผู้ใช้กดเอง
 - ผล Demo นี้เสริม Unit/Regression Tests โดยยืนยัน Live Scan + ticket-specific close + Runtime reconciliation ใน Test Scenario ที่กำหนด; ไม่ได้หมายความว่า Grid V1 หรือ EA Event Handler Integration เสร็จสมบูรณ์
 - Entry Mapping Storage, Typed Reducer และ Snapshot/Journal Rotation มี Source แล้ว และผู้ใช้รายงานผล Compile/Runtime/Regression PASS เมื่อ 2026-11-15; ดูรายละเอียดใน `phase-grid-entry-execution-adapter-round-1.md`
-- Entry Execution Policy มี Design Baseline, Test-First Specification 44 Cases และ Policy Source แล้ว; Test EA ยังไม่ได้ Compile/Run ใน MT5
+- Entry Execution Policy มี Design Baseline, Test-First Specification 44 Cases และ Policy Source แล้ว; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 ผ่าน Compile/Runtime
 - ยังไม่มี CTrade Entry Adapter ที่ส่ง Initial/Level BUY/SELL Request โดย Persist Intent ก่อน Trade API
-- Caller/Resolver Integration สำหรับ Target Level Context และ fail-closed behavior ยังต้องทำ Integration Tests
+- Caller/Resolver Source และ Integration Test 17 cases เพิ่มใน WP-02 แล้ว; รอผู้ใช้ Compile/Run และ rerun Regression
 - ยังไม่มี EA Event Handler adapter ที่เชื่อม Orchestrator/Execution จาก OnInit/OnTick/OnTimer/OnTradeTransaction แบบครบวงจร
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid แบบ End-to-end ที่ผ่าน Acceptance Tests ครบ
 - ยังไม่มีการยืนยันว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้และผ่าน MT5 validation แล้ว

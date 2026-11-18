@@ -9,7 +9,7 @@
 ## Development flow
 1. **Requirement + Design**: clarify problem, scope, behavior, constraints, edge cases, architecture, and Acceptance Criteria with the user.
 2. **Test Plan first**: define suitable Unit, Integration, Failure/Edge Case, and Regression coverage before implementation. Grid work is test-first; keep Grid tests under `Experts/TGK/Tests/Grids`.
-3. **Implement by approved phases**: implement only the agreed slice. Explain changes and wait for user approval before starting the next phase. Do not silently expand scope.
+3. **Implement by approved phases**: implement only the agreed slice. At the end of every Phase, stop and ask the user for explicit authorization before starting the next Phase. This applies even when a kickoff previously authorized the full roadmap; do not treat blanket authorization as permission to cross Phase boundaries.
 4. **Code Review**: inspect logic, architecture, edge cases, compatibility, static issues, and `git diff --check`.
 5. **Compile + MT5 Testing**: user runs MetaEditor/MT5 compile and runtime tests and reports results. Assistant must not claim to have run MT5 or claim compile/runtime success without user confirmation.
 6. **Regression**: run the relevant full regression suite after changes. Before any new Grid feature/refactor, explicitly remind the user to run the latest Grid Regression Tests.
@@ -48,16 +48,18 @@ Move to **Blocked** whenever progress is genuinely blocked; return to the approp
 - Apply only labels relevant to that Card; do not attach all labels by default.
 - Update Card/list status when the work crosses a meaningful workflow boundary, not for every intermediate edit.
 - Do not move a Card to Done based solely on assistant implementation or static checks.
+- When a new Phase is authorized, check whether an existing card matches its scope; create a separate card before implementation when needed. Update the card at meaningful status transitions and at Phase completion so it reflects current evidence and open gates.
 
 ## Roles
 - Assistant: analyze/design with the user; prepare Test Plans; implement approved code slices; review; update technical docs/status and Trello Cards; analyze user-reported MT5/test results.
 - User: make scope/design decisions and approvals; run MetaEditor/MT5 compile/runtime tests; report actual outcomes; confirm Acceptance Criteria and phase completion.
-- Assistant must not start the next phase without explicit user approval.
+- Assistant must ask for and receive explicit user approval at every Phase boundary before starting the next Phase.
 
 ## Practical operating rules
 - Before starting Grid feature/refactor work, remind the user to run the latest Grid Regression Tests.
 - At the beginning of a new development task, check the current-phase memory and relevant Trello Card/Board state when available; do not infer that a task is active or Done from old chat context alone.
 - At each meaningful transition, keep Trello status aligned with repository status. If Trello is unavailable, continue technical work where safe and report that Board synchronization could not be completed.
+- After the user authorizes a new Phase, ensure its Trello card exists before implementation when a separate card is appropriate; update the card whenever its actual workflow status changes and when the Phase completes.
 - Repository documentation remains the detailed technical record; Trello is the concise workflow/status view.
 - Use task-based conversations: one chat should have one bounded primary Work Item or Phase. Split into a new chat at a natural boundary when the next work has a distinct objective or the active context is becoming large; do not wait for a Context window full warning. Small tightly related steps may remain together when doing so avoids unnecessary handoffs.
 - The assistant must proactively tell the user when it is time to open a new chat. Do not merely suggest it vaguely: state clearly that a new chat should be opened now, explain the boundary briefly, and provide a complete ready-to-copy kickoff prompt for that new chat.

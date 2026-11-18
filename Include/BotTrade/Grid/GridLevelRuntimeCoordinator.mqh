@@ -64,6 +64,7 @@ private:
   ENUM_TGK_GRID_MODE m_mode;
   string m_symbol;
   long m_magic_number;
+  long m_config_epoch;
   double m_previous_bid;
   double m_previous_ask;
   double m_current_bid;
@@ -542,6 +543,7 @@ public:
     m_mode = TGK_GRID_MODE_BUY;
     m_symbol = "";
     m_magic_number = 0;
+    m_config_epoch = 0;
     m_previous_bid = 0.0;
     m_previous_ask = 0.0;
     m_current_bid = 0.0;
@@ -595,6 +597,7 @@ public:
     m_mode = mode;
     m_symbol = symbol;
     m_magic_number = magic_number;
+    m_config_epoch = 0;
     m_previous_bid = current_bid;
     m_previous_ask = current_ask;
     m_current_bid = current_bid;
@@ -869,6 +872,42 @@ public:
     return m_initialized &&
            symbol == m_symbol &&
            magic_number == m_magic_number;
+  }
+
+  bool MatchesModeContext(
+    string symbol,
+    long magic_number,
+    ENUM_TGK_GRID_MODE mode
+  )
+  {
+    return m_initialized &&
+           symbol == m_symbol &&
+           magic_number == m_magic_number &&
+           mode == m_mode;
+  }
+
+  // Bind the runtime state to its committed persistent configuration once.
+  // A different epoch requires a freshly initialized Coordinator.
+  bool BindConfigEpoch(long config_epoch)
+  {
+    if(!m_initialized || config_epoch <= 0 ||
+       (m_config_epoch != 0 && m_config_epoch != config_epoch))
+      return false;
+
+    m_config_epoch = config_epoch;
+    return true;
+  }
+
+  bool MatchesGridContext(
+    string symbol,
+    long magic_number,
+    ENUM_TGK_GRID_MODE mode,
+    long config_epoch
+  )
+  {
+    return MatchesModeContext(symbol, magic_number, mode) &&
+           config_epoch > 0 &&
+           config_epoch == m_config_epoch;
   }
 };
 

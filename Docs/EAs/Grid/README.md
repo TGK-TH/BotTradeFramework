@@ -27,11 +27,12 @@
 - [Grid Level Runtime Coordinator — Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md)
 - [Grid Entry Execution Adapter — Persistence/Mapping Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
 - [Grid Entry Execution Policy — Design, Contract และ Test-First](Phases/phase-grid-entry-execution-policy.md)
+- [Grid Entry Execution Resolver — WP-02](Phases/phase-grid-entry-execution-resolver.md)
 
 ## Current implementation boundary
 
 มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Entry Mapping Storage/Reducer/Snapshot Rotation แล้ว โดยผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
 
-Grid Entry Execution Policy Phase 1–2 ได้รับอนุมัติและ Finalized แล้ว; WP-01 สร้าง Policy Header ตาม Contract และผ่าน Static Review แล้ว แต่ยังรอ Compile/Run Test EA 44 Cases และ Grid Regression ใน MetaEditor/MT5 ก่อนเริ่ม WP-02
+Grid Entry Execution Policy WP-01 เสร็จตามผลที่ผู้ใช้รายงาน: Policy Test EA 44/44 และ Grid Component/Regression 15/15 ผ่าน MetaEditor/MT5 เมื่อ 2026-11-17. WP-02 มี Resolver/Caller Source และ Test EA 17 cases แล้ว; รอผู้ใช้ Compile/Run ก่อนเริ่ม WP-03
 
 **ข้อสำคัญ:** การที่ Components แยกส่วนผ่าน Unit/Integration Tests ไม่ได้แปลว่า Grid V1 เสร็จ ต้องเชื่อม Production EA Event Handlers และทดสอบ End-to-End ตาม [Definition of Done](ROADMAP.md)

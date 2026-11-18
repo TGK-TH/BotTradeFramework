@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-17
+อัปเดตล่าสุด: 2026-11-18
 
 ## ก่อนเริ่ม
 
@@ -26,11 +26,12 @@
 | `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
-| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close และ close reason validation | PASS (ผู้ใช้ยืนยัน Regression 12/12 เมื่อ 2026-11-09) |
+| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close, close reason validation และ Reducer/Coordinator context APIs | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังเพิ่ม context/epoch tests |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count และ Snapshot codec; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run ซ้ำและ Grid Regression Tests ทั้งหมด 2026-11-15) |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count, Snapshot codec และ direct tests สำหรับ context/mapping queries; ไม่มี Trade Request | ผู้ใช้รายงาน Compile/Run 2026-11-18 มี 1 failure: out-of-range Level query test ส่ง index 2 ซึ่งยัง valid; แก้ test ให้ใช้ index 200 แล้ว รอ Compile/Run ยืนยันซ้ำ |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy Test-First Contract 44 Cases / 6 Groups; ไม่มี Policy Header, Trade API หรือ File I/O | Static Acceptance PASS (2026-11-17); ยังไม่ได้ Compile/Run MT5 |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy pure-decision tests 44 Cases / 6 Groups; ไม่มี Trade API หรือ File I/O | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18; log ล่าสุดไม่ได้แจกแจงจำนวน cases |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` | Resolver/Caller provenance, stale context, fail-closed และ fresh mapping tests; ไม่มี Trade Request | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18 |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -39,11 +40,11 @@
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
-ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant; แถว Entry Execution Policy เป็น Static Acceptance เท่านั้นและยังไม่ใช่ Compile/Runtime PASS
+ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผลล่าสุดมี Reducer Test EA หนึ่ง failure ตามที่บันทึกไว้ด้านล่าง; แก้ test แล้วและรอ retest.
 
-ณ 2026-11-17 มี Grid Test Sources 17 ไฟล์ใน Directory: 15 Component/Regression Tests ที่เป็น Baseline ก่อนเพิ่ม Policy Test, Policy Test-First 1 ไฟล์ที่ยังไม่ Compile/Run และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+ณ 2026-11-17 มี Grid Test Sources 18 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่ารัน test files แล้วทุกไฟล์ผ่านยกเว้น Reducer 1 failure; ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
 
-ผู้ใช้รายงานว่า Latest Grid Regression Tests ก่อนเริ่ม Policy Phase 2 ผ่านทั้งหมดเมื่อ 2026-11-17; อย่ารวม Policy Test EA ใหม่เข้าในผล PASS นี้จนกว่าจะมีผู้ใช้รายงาน Compile/Run PASS ของไฟล์ดังกล่าว
+ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดแล้ว ทุกไฟล์ผ่านยกเว้น `test_grid_entry_mapping_reducer.mq5` ซึ่งมี 1 failure ที่ out-of-range query ใช้ index 2 ทั้งที่ fixture มี valid level indices 0–199. ปรับ test ให้ใช้ 200; การแก้ไขนี้ยังรอผู้ใช้ Compile/Run ยืนยันซ้ำ. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 
@@ -383,13 +384,13 @@ Implementation ที่เพิ่มแล้ว:
 
 ผล Compile/Runtime: ยังไม่มีการยืนยันจากผู้ใช้; Assistant ทำได้เพียง Static Checks และไม่ได้ Compile/Run MetaEditor/MT5
 
-## Grid Entry Execution Policy — WP-01 Implementation (รอ MT5 Validation)
+## Grid Entry Execution Policy — WP-01
 
 เอกสาร Design Baseline และ Test Contract: [phase-grid-entry-execution-policy.md](../Phases/phase-grid-entry-execution-policy.md)
 
 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 
-Production Policy: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` สร้างแล้วตาม Contract; ยังไม่มีผล Compile/Runtime จาก MetaEditor/MT5
+Production Policy: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` สร้างตาม Contract. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า test files ผ่านทั้งหมด ยกเว้น Reducer Test EA ที่มี failure ตามรายละเอียดสถานะปัจจุบันด้านบน
 
 Test Inventory: **44 Test IDs / 6 Groups**
 - A: Valid Candidate (4)
@@ -403,11 +404,23 @@ Test Contract ใช้ API Names ที่ผู้ใช้ออนุมั�
 
 Caller/Resolver ต้อง Resolve Level Context ตาม `candidate.instance_id` และ target key แล้วส่ง Context สดของ Target Level ใน Current Instance เท่านั้น. เมื่อ Resolve ล้มเหลว Caller ต้อง Fail Closed และห้ามเรียก Policy; ห้ามแทน Resolve failure ด้วย mapping=false. Policy Unit Tests ยืนยันการใช้ Context ที่ส่งให้แต่ละ call แต่ไม่พิสูจน์ provenance correctness; ต้องมี Integration Tests แยกสำหรับ Resolver.
 
-ขอบเขต Policy/Test เป็น Pure Decision เท่านั้น ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency. WP-01 ผ่าน Static Review แต่ยังไม่มีการ Compile/Run ใน MetaEditor/MT5; Static Checks ไม่ใช่ Compile/Runtime PASS.
+ขอบเขต Policy/Test เป็น Pure Decision เท่านั้น ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage dependency. Policy Test EA อยู่ในกลุ่มไฟล์ที่ผู้ใช้รายงานว่าผ่านในการรันล่าสุด; Demo Integration Test ไม่รวมใน Gate นี้.
 
 ผล Phase 2 Static Acceptance (2026-11-17): 44 unique Test IDs; Group counts 4/13/6/9/6/6; F02 ใช้ Context Level 0 unmapped, Level 7 mapped, แล้วประเมิน Level 0 ซ้ำ โดย reuse Result object เดิมและ assert ครบทุก output หลังแต่ละ call; F05/F06 reuse Result object ข้าม Execution State; boundary cases และ E01–E06 precedence ครบ.
 
-ผล WP-01 Static Review: Policy เรียง Validation ตาม Contract, เขียน Output ทั้งสาม field ทุก path และไม่มี Trade API, `CTrade`, `OrderSend`, File I/O, Persistent Storage หรือ Reducer dependency. ต้องให้ผู้ใช้ Compile/Run Test EA นี้และ 15 Grid Component/Regression Test EAs เพื่อยืนยัน WP-01; ห้ามนับผล baseline ก่อนเปลี่ยน Source เป็นผลหลัง WP-01.
+ผล WP-01: Static Review ยืนยัน Validation order, Output assignment ทุก path และไม่มี Trade API, `CTrade`, `OrderSend`, File I/O, Persistent Storage หรือ Reducer dependency ใน Policy. ผู้ใช้รายงานว่า Policy test file ผ่านในการรันชุดล่าสุด; failure ที่เหลือเป็น assertion ใน Reducer test EA.
+
+## Grid Entry Execution Resolver / Caller — WP-02 (รอ MT5 Validation)
+
+เอกสาร Work Package: [phase-grid-entry-execution-resolver.md](../Phases/phase-grid-entry-execution-resolver.md)
+
+Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5`
+
+Inventory: **17 unique Test IDs** — A01–A02 resolve success (READY unmapped Level and mapped Anchor); B01–B11 verify Instance/Symbol/Magic/Mode/Epoch/Target keys, unconfigured/recovery state, and runtime/persistent state disagreement; C01–C03 cover unresolved-state consistency and stale runtime Config Epoch; F01 tests fresh Level 0 unmapped → Level 7 mapped → Level 0 evaluation.
+
+Test EA ใช้ Reducer/Coordinator fixtures ใน memory ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage operation. Resolver failure ต้องคืน `false`, ไม่เรียก Policy และไม่เขียนทับ Result; coherent unresolved request เรียก Policy และได้ `REJECT / UNRESOLVED_REQUEST`.
+
+Static Review: 17 unique IDs; delimiters, newline, whitespace และ no-trading dependency checks ผ่าน; `git diff --check` ผ่าน. ผู้ใช้รายงานว่า Compile/Run test files แล้ว; มี Reducer test failure หนึ่งจุดและแก้ index ใน test source จาก 2 เป็น 200. รอ retest ของ `test_grid_entry_mapping_reducer.mq5`; ไม่รวม Demo Integration Test.
 
 ## นโยบาย Regression Test
 

@@ -731,6 +731,213 @@ int OnInit()
     oversized_snapshot_field_reducer.ExportSnapshot(rejected_snapshot_field_payload));
   Tests.EndTest();
 
+  Tests.BeginTest("Read-only context queries require the exact healthy committed configuration");
+  STGKGridMappingJournalRecord context_records[];
+  AddBaseConfiguration(context_records);
+  CTGKGridEntryMappingReducer context_reducer;
+  Tests.AssertTrue(
+    "initialize context reducer",
+    context_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay committed BUY configuration",
+    context_reducer.Replay(context_records, ArraySize(context_records)));
+  Tests.AssertTrue(
+    "exact Instance/Symbol/Magic/Mode/Epoch matches",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+  Tests.AssertFalse(
+    "different Instance does not match",
+    context_reducer.MatchesContext(
+      "UT-OTHER",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+  Tests.AssertFalse(
+    "different Symbol does not match",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "EURUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+  Tests.AssertFalse(
+    "different Magic does not match",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710002,
+      TGK_GRID_MODE_BUY,
+      1));
+  Tests.AssertFalse(
+    "different Mode does not match",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_SELL,
+      1));
+  Tests.AssertFalse(
+    "different Config Epoch does not match",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      2));
+  Tests.AssertFalse(
+    "non-positive Config Epoch does not match",
+    context_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      0));
+
+  CTGKGridEntryMappingReducer uninitialized_context;
+  Tests.AssertFalse(
+    "uninitialized Reducer does not match",
+    uninitialized_context.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+
+  STGKGridMappingJournalRecord failed_context_records[];
+  AddBaseConfiguration(failed_context_records);
+  failed_context_records[1].sequence = 3;
+  CTGKGridEntryMappingReducer failed_context;
+  Tests.AssertTrue(
+    "initialize failed-context Reducer",
+    failed_context.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "malformed replay is rejected",
+    failed_context.Replay(
+      failed_context_records,
+      ArraySize(failed_context_records)));
+  Tests.AssertFalse(
+    "Reducer in Recovery Error does not match",
+    failed_context.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+  Tests.EndTest();
+
+  Tests.BeginTest("Target mapping query distinguishes unmapped, mapped and invalid targets");
+  STGKGridMappingJournalRecord mapping_query_records[];
+  AddBaseConfiguration(mapping_query_records);
+  CTGKGridEntryMappingReducer unmapped_query;
+  Tests.AssertTrue(
+    "initialize unmapped-query Reducer",
+    unmapped_query.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay committed configuration for unmapped query",
+    unmapped_query.Replay(
+      mapping_query_records,
+      ArraySize(mapping_query_records)));
+  bool has_mapping = true;
+  Tests.AssertTrue(
+    "valid unmapped Level query succeeds",
+    unmapped_query.TryGetPositionMapping(false, 1, has_mapping));
+  Tests.AssertFalse("valid Level has no Position Mapping", has_mapping);
+  Tests.AssertFalse(
+    "negative normal Level query fails",
+    unmapped_query.TryGetPositionMapping(false, -1, has_mapping));
+  Tests.AssertFalse("failed query clears mapping output", has_mapping);
+  Tests.AssertFalse(
+    "Anchor query with non-anchor index fails",
+    unmapped_query.TryGetPositionMapping(true, 0, has_mapping));
+  Tests.AssertFalse("invalid Anchor query clears output", has_mapping);
+  Tests.AssertFalse(
+    "out-of-range Level query fails",
+    unmapped_query.TryGetPositionMapping(false, 200, has_mapping));
+  Tests.AssertFalse("out-of-range query clears output", has_mapping);
+
+  STGKGridMappingJournalRecord mapped_level_records[];
+  AddBaseConfiguration(mapped_level_records);
+  int mapping_sequence = 3;
+  AddMappedPosition(
+    mapped_level_records,
+    mapping_sequence,
+    "REQ-MAPPED-LEVEL",
+    "LEVEL",
+    1,
+    8101);
+  CTGKGridEntryMappingReducer mapped_level_query;
+  Tests.AssertTrue(
+    "initialize mapped-Level Reducer",
+    mapped_level_query.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay mapped-Level events",
+    mapped_level_query.Replay(
+      mapped_level_records,
+      ArraySize(mapped_level_records)));
+  Tests.AssertTrue(
+    "mapped Level query succeeds",
+    mapped_level_query.TryGetPositionMapping(false, 1, has_mapping));
+  Tests.AssertTrue("target Level has Position Mapping", has_mapping);
+  Tests.AssertTrue(
+    "different Level query succeeds",
+    mapped_level_query.TryGetPositionMapping(false, 0, has_mapping));
+  Tests.AssertFalse("mapping is scoped to target Level", has_mapping);
+
+  STGKGridMappingJournalRecord mapped_anchor_records[];
+  AddBaseConfiguration(mapped_anchor_records);
+  int anchor_sequence = 3;
+  AddMappedPosition(
+    mapped_anchor_records,
+    anchor_sequence,
+    "REQ-MAPPED-ANCHOR",
+    "ANCHOR",
+    -1,
+    8102);
+  CTGKGridEntryMappingReducer mapped_anchor_query;
+  Tests.AssertTrue(
+    "initialize mapped-Anchor Reducer",
+    mapped_anchor_query.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay mapped-Anchor events",
+    mapped_anchor_query.Replay(
+      mapped_anchor_records,
+      ArraySize(mapped_anchor_records)));
+  Tests.AssertTrue(
+    "mapped Anchor query succeeds",
+    mapped_anchor_query.TryGetPositionMapping(true, -1, has_mapping));
+  Tests.AssertTrue("Anchor has Position Mapping", has_mapping);
+
+  CTGKGridEntryMappingReducer uninitialized_mapping_query;
+  has_mapping = true;
+  Tests.AssertFalse(
+    "uninitialized Reducer mapping query fails",
+    uninitialized_mapping_query.TryGetPositionMapping(false, 1, has_mapping));
+  Tests.AssertFalse("failed uninitialized query clears output", has_mapping);
+
+  CTGKGridEntryMappingReducer failed_mapping_query;
+  STGKGridMappingJournalRecord failed_mapping_records[];
+  AddBaseConfiguration(failed_mapping_records);
+  failed_mapping_records[1].sequence = 3;
+  Tests.AssertTrue(
+    "initialize failed mapping-query Reducer",
+    failed_mapping_query.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "malformed mapping-query replay is rejected",
+    failed_mapping_query.Replay(
+      failed_mapping_records,
+      ArraySize(failed_mapping_records)));
+  has_mapping = true;
+  Tests.AssertFalse(
+    "Recovery Error mapping query fails",
+    failed_mapping_query.TryGetPositionMapping(false, 1, has_mapping));
+  Tests.AssertFalse("failed Recovery Error query clears output", has_mapping);
+  Tests.EndTest();
+
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }

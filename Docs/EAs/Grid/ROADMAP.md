@@ -78,27 +78,31 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | Typed Mapping Reducer | Implemented; ผู้ใช้รายงาน Compile/Regression ผ่าน 2026-11-15 |
 | Snapshot Serialization + Journal Rotation | Implemented; ผู้ใช้รายงาน Snapshot/Reducer/Regression ผ่าน 2026-11-15 |
 | Entry Execution Policy — Phase 1 Design | Approved |
-| Entry Execution Policy — Phase 2 Test-First | 44 Test IDs / 6 Groups; Static Acceptance Checks ผ่าน 2026-11-17; ยังไม่ได้ Compile/Run ใน MT5 |
+| Entry Execution Policy — WP-01 | Implemented; ผู้ใช้รายงาน Policy 44/44 และ Grid Regression 15/15 Compile/Runtime PASS 2026-11-17 |
 
 ผล Compile/Runtime ในตารางเป็น User-reported เท่านั้น; Codex/Assistant ห้ามเขียนว่าเป็นผลที่ตนเองรัน
 
 ### 3.2 Current Work Item
 
-**WP-01 — Entry Execution Policy Implementation: Source/Static Review เสร็จ; รอ MetaEditor/MT5 Compile และ Test โดยผู้ใช้**
+**WP-02 — Target-Level Resolver / Caller Integration: Source และ Static Review เสร็จ; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
 
 - Contract และ Test Plan: `Phases/phase-grid-entry-execution-policy.md`
 - Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 - 44 Test IDs; Groups A–F = 4/13/6/9/6/6
 - Static checks ผ่านตาม `PROJECT_STATUS.md`
-- Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; Static Review ผ่าน แต่ยังไม่ได้ Compile/Run
-- Baseline Regression 15 Test EAs ผู้ใช้รายงาน PASS เมื่อ 2026-11-17 ก่อนเพิ่ม Policy Header; ต้องรันซ้ำหลังเปลี่ยน Source
-- Gate ถัดไป: ผู้ใช้ Compile/Run Policy Test EA และ 15 Regression Test EAs; WP-02 เริ่มได้เมื่อผล PASS ได้รับการยืนยัน
+- WP-01 Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
+- WP-02 ต้องทดสอบ Target-Level Resolver/Caller, exact Instance/Target provenance, fresh context, Mapping Reducer query และ fail-closed โดยไม่ส่ง Trade Request
+- Dependency review พบ Mapping Reducer ไม่มี public read-only query และ Coordinator ไม่มี Mode/Config Epoch matcher; WP-02 เพิ่ม APIs ดังกล่าวแล้ว
+- WP-02 เพิ่ม `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` จำนวน 17 Test IDs; static checks ผ่าน; ยังไม่ได้ Compile/Run
+- WP-02 เปลี่ยน Reducer/Coordinator public read-only context APIs และเพิ่ม Resolver/Caller; รายละเอียดอยู่ใน `Phases/phase-grid-entry-execution-resolver.md`
+- Gate ถัดไป: ผู้ใช้ Compile/Run Resolver Test EA, Policy Test EA และ 15 Component/Regression Test EAs; WP-03 เริ่มเมื่อผล PASS ได้รับการยืนยัน
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
-มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 17 ไฟล์ ณ วันที่อัปเดต:
+มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 18 ไฟล์ ณ วันที่อัปเดต:
 - 15 existing component/regression test files ที่เป็น baseline ก่อน Policy Test
-- `test_grid_entry_execution_policy.mq5` เป็น Test-First Specification ใหม่; ยังไม่ได้ Compile/Run
+- `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
+- `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; รอ Compile/Run
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด
@@ -109,8 +113,8 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 | ลำดับ | Work Package | สถานะ | ผลลัพธ์ที่ต้องส่งมอบ |
 |---|---|---|---|
-| WP-01 | Entry Execution Policy Implementation | WAITING FOR USER MT5 TEST | Header ตาม Phase 2 Contract; ต้องยืนยัน Test EA 44 cases และ Full Regression ผ่าน; ไม่มี Trade API/Mutation |
-| WP-02 | Target-Level Resolver / Caller Integration | NOT STARTED | Resolve Candidate ไปยัง Level/Instance ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ F02 mapping scenario |
+| WP-01 | Entry Execution Policy Implementation | COMPLETE (USER-REPORTED PASS) | Header ตาม Phase 2 Contract; Policy Test EA 44 cases และ Full Regression ผ่านตามผู้ใช้รายงาน; ไม่มี Trade API/Mutation |
+| WP-02 | Target-Level Resolver / Caller Integration | WAITING FOR USER MT5 TEST | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | NOT STARTED | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | NOT STARTED | เชื่อม Engine Candidate → Resolver → Policy → Persistent Mapping/Reducer → CTrade Adapter → Runtime Coordinator; mapping จาก Deal/Position Identifier; ACTIVE หลัง reconciliation เท่านั้น |
 | WP-05 | Close/Deal/Transaction Reconciliation Integration | NOT STARTED | เชื่อม partial fill, partial close, full close, TP/SL/manual close, Deal history และ Position transaction เข้ากับ Mapping/Coordinator/Engine; ไม่เดา Close Reason หรือ Logical Level |
@@ -166,13 +170,14 @@ Grid V1 จะถือว่าเสร็จได้เมื่อครบ
 4. ก่อนเริ่ม Source feature/refactor ให้ผู้ใช้รัน latest Grid Regression Tests และบันทึกผล Pre-change; หลังแก้ต้องรัน Regression ซ้ำ
 5. Test-first: เขียน/ทบทวน Acceptance Criteria และ Tests ก่อน implementation; ใช้ Test EAs ใน `Experts/TGK/Tests/Grids/`
 6. ทำงานทีละ Work Package; ไม่ข้าม Dependency และไม่ขยาย Scope โดยไม่บันทึกเหตุผล
-7. ถ้า Kickoff Prompt ระบุชัดว่า “อนุมัติให้ดำเนิน Grid V1 ต่อเนื่องจนเสร็จตาม Roadmap” ให้ถือเป็น Blanket Authorization สำหรับ Work Packages ใน Scope นี้และเดินหน้าต่อหลังแต่ละ Work Package ผ่าน Gate โดยไม่ต้องถามอนุมัติซ้ำสำหรับงานปกติ
-8. Blanket Authorization ไม่ครอบคลุม Live Trading, Demo Test ที่ส่ง Trade Request, การลบ/ปิด Position ที่ไม่ใช่ Test Position, การเปลี่ยน Product Scope หรือการตัดสินใจ Design ที่มีหลายทางเลือกและยังไม่เคยตกลง; กรณีเหล่านี้ต้องหยุดถามผู้ใช้
-9. เมื่อถึง MetaEditor/MT5 Gate ให้ส่งรายการไฟล์/ขั้นตอนทดสอบและหยุดรอผลผู้ใช้; ห้ามอ้าง Compile/Runtime PASS จาก Static Checks หรือการอ่าน Source
-10. เมื่อผลผู้ใช้ PASS ให้ดำเนิน Work Package ถัดไปได้ภายใต้ Blanket Authorization; ถ้า FAIL ให้แก้เฉพาะสาเหตุและรัน Regression ซ้ำ
-11. หลังแต่ละ Work Package ให้ Update `PROJECT_STATUS.md`, Docs ที่เกี่ยวข้อง, Testing Inventory และ Serena current-phase memory; บันทึก changed files, checks, user-reported outcomes, known gaps และ exact next step
-12. ไม่ Commit/Push เว้นแต่ผู้ใช้สั่ง; ไม่แก้ MT5-linked copy นอก Repository
-13. ก่อนประกาศ Grid V1 Complete ให้ตรวจ Definition of Done ทุกข้อและขอ User Acceptance
+7. เมื่อ Work Package/Phase ปัจจุบันเสร็จ ให้หยุดและขออนุมัติจากผู้ใช้ก่อนเริ่ม Phase ถัดไปทุกครั้ง แม้ Kickoff Prompt ก่อนหน้าจะอนุมัติให้ทำ Grid V1 ตาม Roadmap จนเสร็จก็ตาม
+8. เมื่อผู้ใช้ออนุมัติ Phase ใหม่ ให้ตรวจ Trello Card ที่ตรงกับ Scope; ถ้าไม่มี Card แยกที่เหมาะสม ให้สร้างก่อนเริ่มงาน และอัปเดต Card ตามสถานะจริงตลอดงาน
+9. Blanket Authorization ไม่ครอบคลุม Live Trading, Demo Test ที่ส่ง Trade Request, การลบ/ปิด Position ที่ไม่ใช่ Test Position, การเปลี่ยน Product Scope หรือการตัดสินใจ Design ที่มีหลายทางเลือกและยังไม่เคยตกลง; กรณีเหล่านี้ต้องหยุดถามผู้ใช้
+10. เมื่อถึง MetaEditor/MT5 Gate ให้ส่งรายการไฟล์/ขั้นตอนทดสอบและหยุดรอผลผู้ใช้; ห้ามอ้าง Compile/Runtime PASS จาก Static Checks หรือการอ่าน Source
+11. เมื่อผลผู้ใช้ PASS ให้แก้/ปิด Gate ปัจจุบันตามหลักฐาน แล้วหยุดที่ขอบเขต Phase และขออนุมัติผู้ใช้ก่อนเริ่ม Phase ถัดไป; ถ้า FAIL ให้แก้เฉพาะสาเหตุและรัน Regression ซ้ำ
+12. หลังแต่ละ Work Package ให้ Update `PROJECT_STATUS.md`, Docs ที่เกี่ยวข้อง, Testing Inventory, Trello Card และ Serena current-phase memory; บันทึก changed files, checks, user-reported outcomes, known gaps และ exact next step
+13. ไม่ Commit/Push เว้นแต่ผู้ใช้สั่ง; ไม่แก้ MT5-linked copy นอก Repository
+14. ก่อนประกาศ Grid V1 Complete ให้ตรวจ Definition of Done ทุกข้อและขอ User Acceptance
 
 ## 7. เอกสารที่เป็น Authority
 

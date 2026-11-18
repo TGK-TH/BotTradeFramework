@@ -1,6 +1,6 @@
 # Grid Entry Execution Policy — Design Baseline และ Test Plan
 
-สถานะ: **Phase 1 Design Baseline อนุมัติแล้ว; Phase 2 Test-First Specification Finalized; WP-01 Policy Implementation มี Source และผ่าน Static Review; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5 ก่อนปิด Work Package**
+สถานะ: **Phase 1 Design Baseline และ Phase 2 Test-First Specification Finalized; WP-01 Policy Implementation เสร็จตามผล Compile/Runtime PASS ที่ผู้ใช้รายงาน (Policy 44/44, Grid Regression 15/15; 2026-11-17)**
 
 อัปเดตล่าสุด: 2026-11-17
 
@@ -288,9 +288,9 @@ Policy-specific enum numeric values ไม่ใช่ persistent contract ใ�
 | Phase 1 | ตรวจสอบ Design, Contract, Architecture และ Test Plan | Complete; ผู้ใช้อนุมัติ |
 | Precondition | Latest Grid Regression Tests | PASS ตามที่ผู้ใช้รายงาน 2026-11-17 |
 | Phase 2 | Test-First Specification, 44 Cases และ Static Review | Finalized ตาม Final Contract ที่ผู้ใช้อนุมัติ 2026-11-17; Static Checks ผ่านตามรายการใน Project Status |
-| WP-01 | Policy Implementation | Source มีแล้ว; Static Review ผ่าน; รอผู้ใช้ Compile/Run Test EA 44 Cases และ Full Grid Regression |
+| WP-01 | Policy Implementation | Complete ตามผลผู้ใช้รายงาน: Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17 |
 
-Phase 2 เองเป็น Test-First Specification และไม่ได้สร้าง Header; WP-01 สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract แล้ว. Test EA ยังไม่ Compile/Run กับ Production Policy และผล Static Checks ไม่ใช่ Compile/Runtime PASS.
+Phase 2 เป็น Test-First Specification; WP-01 สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract. Compile/Runtime PASS เป็นผลที่ผู้ใช้รายงาน ไม่ใช่การรันโดย Codex.
 
 ## 10. Related Files
 
@@ -299,4 +299,4 @@ Phase 2 เองเป็น Test-First Specification และไม่ได�
 - [Grid Entry Execution Adapter — Round 1](phase-grid-entry-execution-adapter-round-1.md)
 - [Project status](../../../../PROJECT_STATUS.md)
 
-สถานะไฟล์ ณ 2026-11-17: Phase 2 Test-First Specification มี 44 Test IDs และผ่าน Static Acceptance Checks. WP-01 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract; Static Review ผ่าน แต่ยังไม่มี Compile/Runtime ผลถัดไปคือผู้ใช้ Compile/Run Policy Test EA และ Full Regression.
+สถานะไฟล์ ณ 2026-11-17: Phase 2 Test-First Specification มี 44 Test IDs; WP-01 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` ตาม Contract และผู้ใช้รายงาน Policy Test 44/44 กับ Grid Regression 15/15 ผ่าน Compile/Runtime. รายละเอียดการทำงานต่ออยู่ใน WP-02 ของ `ROADMAP.md`.

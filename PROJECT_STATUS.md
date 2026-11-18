@@ -1,29 +1,30 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 ## Current focus
 
-**Grid V1 — WP-01 Entry Execution Policy Implementation: Source และ Static Review เสร็จ; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
+**Grid V1 — WP-02 รอ Compile/Run ยืนยันซ้ำหลังแก้ boundary test ใน Reducer Test EA**
 
 - Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
 - Current contract: [Grid Entry Execution Policy](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
-- Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — 44 Test IDs / Groups A–F = 4/13/6/9/6/6; รอ Compile/Run พร้อม Policy Header
-- Next: ผู้ใช้ Compile/Run Policy Test EA และ Grid Regression suite 15 ไฟล์ใน MetaEditor/MT5; หากผ่าน ให้เดินหน้า WP-02 ตาม Roadmap
+- Test EAs: ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run ทั้งหมดแล้ว ทุกไฟล์ผ่านยกเว้น Reducer 1 failure ใน out-of-range query test; แก้ test index จาก 2 เป็น 200 แล้ว
+- Next: ผู้ใช้ Compile/Run `test_grid_entry_mapping_reducer.mq5` ซ้ำเพื่อยืนยัน; หยุดที่ WP-02 และรออนุมัติแยกก่อนเริ่ม Phase ถัดไป
 
 ## Current phase evidence
 
 - Phase 1 Design/Contract/Test Plan: ผู้ใช้ออนุมัติแล้ว
 - Phase 2 Test-First Specification: Finalized; 44 cases; Static checks ผ่าน
-- WP-01 Policy Implementation: สร้าง `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; Static Review ผ่าน; ยังไม่มีผล Compile/Runtime
-- Regression baseline: ผู้ใช้รายงาน PASS เมื่อ 2026-11-17 สำหรับ 15 Component/Regression Tests ก่อน Policy Header; หลังการเปลี่ยน source รอบนี้ต้องรันซ้ำก่อนปิด WP-01
-- Checks รอบ WP-01: ตรวจ Contract/API, ลำดับ validation, output ทุก path, forbidden dependencies, delimiter/whitespace และ `git diff --check`; ไม่ได้ Compile/Run MetaEditor/MT5
-- Known issue/gate: ความถูกต้องด้าน Compiler/Runtime ของ Header และ Test EA ยังไม่ยืนยัน
-- Trello: [Grid Entry Execution Policy — Pure Decision Component + Unit Tests](https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests) — In Progress
+- WP-01 Policy Implementation: Source และ Static Review ผ่าน; ในการรันชุดทดสอบล่าสุด ผู้ใช้รายงานว่าทุกไฟล์ผ่าน ยกเว้น Reducer Test EA ที่มี failure ตามบรรทัดข้างต้น
+- WP-01 scope ไม่รวม Demo Integration Test ซึ่งส่ง Trade Request จริง
+- WP-02 dependency review พบช่องว่าง public read-only query; เพิ่ม Reducer context/mapping query และ Coordinator Mode/Config Epoch matching; เพิ่ม Resolver/Caller ที่ Fail Closed และไม่เรียก Policy เมื่อ context ไม่สอดคล้อง
+- WP-02 Static Review: 17 Resolver IDs; direct tests ครอบคลุม Reducer `MatchesContext()`/`TryGetPositionMapping()` และ Coordinator context/epoch APIs; static checks ผ่าน
+- WP-02 user-reported test result: ทุกไฟล์ผ่าน ยกเว้น Reducer มี out-of-range assertion ใช้ index 2 ที่ valid; test เปลี่ยนเป็น index 200 และรอ retest
+- Trello: WP-01 Policy card และ WP-02 Resolver/Caller card แยกกัน; WP-02 กำลังแก้ test และรอ retest
 
 ## Current implementation snapshot
 
-มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Persistent Entry Mapping/Reducer/Snapshot Rotation ตาม Phase Notes แล้ว อย่างไรก็ตาม **ยังไม่มี Production Entry Policy, Entry CTrade Adapter, Resolver Integration และ Production EA Event Handler/End-to-End Grid V1** ตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
+มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Policy และ Resolver/Caller Source ตาม Phase Notes แล้ว อย่างไรก็ตาม **ยังไม่มี Entry CTrade Adapter, Entry Pipeline, Production EA Event Handler หรือ End-to-End Grid V1** ตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
 
 ## Evidence rules
 

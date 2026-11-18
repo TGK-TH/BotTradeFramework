@@ -77,6 +77,66 @@ int OnInit()
       0.0));
   Tests.EndTest();
 
+  Tests.BeginTest("Runtime context matching binds and enforces Config Epoch");
+  CTGKGridLevelRuntimeCoordinator context;
+  Tests.AssertFalse(
+    "uninitialized Coordinator cannot bind Config Epoch",
+    context.BindConfigEpoch(1));
+  Tests.AssertTrue(
+    "initialize context Coordinator",
+    context.Initialize(
+      TGK_GRID_MODE_BUY,
+      4000.0,
+      5.0,
+      3992.0,
+      4012.0,
+      3,
+      "XAUUSD",
+      710101,
+      3999.0,
+      4000.0));
+  Tests.AssertFalse("zero Config Epoch rejected", context.BindConfigEpoch(0));
+  Tests.AssertFalse("negative Config Epoch rejected", context.BindConfigEpoch(-1));
+  Tests.AssertFalse(
+    "unbound Coordinator does not match Grid context",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_BUY, 1));
+  Tests.AssertTrue("positive Config Epoch binds", context.BindConfigEpoch(1));
+  Tests.AssertTrue("same Config Epoch may be rebound", context.BindConfigEpoch(1));
+  Tests.AssertTrue(
+    "exact Symbol/Magic/Mode/Epoch matches",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_BUY, 1));
+  Tests.AssertFalse(
+    "different Symbol does not match",
+    context.MatchesGridContext("EURUSD", 710101, TGK_GRID_MODE_BUY, 1));
+  Tests.AssertFalse(
+    "different Magic does not match",
+    context.MatchesGridContext("XAUUSD", 710102, TGK_GRID_MODE_BUY, 1));
+  Tests.AssertFalse(
+    "different Mode does not match",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_SELL, 1));
+  Tests.AssertFalse(
+    "different Config Epoch does not match",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_BUY, 2));
+  Tests.AssertFalse(
+    "non-positive matched Config Epoch does not match",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_BUY, 0));
+  Tests.AssertFalse(
+    "different Config Epoch cannot replace existing binding",
+    context.BindConfigEpoch(2));
+  Tests.AssertTrue(
+    "original binding remains intact after rejected rebind",
+    context.MatchesGridContext("XAUUSD", 710101, TGK_GRID_MODE_BUY, 1));
+  Tests.AssertTrue(
+    "Mode context matches independently of Epoch",
+    context.MatchesModeContext("XAUUSD", 710101, TGK_GRID_MODE_BUY));
+  Tests.AssertFalse(
+    "Mode context rejects wrong identity",
+    context.MatchesModeContext("XAUUSD", 710102, TGK_GRID_MODE_BUY));
+  Tests.AssertFalse(
+    "Mode context rejects wrong Mode",
+    context.MatchesModeContext("XAUUSD", 710101, TGK_GRID_MODE_SELL));
+  Tests.EndTest();
+
   Tests.BeginTest("Invalid quote does not mutate the previous quote");
   CTGKGridLevelRuntimeCoordinator quote_validation;
   quote_validation.Initialize(

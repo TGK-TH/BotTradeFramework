@@ -1786,6 +1786,76 @@ public:
     return m_recovery_status;
   }
 
+  // Confirms that this healthy Reducer contains the Candidate's exact
+  // Instance and committed Grid configuration.
+  bool MatchesContext(
+    string instance_id,
+    string symbol,
+    long magic_number,
+    ENUM_TGK_GRID_MODE mode,
+    long config_epoch
+  )
+  {
+    string mode_value = "";
+    if(mode == TGK_GRID_MODE_BUY)
+      mode_value = "BUY";
+    else if(mode == TGK_GRID_MODE_SELL)
+      mode_value = "SELL";
+
+    return m_initialized &&
+           !m_failed &&
+           m_recovery_status == TGK_GRID_MAPPING_STATUS_NORMAL &&
+           instance_id == m_instance_id &&
+           symbol == m_symbol &&
+           magic_number == m_magic_number &&
+           mode_value != "" &&
+           mode_value == m_mode &&
+           config_epoch > 0 &&
+           config_epoch == m_config_epoch;
+  }
+
+  // Returns false when the target is invalid, state is unhealthy, or the
+  // Reducer contains more than one mapping for the requested logical target.
+  bool TryGetPositionMapping(
+    bool is_anchor,
+    int level_index,
+    bool &has_position_mapping
+  )
+  {
+    has_position_mapping = false;
+    if(!m_initialized ||
+       m_failed ||
+       m_recovery_status != TGK_GRID_MAPPING_STATUS_NORMAL ||
+       m_config_epoch <= 0)
+      return false;
+
+    string target_kind = "LEVEL";
+    if(is_anchor)
+    {
+      if(level_index != -1)
+        return false;
+      target_kind = "ANCHOR";
+    }
+    else if(!IsValidGridLevelIndex(level_index))
+    {
+      return false;
+    }
+
+    int matching_positions = 0;
+    for(int index = 0; index < ArraySize(m_positions); index++)
+    {
+      if(m_positions[index].target_kind == target_kind &&
+         m_positions[index].level_index == level_index)
+        matching_positions++;
+    }
+
+    if(matching_positions > 1)
+      return false;
+
+    has_position_mapping = matching_positions == 1;
+    return true;
+  }
+
   int RequestCount()
   {
     return ArraySize(m_requests);

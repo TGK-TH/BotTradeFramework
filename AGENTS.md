@@ -17,9 +17,10 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 ## Workflow and authorization
 - Work in small, testable Work Packages/Phases with explicit scope and Acceptance Criteria.
 - Do not silently expand product scope or change approved contracts.
-- A user kickoff instruction that explicitly authorizes continuing Grid V1 through completion according to `Docs/EAs/Grid/ROADMAP.md` is blanket authorization for all normal in-scope Work Packages in that roadmap. Under that authorization, proceed sequentially after each successful gate; do not ask for approval again for routine next phases.
+- Finish only the currently authorized Phase. At every Phase boundary, stop and ask the user for explicit authorization before starting the next Phase. A broad roadmap/kickoff authorization does not waive this per-Phase approval requirement.
+- When a new Phase is authorized, check whether a Trello card already matches its scope; create a separate card when needed before implementation. Keep the card's list, description, and progress log aligned with the actual current state, and update it at meaningful transitions and when the Phase ends.
 - Blanket authorization does NOT authorize live trading, Demo tests that send Trade Requests, touching non-test positions, destructive account actions, changing product scope, or choosing between unresolved material design alternatives. Stop and ask the user for these.
-- If no blanket authorization is present, stop at phase boundaries and request approval before starting the next phase.
+- Always stop at Phase boundaries and request approval before starting the next Phase, even if an earlier kickoff authorized continuing the roadmap.
 - Do not commit or push unless explicitly asked.
 - Never place live trades or enable live trading as part of development/testing unless the user explicitly authorizes it.
 - Explain changed files, behavior, rationale, validation, and next step after each Work Package.

@@ -11,7 +11,7 @@
 - Current Trello card: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests
 
 ## Current Work Item
-Grid Entry Execution Policy:
+WP-02 Target-Level Resolver / Caller Integration (WP-01 Policy is complete by user-reported PASS):
 - Phase 1 Design/Contract/Test Plan: approved.
 - Phase 2 Test-First Specification: finalized on 2026-11-17.
 - Dedicated Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
@@ -21,14 +21,15 @@ Grid Entry Execution Policy:
 - Resolver failure is Caller-owned Fail Closed; do not call Policy when Resolve fails.
 - Phase 2 Static Acceptance Checks passed 2026-11-17.
 - WP-01 created `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` strictly against the approved contract. Static review confirms validation precedence, complete result assignment on all paths, and no Trade API/storage/reducer dependency.
-- WP-01 awaits user MetaEditor/MT5 compile and runtime results for the 44-case Policy Test EA and all 15 component/regression EAs. No compile/runtime test has been performed in this workflow.
+- User reported on 2026-11-18 that all test files were compiled/run and passed except one Reducer test failure: out-of-range Level query returned true because the test used index 2, valid in the fixture. The assertion was corrected to index 200 and awaits rerun. Do not claim the corrected test passed until the user reports it.
 
 ## Next Work
-- Current gate: user compiles and runs `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`, then all 15 component/regression test EAs listed in `Docs/EAs/Grid/ROADMAP.md` (exclude the Demo Integration EA; it sends Trade Requests).
-- The user reported the latest pre-change Grid Regression suite passed on 2026-11-17; rerun after the new Policy Header before closing WP-01.
-- If Policy and Regression tests pass, proceed automatically to WP-02 Target-Level Resolver/Caller integration under the user's Grid V1 kickoff authorization.
-- Continue through the remaining Work Packages in `Docs/EAs/Grid/ROADMAP.md`: Entry CTrade Adapter; Entry Pipeline integration; Close/Deal/Transaction reconciliation; Production EA event handlers; configuration/bounds/runtime safety; End-to-End tests; final Grid V1 acceptance.
-- Current test source inventory at 2026-11-17: 17 .mq5 files under `Experts/TGK/Tests/Grids/`: 15 existing component/regression tests, 1 Policy Test-First file not yet compiled/run, and 1 separate Demo Integration test. Always inspect directory; do not trust old hard-coded counts.
+- WP-02 source and static review are complete; direct unit tests were added for the new Reducer/Coordinator APIs. Current gate: user compiles/runs the Resolver EA, Policy EA, Reducer EA, Coordinator EA, and relevant Grid regression tests; all await confirmation.
+- User's latest run covers all test files; all passed except the one Reducer boundary assertion described above. Rerun confirmation is pending for the corrected index-200 assertion.
+- WP-02 adds Resolver/Caller integration, Mapping Reducer read-only identity/mapping queries, and Coordinator Mode/Config Epoch matching. The Demo Integration EA is excluded because it sends Trade Requests.
+- Stop at WP-02 until the user reports compile/runtime results; do not begin WP-03 beforehand.
+- Continue through the remaining Work Packages in `Docs/EAs/Grid/ROADMAP.md`: Entry Pipeline integration; Close/Deal/Transaction reconciliation; Production EA event handlers; configuration/bounds/runtime safety; End-to-End tests; final Grid V1 acceptance.
+- Current test source inventory at 2026-11-17: 18 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression tests, 1 Policy Test EA, 1 Resolver/Caller Test EA, and 1 separate Demo Integration test. Always inspect directory; do not trust old hard-coded counts.
 
 ## Existing verified foundations
 User-reported MetaEditor/MT5 validation (not independently run by Assistant):
@@ -57,4 +58,4 @@ User-reported MetaEditor/MT5 validation (not independently run by Assistant):
 - User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
 - Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.
 - After each Work Package, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, and this memory. Preserve staged/unstaged work; do not commit/push unless asked.
-- A user-provided kickoff instruction that explicitly authorizes Grid V1 continuation through the ROADMAP is blanket authorization for ordinary in-scope Work Packages. Continue after each successful gate without asking for routine phase approval. This does not authorize Demo/Live trading, unresolved material design choices, scope changes, or destructive actions; pause and ask for those.
+- Stop at every Phase boundary and ask for explicit user authorization before starting the next Phase, even if a prior kickoff authorized continuing through the Roadmap. Once a Phase is authorized, ensure an appropriately scoped Trello card exists before implementation when needed, and update it at meaningful status transitions and Phase completion to match verified progress.
