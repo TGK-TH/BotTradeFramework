@@ -33,7 +33,7 @@ Typical path:
 Move to **Blocked** whenever progress is genuinely blocked; return to the appropriate active stage after resolution. A failed test normally returns to In Progress for a fix, then repeats review/testing.
 
 ## Trello Card conventions
-- Create a Card when a meaningful work item enters the backlog; do not create a Card for every tiny code edit.
+- Before starting a Phase, inspect the Trello Card for its scope. Create a new Card or update the matching existing Card to reflect the Phase scope and ready status before implementation whenever needed. Do not create a Card for every tiny code edit.
 - A Card should state: goal/context, scope, Acceptance Criteria, Test Plan, and links/paths to source, tests, and technical docs.
 - Keep a concise Progress Log for meaningful stage changes and user-reported test outcomes.
 - Use the board's labels consistently:
@@ -46,9 +46,9 @@ Move to **Blocked** whenever progress is genuinely blocked; return to the approp
   - Documentation
   - Research
 - Apply only labels relevant to that Card; do not attach all labels by default.
-- Update Card/list status when the work crosses a meaningful workflow boundary, not for every intermediate edit.
+- Update Card/list status when the work crosses a meaningful workflow boundary, not for every intermediate edit. Whenever work in a Phase is finished, update the Card to reflect the actual outcome, acceptance state, remaining work, and user-reported test evidence.
 - Do not move a Card to Done based solely on assistant implementation or static checks.
-- When a new Phase is authorized, check whether an existing card matches its scope; create a separate card before implementation when needed. Update the card at meaningful status transitions and at Phase completion so it reflects current evidence and open gates.
+- Before starting any Phase, check whether an existing card matches its scope and current status; create or update the card first whenever needed. At Phase completion, always update the card to match the actual outcome, acceptance status, user-reported test evidence, and remaining work.
 
 ## Roles
 - Assistant: analyze/design with the user; prepare Test Plans; implement approved code slices; review; update technical docs/status and Trello Cards; analyze user-reported MT5/test results.
