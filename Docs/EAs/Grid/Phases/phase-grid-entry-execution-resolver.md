@@ -1,6 +1,6 @@
 # Grid Entry Execution Resolver / Caller — WP-02
 
-สถานะ: **ผู้ใช้ Compile/Run แล้ว พบ 1 test failure ใน Reducer test; แก้ boundary test แล้ว รอ Compile/Run ยืนยันซ้ำ**
+สถานะ: **เสร็จตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18**
 
 อัปเดตล่าสุด: 2026-11-18
 
@@ -77,7 +77,7 @@ Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5`; ใ�
 ## 7. ผลตรวจปัจจุบัน
 
 - Static Review: 17 unique Test IDs; delimiter balance, final newline, trailing whitespace และ no-trading dependency checks ผ่าน; `git diff --check` ผ่าน.
-- ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดแล้ว ทุกไฟล์ผ่านยกเว้น Reducer Test EA มี `out-of-range Level query fails | actual=true` ที่ assertion เดิมใช้ index 2.
-- Fixture มี 201 Grid Levels (Anchor รวมอยู่ด้วย) และ normal level indices 0–199; index 2 จึง valid. เปลี่ยน out-of-range test index เป็น 200 โดยไม่เปลี่ยน production Reducer.
-- Static Review และ `git diff --check` หลังแก้ผ่าน; การแก้ test ยังรอผู้ใช้ Compile/Run ยืนยันซ้ำ.
-- หยุด WP-02 ไว้จนได้รับผลยืนยันหลังแก้; ห้ามเริ่ม Phase ถัดไปก่อนได้รับอนุมัติจากผู้ใช้.
+- ผู้ใช้รายงานว่า Compile/Run Test ทั้งหมดแล้ว ทุกไฟล์ผ่านหลังแก้ Reducer Test EA.
+- Failure เดิม `out-of-range Level query fails | actual=true` เกิดเพราะ assertion ใช้ index 2 ซึ่ง valid; Fixture มี 201 Grid Levels (รวม Anchor) และ valid normal indices 0–199.
+- ปรับ out-of-range test index เป็น 200 โดยไม่เปลี่ยน production Reducer; ผู้ใช้ยืนยันผล Compile/Run ผ่านหลังแก้เมื่อ 2026-11-18.
+- WP-02 ผ่านตามผลผู้ใช้รายงาน; WP-03 ยังไม่เริ่มจนกว่าจะได้รับอนุมัติแยกจากผู้ใช้.

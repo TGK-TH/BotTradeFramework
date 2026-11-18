@@ -28,7 +28,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
 | `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close, close reason validation และ Reducer/Coordinator context APIs | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังเพิ่ม context/epoch tests |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
-| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count, Snapshot codec และ direct tests สำหรับ context/mapping queries; ไม่มี Trade Request | ผู้ใช้รายงาน Compile/Run 2026-11-18 มี 1 failure: out-of-range Level query test ส่ง index 2 ซึ่งยัง valid; แก้ test ให้ใช้ index 200 แล้ว รอ Compile/Run ยืนยันซ้ำ |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count, Snapshot codec และ direct tests สำหรับ context/mapping queries; ไม่มี Trade Request | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังแก้ out-of-range query ให้ใช้ index 200 |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy pure-decision tests 44 Cases / 6 Groups; ไม่มี Trade API หรือ File I/O | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18; log ล่าสุดไม่ได้แจกแจงจำนวน cases |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` | Resolver/Caller provenance, stale context, fail-closed และ fresh mapping tests; ไม่มี Trade Request | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18 |
@@ -40,11 +40,11 @@
 | `Experts/TGK/Tests/Grids/test_grid_identity_multichart.mq5` | กราฟคนละหน้าต่างต้องได้ Instance ID และ Magic Number คนละค่า | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_restart_persistence.mq5` | Restore Identity, Snapshot และ Level State หลัง Restore กราฟ/โปรไฟล์ | ผ่านหลังปรับเงื่อนไข Chart ID |
 
-ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผลล่าสุดมี Reducer Test EA หนึ่ง failure ตามที่บันทึกไว้ด้านล่าง; แก้ test แล้วและรอ retest.
+ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run ผ่านครบหลังแก้ Reducer boundary test.
 
-ณ 2026-11-17 มี Grid Test Sources 18 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่ารัน test files แล้วทุกไฟล์ผ่านยกเว้น Reducer 1 failure; ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+ณ 2026-11-17 มี Grid Test Sources 18 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า test files ผ่านครบหลังแก้ Reducer boundary test; ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
 
-ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดแล้ว ทุกไฟล์ผ่านยกเว้น `test_grid_entry_mapping_reducer.mq5` ซึ่งมี 1 failure ที่ out-of-range query ใช้ index 2 ทั้งที่ fixture มี valid level indices 0–199. ปรับ test ให้ใช้ 200; การแก้ไขนี้ยังรอผู้ใช้ Compile/Run ยืนยันซ้ำ. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
+ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดผ่านหลังแก้ `test_grid_entry_mapping_reducer.mq5`: fixture มี valid normal level indices 0–199 ดังนั้น out-of-range query ใช้ index 200. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 
@@ -410,7 +410,7 @@ Caller/Resolver ต้อง Resolve Level Context ตาม `candidate.instance
 
 ผล WP-01: Static Review ยืนยัน Validation order, Output assignment ทุก path และไม่มี Trade API, `CTrade`, `OrderSend`, File I/O, Persistent Storage หรือ Reducer dependency ใน Policy. ผู้ใช้รายงานว่า Policy test file ผ่านในการรันชุดล่าสุด; failure ที่เหลือเป็น assertion ใน Reducer test EA.
 
-## Grid Entry Execution Resolver / Caller — WP-02 (รอ MT5 Validation)
+## Grid Entry Execution Resolver / Caller — WP-02 (ผ่านตามผลผู้ใช้รายงาน 2026-11-18)
 
 เอกสาร Work Package: [phase-grid-entry-execution-resolver.md](../Phases/phase-grid-entry-execution-resolver.md)
 
@@ -420,7 +420,7 @@ Inventory: **17 unique Test IDs** — A01–A02 resolve success (READY unmapped 
 
 Test EA ใช้ Reducer/Coordinator fixtures ใน memory ไม่มี Trade API, `CTrade`, `OrderSend`, File I/O หรือ Persistent Storage operation. Resolver failure ต้องคืน `false`, ไม่เรียก Policy และไม่เขียนทับ Result; coherent unresolved request เรียก Policy และได้ `REJECT / UNRESOLVED_REQUEST`.
 
-Static Review: 17 unique IDs; delimiters, newline, whitespace และ no-trading dependency checks ผ่าน; `git diff --check` ผ่าน. ผู้ใช้รายงานว่า Compile/Run test files แล้ว; มี Reducer test failure หนึ่งจุดและแก้ index ใน test source จาก 2 เป็น 200. รอ retest ของ `test_grid_entry_mapping_reducer.mq5`; ไม่รวม Demo Integration Test.
+Static Review: 17 unique IDs; delimiters, newline, whitespace และ no-trading dependency checks ผ่าน; `git diff --check` ผ่าน. ผู้ใช้รายงาน Compile/Run test files ผ่านทั้งหมดหลังแก้ Reducer boundary test เป็น index 200; ไม่รวม Demo Integration Test.
 
 ## นโยบาย Regression Test
 

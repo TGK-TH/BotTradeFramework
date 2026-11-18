@@ -21,14 +21,13 @@ WP-02 Target-Level Resolver / Caller Integration (WP-01 Policy is complete by us
 - Resolver failure is Caller-owned Fail Closed; do not call Policy when Resolve fails.
 - Phase 2 Static Acceptance Checks passed 2026-11-17.
 - WP-01 created `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` strictly against the approved contract. Static review confirms validation precedence, complete result assignment on all paths, and no Trade API/storage/reducer dependency.
-- User reported on 2026-11-18 that all test files were compiled/run and passed except one Reducer test failure: out-of-range Level query returned true because the test used index 2, valid in the fixture. The assertion was corrected to index 200 and awaits rerun. Do not claim the corrected test passed until the user reports it.
+- User reported on 2026-11-18 that all test files passed after correcting the Reducer out-of-range query from index 2 (valid) to index 200. This is user-reported Compile/Runtime validation. WP-02 is complete; stop and request explicit approval before starting WP-03.
 
 ## Next Work
-- WP-02 source and static review are complete; direct unit tests were added for the new Reducer/Coordinator APIs. Current gate: user compiles/runs the Resolver EA, Policy EA, Reducer EA, Coordinator EA, and relevant Grid regression tests; all await confirmation.
-- User's latest run covers all test files; all passed except the one Reducer boundary assertion described above. Rerun confirmation is pending for the corrected index-200 assertion.
-- WP-02 adds Resolver/Caller integration, Mapping Reducer read-only identity/mapping queries, and Coordinator Mode/Config Epoch matching. The Demo Integration EA is excluded because it sends Trade Requests.
-- Stop at WP-02 until the user reports compile/runtime results; do not begin WP-03 beforehand.
-- Continue through the remaining Work Packages in `Docs/EAs/Grid/ROADMAP.md`: Entry Pipeline integration; Close/Deal/Transaction reconciliation; Production EA event handlers; configuration/bounds/runtime safety; End-to-End tests; final Grid V1 acceptance.
+- WP-02 Resolver/Caller, direct Reducer/Coordinator unit tests, and relevant regression test files passed according to the user's 2026-11-18 report after correcting the Reducer boundary query from index 2 to 200.
+- WP-02 is complete and documented in Trello: https://trello.com/c/KxLQWjWq/4-wp-02-grid-entry-execution-resolver-caller-integration
+- Stop at the Phase boundary and ask for explicit authorization before starting WP-03 Entry CTrade Adapter, even though the broader Grid V1 kickoff had previously authorized the roadmap.
+- The Demo Integration EA remains excluded because it sends Trade Requests.
 - Current test source inventory at 2026-11-17: 18 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression tests, 1 Policy Test EA, 1 Resolver/Caller Test EA, and 1 separate Demo Integration test. Always inspect directory; do not trust old hard-coded counts.
 
 ## Existing verified foundations
