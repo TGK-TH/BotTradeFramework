@@ -1,6 +1,6 @@
 # Current TGK BotTradeFramework / Grid V1 Phase
 
-อัปเดต: 2026-11-17
+อัปเดต: 2026-11-18
 
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
@@ -8,27 +8,20 @@
 - Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
 - Current status: `PROJECT_STATUS.md`
 - Grid technical docs: `Docs/EAs/Grid/`
-- Current Trello card: https://trello.com/c/Wt3XbHva/3-grid-entry-execution-policy-pure-decision-component-unit-tests
+- Current Trello card: https://trello.com/c/KxLQWjWq/4-wp-02-grid-entry-execution-resolver-caller-integration
 
 ## Current Work Item
-WP-02 Target-Level Resolver / Caller Integration (WP-01 Policy is complete by user-reported PASS):
-- Phase 1 Design/Contract/Test Plan: approved.
-- Phase 2 Test-First Specification: finalized on 2026-11-17.
-- Dedicated Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
-- 44 unique Test IDs across groups A-F: 4/13/6/9/6/6.
-- Final contract includes grouped Candidate/Level Context/Execution Context inputs; single Reason Code; eligible Level States READY and WAIT_RETURN; finite positive Entry Price; Target-Level-only mapping check; Validation Order INVALID_CANDIDATE -> IDENTITY_MISMATCH -> EXECUTION_BLOCKED -> UNRESOLVED_REQUEST -> LEVEL_NOT_FOUND -> LEVEL_NOT_ELIGIBLE -> ALREADY_MAPPED -> ELIGIBLE.
-- F02: Level 0 READY/unmapped ALLOW -> Level 7 READY/mapped REJECT ALREADY_MAPPED -> re-evaluate Level 0 ALLOW; same Result object across all three calls.
-- Resolver failure is Caller-owned Fail Closed; do not call Policy when Resolve fails.
-- Phase 2 Static Acceptance Checks passed 2026-11-17.
-- WP-01 created `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` strictly against the approved contract. Static review confirms validation precedence, complete result assignment on all paths, and no Trade API/storage/reducer dependency.
-- User reported on 2026-11-18 that all test files passed after correcting the Reducer out-of-range query from index 2 (valid) to index 200. This is user-reported Compile/Runtime validation. WP-02 is complete; stop and request explicit approval before starting WP-03.
+WP-03 Entry CTrade Adapter is the next planned Work Package; it has NOT STARTED and requires separate explicit user approval before work begins.
+- WP-01 Entry Execution Policy: complete; user-reported Policy 44/44 and Grid Regression 15/15 Compile/Runtime PASS on 2026-11-17.
+- WP-02 Target-Level Resolver / Caller Integration: complete based on user-reported Compile/Run PASS on 2026-11-18 after correcting the Reducer out-of-range test index from 2 (valid) to 200. This is user-reported evidence, not independently run by Assistant.
+- WP-02 includes 17 Resolver/Caller test IDs plus direct Reducer/Coordinator context API coverage; see `Docs/EAs/Grid/Phases/phase-grid-entry-execution-resolver.md`.
+- WP-02 changed Reducer/Coordinator read-only context APIs and added Resolver/Caller; no Trade Request or persistent write is part of this Work Package.
 
 ## Next Work
-- WP-02 Resolver/Caller, direct Reducer/Coordinator unit tests, and relevant regression test files passed according to the user's 2026-11-18 report after correcting the Reducer boundary query from index 2 to 200.
-- WP-02 is complete and documented in Trello: https://trello.com/c/KxLQWjWq/4-wp-02-grid-entry-execution-resolver-caller-integration
-- Stop at the Phase boundary and ask for explicit authorization before starting WP-03 Entry CTrade Adapter, even though the broader Grid V1 kickoff had previously authorized the roadmap.
-- The Demo Integration EA remains excluded because it sends Trade Requests.
-- Current test source inventory at 2026-11-17: 18 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression tests, 1 Policy Test EA, 1 Resolver/Caller Test EA, and 1 separate Demo Integration test. Always inspect directory; do not trust old hard-coded counts.
+- Stop at the WP-02 boundary; get explicit approval before starting WP-03 Entry CTrade Adapter.
+- Do not begin WP-03 implementation during a status audit.
+- Demo Integration EA remains excluded because it sends Trade Requests.
+- Current Grid test source inventory: 18 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression tests, 1 Policy Test EA, 1 Resolver/Caller Test EA, and 1 separate Demo Integration test. Recount the directory before relying on this number.
 
 ## Existing verified foundations
 User-reported MetaEditor/MT5 validation (not independently run by Assistant):

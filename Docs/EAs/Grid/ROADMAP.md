@@ -84,7 +84,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-02 — Target-Level Resolver / Caller Integration: Source และ Static Review เสร็จ; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
+**WP-02 — Target-Level Resolver / Caller Integration: เสร็จตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18**
 
 - Contract และ Test Plan: `Phases/phase-grid-entry-execution-policy.md`
 - Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
@@ -93,16 +93,16 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-01 Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
 - WP-02 ต้องทดสอบ Target-Level Resolver/Caller, exact Instance/Target provenance, fresh context, Mapping Reducer query และ fail-closed โดยไม่ส่ง Trade Request
 - Dependency review พบ Mapping Reducer ไม่มี public read-only query และ Coordinator ไม่มี Mode/Config Epoch matcher; WP-02 เพิ่ม APIs ดังกล่าวแล้ว
-- WP-02 เพิ่ม `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` จำนวน 17 Test IDs; static checks ผ่าน; ยังไม่ได้ Compile/Run
+- WP-02 เพิ่ม Resolver/Caller Test EA จำนวน 17 Test IDs และ direct tests สำหรับ Reducer/Coordinator; Static Review ผ่าน; ผู้ใช้รายงานว่า Compile/Run ของ Resolver, Policy, Reducer, Coordinator และ Grid Regression ที่เกี่ยวข้องผ่านเมื่อ 2026-11-18 หลังแก้ assertion กรณี Level index นอกขอบเขตใน Reducer Test เป็น index 200
 - WP-02 เปลี่ยน Reducer/Coordinator public read-only context APIs และเพิ่ม Resolver/Caller; รายละเอียดอยู่ใน `Phases/phase-grid-entry-execution-resolver.md`
-- Gate ถัดไป: ผู้ใช้ Compile/Run Resolver Test EA, Policy Test EA และ 15 Component/Regression Test EAs; WP-03 เริ่มเมื่อผล PASS ได้รับการยืนยัน
+- WP-02 ผ่านตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18; หยุดที่ขอบเขต Work Package และขออนุมัติแยกก่อนเริ่ม WP-03
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
 มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 18 ไฟล์ ณ วันที่อัปเดต:
 - 15 existing component/regression test files ที่เป็น baseline ก่อน Policy Test
 - `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
-- `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; รอ Compile/Run
+- `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-18
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด
@@ -114,7 +114,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | ลำดับ | Work Package | สถานะ | ผลลัพธ์ที่ต้องส่งมอบ |
 |---|---|---|---|
 | WP-01 | Entry Execution Policy Implementation | COMPLETE (USER-REPORTED PASS) | Header ตาม Phase 2 Contract; Policy Test EA 44 cases และ Full Regression ผ่านตามผู้ใช้รายงาน; ไม่มี Trade API/Mutation |
-| WP-02 | Target-Level Resolver / Caller Integration | WAITING FOR USER MT5 TEST | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
+| WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | NOT STARTED | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | NOT STARTED | เชื่อม Engine Candidate → Resolver → Policy → Persistent Mapping/Reducer → CTrade Adapter → Runtime Coordinator; mapping จาก Deal/Position Identifier; ACTIVE หลัง reconciliation เท่านั้น |
 | WP-05 | Close/Deal/Transaction Reconciliation Integration | NOT STARTED | เชื่อม partial fill, partial close, full close, TP/SL/manual close, Deal history และ Position transaction เข้ากับ Mapping/Coordinator/Engine; ไม่เดา Close Reason หรือ Logical Level |

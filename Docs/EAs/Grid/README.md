@@ -33,6 +33,6 @@
 
 มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Entry Mapping Storage/Reducer/Snapshot Rotation แล้ว โดยผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
 
-Grid Entry Execution Policy WP-01 เสร็จตามผลที่ผู้ใช้รายงาน: Policy Test EA 44/44 และ Grid Component/Regression 15/15 ผ่าน MetaEditor/MT5 เมื่อ 2026-11-17. WP-02 มี Resolver/Caller Source และ Test EA 17 cases แล้ว; รอผู้ใช้ Compile/Run ก่อนเริ่ม WP-03
+Grid Entry Execution Policy WP-01 และ Resolver/Caller WP-02 เสร็จตามผล Compile/Run ที่ผู้ใช้รายงาน (WP-02 เมื่อ 2026-11-18 หลังแก้ assertion กรณี Level index นอกขอบเขตใน Reducer Test เป็น index 200). WP-02 มี Resolver/Caller Source และ Test EA 17 cases. WP-03 ยังไม่เริ่มและต้องได้รับอนุมัติแยกก่อนเริ่ม
 
 **ข้อสำคัญ:** การที่ Components แยกส่วนผ่าน Unit/Integration Tests ไม่ได้แปลว่า Grid V1 เสร็จ ต้องเชื่อม Production EA Event Handlers และทดสอบ End-to-End ตาม [Definition of Done](ROADMAP.md)
