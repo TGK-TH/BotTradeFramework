@@ -55,6 +55,15 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 - Verify local Markdown links and run `git diff --check`.
 - Do not claim MetaEditor/MT5 compilation or runtime passed without the user's report.
 
+## Documentation Consistency Gate
+
+- Before closing any WP/Phase or documentation-maintenance task, run the mandatory [Documentation Consistency Gate](Docs/Development/documentation-consistency-gate.md).
+- This is a separate acceptance gate after implementation/test review and documentation updates; a successful `git diff --check` alone is not sufficient.
+- Review current-status claims across `PROJECT_STATUS.md`, affected `Docs/`, `AGENTS.md`, and relevant Serena memories; compare implementation claims with source, test inventory with actual test files, and verification claims with user-reported evidence.
+- Search for stale/contradictory positive and negative claims. Preserve valid historical records but date/contextualize them and point to the current status.
+- Confirm architecture, current WP state, next step, and authorization/safety boundaries agree. Read the full diff, validate local Markdown links, run `git diff --check`, and report the gate evidence.
+- If contradictions or required checks remain unresolved, do not mark the WP/Phase or documentation task complete.
+
 ## Grid V1 completion
 - For Grid tasks, `Docs/EAs/Grid/ROADMAP.md` is the master roadmap and Definition of Done.
 - Grid V1 is not complete merely because individual modules or test EAs pass. Production EA integration and end-to-end behavior must be validated against the roadmap.

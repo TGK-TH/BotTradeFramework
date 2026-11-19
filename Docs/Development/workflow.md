@@ -20,6 +20,15 @@
 - **Decisions:** บันทึกเหตุผลการตัดสินใจ โดยระบุ Scope ให้ชัดเจน
 - **Project Status:** สรุปสถานะปัจจุบันและขั้นตอนถัดไป ไม่ทำซ้ำเอกสารเชิงเทคนิค
 
+## Documentation Consistency Gate
+
+ก่อนปิด WP/Phase หรือ Documentation Maintenance ทุกครั้ง ต้องผ่าน [Documentation Consistency Gate](documentation-consistency-gate.md) เพิ่มเติมจากการ Review และการอัปเดตเอกสารตามปกติ โดยต้องตรวจความสอดคล้องเชิงความหมายระหว่าง `PROJECT_STATUS.md`, Roadmap/README, Architecture, Testing, Phase Notes, ADRs, Source/Tests และ Serena current-phase memory ตามขอบเขตที่ได้รับผลกระทบ
+
+- ตรวจทั้งข้อความที่ยืนยันว่ามีและไม่มี Feature/Module, สถานะ WP, Test Inventory/จำนวน Test, ผล Compile/Runtime, Next Step และ Approval Boundary
+- ค้นหาข้อความเก่าหรือขัดแย้งในเอกสารและ Memory; เก็บประวัติที่ถูกต้องในอดีตไว้ แต่ระบุวันที่/บริบทและชี้ไปยังสถานะปัจจุบัน
+- อ่าน Diff ทั้งหมด, รัน `git diff --check`, ตรวจ Local Markdown Links และตรวจ Test Inventory กับไฟล์จริงเมื่อเกี่ยวข้อง
+- หากยังมีข้อขัดแย้งหรือหลักฐานไม่ครบ ห้ามรายงานว่า WP/Phase ผ่าน Gate หรือ Complete
+
 ## สถานะหลักฐาน
 
 ในเอกสารให้แยกให้ได้ระหว่าง:

@@ -5,7 +5,8 @@
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
-- Last verified HEAD during status/docs update: `8034217`; working tree was clean before documentation edits.
+- Historical HEAD during the 2026-11-19 WP-03 status/docs update: `8034217`.
+- Documentation Consistency Gate work started from HEAD `b3bb2d7` on `feature/grid-trading`; working tree was clean before these workflow edits.
 - Source of Truth: Repository source/tests/docs.
 - Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
 - Current status: `PROJECT_STATUS.md`
@@ -54,3 +55,9 @@ Demo Entry Integration sends Trade Requests and remains excluded unless separate
 - After each WP, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, Serena current-phase memory, and Trello card as applicable.
 - Preserve staged/unstaged/untracked changes. No reset/checkout/clean/stash or overwrite unrelated work. No commit/push unless asked.
 - Stop at every WP/Phase boundary and ask for explicit user authorization before starting the next one.
+
+## Documentation Consistency Gate — added 2026-11-19
+- Mandatory before closing any WP/Phase or documentation-maintenance task; details: `Docs/Development/documentation-consistency-gate.md`.
+- Gate compares current status across status/docs/source/tests/Serena memories, checks positive and negative stale claims, evidence levels, actual test inventory, historical-context labeling, and exact authorization boundary.
+- Final checks: inspect full diff, `git diff --check`, local Markdown links, actual test inventory when affected, and final working-tree state.
+- Do not report the gate passed or close work while contradictions remain unresolved.

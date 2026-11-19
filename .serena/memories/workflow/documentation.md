@@ -1,22 +1,36 @@
 # TGK BotTradeFramework Documentation Workflow
 
-User approved a multi-EA documentation hierarchy; all technical Docs must be written in Thai. Preserve actual source identifiers, class/function/enum names, and file paths in original spelling.
+## Documentation hierarchy
+- Technical Docs under `Docs/` are Thai; preserve source identifiers and paths exactly.
+- `PROJECT_STATUS.md` is concise current status/next step; details belong in Phase Notes.
+- `Docs/Framework/`: confirmed shared multi-EA contracts only.
+- `Docs/EAs/<EA-Name>/`: EA-specific architecture, behavior, tests, decisions, and phases.
+- `Docs/Development/`: repository-wide workflow and standards.
+- `Docs/Decisions/README.md`: central ADR index; every ADR declares scope.
 
-Structure:
-- `Docs/Framework/`: only architecture/modules with a confirmed shared contract for multiple EAs.
-- `Docs/EAs/<EA-Name>/`: EA-specific architecture, strategy logic, state machine, configuration, tests, decisions, and phase notes.
-- `Docs/Development/`: repository-wide workflow and development standards.
-- `Docs/Decisions/README.md`: central ADR index; every ADR must declare its scope.
-- `PROJECT_STATUS.md`: concise current status and exact next step, not a duplicate technical manual.
+## WP/Phase completion
+1. Update `PROJECT_STATUS.md` with state, changed files, checks, user-reported outcomes, known issues, and exact next step.
+2. Update affected Thai technical docs, Phase Notes, Testing inventory, module/architecture docs, ADRs as appropriate.
+3. Distinguish Implemented, User-verified, Agreed-not-implemented, and Open.
+4. Verify docs against source/tests; do not infer Compile/Runtime PASS from static checks.
+5. Run mandatory Documentation Consistency Gate: `Docs/Development/documentation-consistency-gate.md`.
+6. Update Serena `workflow/current-phase` and relevant durable memories.
+7. Verify local Markdown links and `git diff --check`; inspect the complete diff and working-tree state.
+8. Do not close the WP/Phase if semantic contradictions or required checks remain unresolved.
 
-Do not promote an EA-specific module to Framework merely because another EA might use it later. Current Grid Identity and Persistence docs remain under `Docs/EAs/Grid/` because the existing APIs/types are Grid-specific. TestAssert/TestRunner docs are under Framework.
+## Documentation Consistency Gate
+- Review all affected current-status surfaces: `PROJECT_STATUS.md`, roadmap/README, architecture, Testing, Phase Notes, ADRs, `AGENTS.md`, and relevant Serena memories.
+- Compare implementation claims (including claims that something is absent) with source; test inventory/counts with actual test files/cases; verification claims with user-reported evidence.
+- Search changed concepts and stale/contradictory claims across status/docs/memories. Preserve valid historical notes, but date/contextualize old state and link to current status.
+- Confirm current WP state, architecture/integration boundary, exact next step, and explicit approval/safety boundaries agree.
+- Read the full diff; run `git diff --check`; validate local Markdown links; recheck test inventory when affected.
+- Completion report records documents reviewed/updated, semantic/search areas checked, evidence basis, checks/results, remaining issues, working-tree state, and exact next step.
+- If any criterion fails, do not declare documentation or WP complete.
 
-When a phase completes:
-1. Update `PROJECT_STATUS.md` with phase state, changed files, checks, user-reported compile/runtime outcomes, known issues, and exact next step.
-2. Update relevant existing Thai Docs; create new docs only when needed.
-3. Update module docs for behavior/architecture changes, testing docs for test/procedure changes, ADRs for important design decisions, and phase notes for completed work.
-4. Clearly distinguish implemented, user-verified, agreed-not-implemented, and open behavior.
-5. Verify docs match source, check local Markdown links, and run `git diff --check`.
-6. Never claim MQL5 compile/runtime passed without user confirmation.
-
-Documentation hierarchy was reorganized on 2026-10-23. Grid Integration Testing and Documentation Structure are complete based on user-reported test results and repository checks. Next planned development is Grid State Machine, but do not begin until explicitly authorized. Before any Grid feature/refactor, run relevant Grid regression tests first.
+## Evidence and safety
+- User performs MetaEditor/MT5 Compile/Runtime and reports results unless a verified compiler/test environment is explicitly available.
+- Never claim MT5 tests passed without user confirmation.
+- No commit/push unless explicitly requested.
+- Preserve all pre-existing staged, unstaged, and untracked work.
+- Stop at each WP/Phase boundary and require explicit user authorization before starting the next.
+- Demo tests sending Trade Requests require separate explicit approval and Safety Gate; never place live trades.
