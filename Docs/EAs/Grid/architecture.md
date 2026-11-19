@@ -115,7 +115,7 @@ MQL5 Test EAs
 - Resolver provenance เป็นความรับผิดชอบของ Caller และต้องทดสอบ Integration แยก; Resolve failure ต้อง Fail Closed และห้ามเรียก Policy
 - WP-03 `GridEntryExecutionAdapter.mqh` แยก intent/result orchestration ออกจาก Port; `ITGKGridEntryExecutionPort` เป็น seam สำหรับ Fake Unit Tests และ `CTGKGridEntryCTradePort` เป็น Production Port ที่ใช้ `GridEntryMappingSnapshotStorage.mqh`
 - Adapter บันทึก Typed `ENTRY_INTENT` และนำเข้า Reducer ก่อนส่ง BUY/SELL; จากนั้นบันทึก `EXECUTION_RESULT`; `DONE`, `DONE_PARTIAL`, `PLACED` ยังคง unresolved และไม่สร้าง Position Mapping
-- Entry Adapter Test EA มี 13 cases ใช้ Fake Port ไม่มี Trade Request หรือ File I/O; Static Review ผ่านและรอผู้ใช้ Compile/Run
+- Entry Adapter Test EA มี 13 cases ใช้ Fake Port ไม่มี Trade Request หรือ File I/O; Static Review ผ่าน และผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
 - ดู Contract เต็มใน [Entry Execution Policy](Phases/phase-grid-entry-execution-policy.md)
 
 ## Grid Level Engine — Design และ Round 1 Implementation
@@ -160,7 +160,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - ผล Demo นี้เสริม Unit/Regression Tests โดยยืนยัน Live Scan + ticket-specific close + Runtime reconciliation ใน Test Scenario ที่กำหนด; ไม่ได้หมายความว่า Grid V1 หรือ EA Event Handler Integration เสร็จสมบูรณ์
 - Entry Mapping Storage, Typed Reducer และ Snapshot/Journal Rotation มี Source แล้ว และผู้ใช้รายงานผล Compile/Runtime/Regression PASS เมื่อ 2026-11-15; ดูรายละเอียดใน `phase-grid-entry-execution-adapter-round-1.md`
 - Entry Execution Policy มี Design Baseline, Test-First Specification 44 Cases และ Policy Source แล้ว; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 ผ่าน Compile/Runtime
-- CTrade Entry Adapter Source และ Fake Port Test EA 13 cases เพิ่มใน WP-03 แล้ว; Static PASS และรอผู้ใช้ Compile/Run กับ Regression
+- CTrade Entry Adapter Source และ Fake Port Test EA 13 cases เพิ่มใน WP-03 แล้ว; Static PASS และผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
 - Caller/Resolver Source และ Integration Test 17 cases เพิ่มใน WP-02 แล้ว; ผู้ใช้รายงาน Compile/Run PASS
 - ยังไม่มี EA Event Handler adapter ที่เชื่อม Orchestrator/Execution จาก OnInit/OnTick/OnTimer/OnTradeTransaction แบบครบวงจร
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid แบบ End-to-end ที่ผ่าน Acceptance Tests ครบ

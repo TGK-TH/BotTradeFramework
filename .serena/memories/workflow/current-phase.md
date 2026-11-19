@@ -11,18 +11,18 @@
 - Current Trello card: https://trello.com/c/KxLQWjWq/4-wp-02-grid-entry-execution-resolver-caller-integration
 
 ## Current Work Item
-WP-03 Entry CTrade Adapter is implemented and awaits user MetaEditor/MT5 Compile/Run.
+WP-03 Entry CTrade Adapter is complete; user reported all Compile/Run tests passed on 2026-11-19. Stop at the WP boundary; WP-04 requires explicit user authorization.
 - WP-01 Entry Execution Policy: complete; user-reported Policy 44/44 and Grid Regression 15/15 Compile/Runtime PASS on 2026-11-17.
 - WP-02 Target-Level Resolver / Caller Integration: complete based on user-reported Compile/Run PASS on 2026-11-18 after correcting the Reducer out-of-range test index from 2 (valid) to 200. This is user-reported evidence, not independently run by Assistant.
 - WP-02 includes 17 Resolver/Caller test IDs plus direct Reducer/Coordinator context API coverage; see `Docs/EAs/Grid/Phases/phase-grid-entry-execution-resolver.md`.
-- WP-03 adds `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` and 13 Fake Port tests in `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`. Static Review and `git diff --check` pass; no WP-03 Compile/Runtime result yet. Production Port uses SnapshotStorage; sequence mismatch between storage and Reducer fails closed.
+- WP-03 added `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` and 13 Fake Port tests in `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`. Static Review and `git diff --check` pass; user reported all Compile/Run tests passed on 2026-11-19. Production Port uses SnapshotStorage; sequence mismatch between storage and Reducer fails closed.
 - WP-03 user-reported baseline before source changes: Compile/Run tests passed on 2026-11-19.
 - Trello WP-03 card: https://trello.com/c/Jvj4Aawo/5-wp-03-grid-entry-ctrade-adapter (MT5 Testing).
 
 ## Next Work
-- User compiles/runs the WP-03 Test EA and all 18 non-Demo Grid Unit/Regression Test EAs; fix any failure and repeat tests.
+- WP-03 user verification is complete: user reported all Compile/Run tests passed on 2026-11-19. Trello card is Done.
 - Demo Entry Integration remains excluded; it sends Trade Requests and requires separate explicit user approval.
-- After WP-03 is user-verified, stop at the Work Package boundary and request separate approval before WP-04.
+- Exact next step: await explicit user authorization before starting WP-04 Entry Pipeline Integration.
 - Current Grid test source inventory: 19 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression, Policy, Resolver/Caller, Entry Adapter tests, and 1 separate Demo Integration test. Recount before relying on this number.
 
 ## Existing verified foundations

@@ -1,8 +1,8 @@
 # Grid Entry Execution Adapter — Round 1
 
-สถานะปัจจุบัน: **WP-03 Entry CTrade Adapter Implemented; Static Review ผ่าน; รอผู้ใช้ Compile/Run `test_grid_entry_execution.mq5` และ Grid Regression ใน MetaEditor/MT5. ไม่มีการทดสอบ Trade Request จริงใน WP-03.**
+สถานะปัจจุบัน: **WP-03 Entry CTrade Adapter Complete; Static Review ผ่าน; ผู้ใช้รายงาน Compile/Run Test ทั้งหมดผ่านเมื่อ 2026-11-19. ไม่มีการทดสอบ Trade Request จริงใน WP-03.**
 
-อัปเดตล่าสุด: 2026-11-17
+อัปเดตล่าสุด: 2026-11-19
 
 สำหรับรายละเอียด Policy ที่เป็น Authority ให้ใช้ [Grid Entry Execution Policy — Design Baseline และ Test Plan](phase-grid-entry-execution-policy.md) ซึ่งเป็นเอกสารใหม่กว่าและ supersede รายการ Policy Test เบื้องต้นในเอกสารนี้
 
@@ -287,7 +287,7 @@ Comment:
 - `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` — Snapshot Serialization/Rotation (ผู้ใช้ยืนยัน PASS 2026-11-14)
 - `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` — Pure Entry Execution Policy tests (44 Cases; ผู้ใช้รายงาน Compile/Run PASS 2026-11-17)
 - `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` — Resolver/Caller Integration (17 Cases; ผู้ใช้รายงาน Compile/Run PASS 2026-11-18)
-- `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Adapter Fake Port Unit Tests (12 Cases; รอผู้ใช้ Compile/Run)
+- `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` — Entry Adapter Fake Port Unit Tests (13 Cases; ผู้ใช้รายงาน Compile/Run PASS 2026-11-19)
 
 ### A. Entry Execution Policy
 
@@ -434,7 +434,7 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 4. **Snapshot Serialization + Journal Rotation Design/Test** — Design, bounded retention, dual Manifest Slots, generation/commit protocol และ Crash Recovery Matrix เสร็จแล้ว.
 5. **Snapshot + Rotation Implementation** — Implemented; ผู้ใช้รายงาน Snapshot Test, corrected Reducer Test และ Grid Regression Tests ผ่านเมื่อ 2026-11-15. Capacity Limits/Failure semantics ดู Contract ในส่วนก่อนหน้าและ Testing Guide.
 6. **Entry Execution Policy + Tests** — WP-01 Implemented; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS 2026-11-17. รายละเอียดอยู่ใน `phase-grid-entry-execution-policy.md`.
-7. **CTrade Entry Adapter + no-live-trade seam tests** — WP-03 Implemented; Static Review ผ่าน; รอผู้ใช้ Compile/Run Test EA 13 cases และ Grid Regression หลัง Source changes.
+7. **CTrade Entry Adapter + no-live-trade seam tests** — WP-03 Complete; Static Review ผ่าน; ผู้ใช้รายงาน Compile/Run Test ทั้งหมดผ่าน 2026-11-19.
 8. **Caller/Resolver + Coordinator Integration, Runtime/EA Event Handler Integration, Docs และ Regression** — WP-02 เสร็จตามผลผู้ใช้ Compile/Run PASS เมื่อ 2026-11-18; WP-04 Pipeline Integration และ Runtime/EA Event Handler ยังไม่ครบ.
 9. Demo Entry Integration เป็นงานแยก ต้องได้รับอนุมัติจากผู้ใช้ก่อนส่ง Trade Request จริง.
 
@@ -451,7 +451,7 @@ Unit Tests ต้องไม่ส่ง Trade Request จริง การ D
 - ผู้ใช้ยืนยัน Compile/Run Unit และ Regression ผ่านใน MetaEditor/MT5
 - เอกสารระบุข้อจำกัดและผลทดสอบตามจริง
 
-## WP-03 Implementation — 2026-11-19 (Static PASS; รอผู้ใช้ทดสอบ)
+## WP-03 Implementation — 2026-11-19 (Complete; User-reported Compile/Run PASS)
 
 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` โดยแบ่ง Orchestration ออกจาก Port: Adapter ทำ Intent → Send → Execution Result; `CTGKGridEntryCTradePort` เป็น Production Port ที่เชื่อม `CTGKGridEntryMappingSnapshotStorage` และ `CTrade`; `ITGKGridEntryExecutionPort` เป็น Fake seam สำหรับ Unit Test. Production Port รับ Initial Snapshot + Checkpoint Sequence เพื่อ Bootstrap storage ใหม่ และใช้ Snapshot Storage Replay/Rotation/Recovery protocol.
 
@@ -459,4 +459,4 @@ Request ID ใช้ `<instance_id>-REQ-<next journal sequence>` จาก `Snap
 
 ผล raw `retcode` คืนใน `STGKGridEntryExecutionOutcome`; typed Journal schema v1 คงเดิมและบันทึกผลเป็น outcome token พร้อม Order/Deal ticket decimal strings เพื่อรักษา compatibility กับ Reducer. `CTrade` boolean false จัดเป็น `FAILED` และไม่เก็บ ticket result ที่อาจเป็น stale. Comment เป็น metadata เท่านั้น.
 
-Test EA `test_grid_entry_execution.mq5` มี 13 cases E01–E13, ใช้ Fake Port เท่านั้น. E13 จำลอง Intent write ที่อาจ complete แม้ Append คืน failure จากนั้นสร้าง Adapter ใหม่แต่ใช้ Reducer เก่า; sequence mismatch ต้อง block การ retry ก่อน append/trade. Static review: source/test delimiter and whitespace, Test IDs, no-trade API scan และ `git diff --check` ผ่าน. ผู้ใช้รายงาน baseline Compile/Run ผ่านก่อนเริ่ม WP-03 เมื่อ 2026-11-19; ยังไม่มี Compile/Runtime ผลหลัง WP-03. Exact next step: ผู้ใช้ Compile/Run Entry Adapter Test EA และ Grid Regression ที่เกี่ยวข้อง แล้วส่งผลเพื่อให้แก้ failure หรือปิด WP-03.
+Test EA `test_grid_entry_execution.mq5` มี 13 cases E01–E13, ใช้ Fake Port เท่านั้น. E13 จำลอง Intent write ที่อาจ complete แม้ Append คืน failure จากนั้นสร้าง Adapter ใหม่แต่ใช้ Reducer เก่า; sequence mismatch ต้อง block การ retry ก่อน append/trade. Static review: source/test delimiter and whitespace, Test IDs, no-trade API scan และ `git diff --check` ผ่าน. ผู้ใช้รายงานเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดผ่านหลัง WP-03 changes. นี่เป็น User-reported PASS; Assistant ไม่ได้รัน MetaEditor/MT5 เอง. WP-03 ปิดแล้ว; ขั้นถัดไปคือ WP-04 Entry Pipeline Integration ซึ่งยังต้องรออนุญาตจากผู้ใช้ก่อนเริ่ม.

@@ -32,7 +32,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy pure-decision tests 44 Cases / 6 Groups; ไม่มี Trade API หรือ File I/O | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18; log ล่าสุดไม่ได้แจกแจงจำนวน cases |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` | Resolver/Caller provenance, stale context, fail-closed และ fresh mapping tests; ไม่มี Trade Request | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18 |
-| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | Entry Adapter Fake Port tests 13 cases: Persist-before-send, Policy/Identity gate, retcode, duplicate prevention, retry IDs, ticket precision, sequence mismatch และ Recovery lock; Test EA ไม่เรียก CTrade หรือ File I/O | Static PASS; รอผู้ใช้ Compile/Run |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | Entry Adapter Fake Port tests 13 cases: Persist-before-send, Policy/Identity gate, retcode, duplicate prevention, retry IDs, ticket precision, sequence mismatch และ Recovery lock; Test EA ไม่เรียก CTrade หรือ File I/O | Static PASS; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19 |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
@@ -43,11 +43,11 @@
 
 ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run ผ่านครบหลังแก้ Reducer boundary test.
 
-ณ 2026-11-19 มี Grid Test Sources 19 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-19 ว่า Compile/Run baseline ผ่านก่อน WP-03; Adapter Test EA และ Regression หลัง WP-03 ยังรอผล. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+ณ 2026-11-19 มี Grid Test Sources 19 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile/Run Test ทั้งหมดหลัง WP-03 ผ่าน. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
 
 ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดผ่านหลังแก้ `test_grid_entry_mapping_reducer.mq5`: fixture มี valid normal level indices 0–199 ดังนั้น out-of-range query ใช้ index 200. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
 
-## Grid Entry CTrade Adapter — WP-03 (Static PASS; รอผู้ใช้ทดสอบ)
+## Grid Entry CTrade Adapter — WP-03 (Complete; User-reported Compile/Run PASS 2026-11-19)
 
 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` และ `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` (13 Test IDs E01–E13). Adapter บันทึก Entry Intent ก่อนเรียก Port; Production Port ใช้ `CTGKGridEntryMappingSnapshotStorage` และ `CTrade`; Test EA ใช้ Fake Port ในหน่วยความจำ จึงไม่มี Trade Request หรือ File I/O จากตัว Test.
 

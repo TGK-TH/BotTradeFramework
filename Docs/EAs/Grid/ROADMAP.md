@@ -84,7 +84,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-03 — Entry CTrade Adapter: Implemented; Static Review ผ่าน; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
+**WP-03 — Entry CTrade Adapter: Complete; Static Review ผ่าน; ผู้ใช้รายงาน Compile/Run Test ทั้งหมดผ่านเมื่อ 2026-11-19**
 
 - Contract และ Test Plan: `Phases/phase-grid-entry-execution-policy.md`
 - Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
@@ -97,8 +97,8 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-02 เปลี่ยน Reducer/Coordinator public read-only context APIs และเพิ่ม Resolver/Caller; รายละเอียดอยู่ใน `Phases/phase-grid-entry-execution-resolver.md`
 - WP-02 ผ่านตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18
 - WP-03 Source: `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` มี 13 cases ผ่าน Static Review; Fake Port เท่านั้น ไม่มี Trade Request ใน Unit Test
-- WP-03 Compile/Runtime ยังไม่ยืนยัน; ผู้ใช้ต้อง Compile/Run Test EA ใหม่และ Grid Regression หลัง Source changes
-- หลัง WP-03 ผ่านตามผลผู้ใช้รายงาน ให้หยุดที่ขอบเขต Work Package และขออนุญาตแยกก่อน WP-04
+- WP-03 ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดผ่าน; บันทึกเป็น User-reported PASS
+- WP-03 เสร็จแล้ว; หยุดที่ขอบเขต Work Package และรออนุญาตชัดเจนก่อน WP-04
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
@@ -106,7 +106,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - 15 existing component/regression test files ที่เป็น baseline ก่อน Policy Test
 - `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
 - `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-18
-- `test_grid_entry_execution.mq5` เป็น WP-03 Entry Adapter Unit Test EA จำนวน 13 cases; รอผู้ใช้ Compile/Run
+- `test_grid_entry_execution.mq5` เป็น WP-03 Entry Adapter Unit Test EA จำนวน 13 cases; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด
@@ -119,7 +119,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 |---|---|---|---|
 | WP-01 | Entry Execution Policy Implementation | COMPLETE (USER-REPORTED PASS) | Header ตาม Phase 2 Contract; Policy Test EA 44 cases และ Full Regression ผ่านตามผู้ใช้รายงาน; ไม่มี Trade API/Mutation |
 | WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
-| WP-03 | Entry CTrade Adapter | IMPLEMENTED; STATIC PASS; AWAITING USER MT5 TEST | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
+| WP-03 | Entry CTrade Adapter | COMPLETE (USER-REPORTED PASS 2026-11-19) | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | NOT STARTED | เชื่อม Engine Candidate → Resolver → Policy → Persistent Mapping/Reducer → CTrade Adapter → Runtime Coordinator; mapping จาก Deal/Position Identifier; ACTIVE หลัง reconciliation เท่านั้น |
 | WP-05 | Close/Deal/Transaction Reconciliation Integration | NOT STARTED | เชื่อม partial fill, partial close, full close, TP/SL/manual close, Deal history และ Position transaction เข้ากับ Mapping/Coordinator/Engine; ไม่เดา Close Reason หรือ Logical Level |
 | WP-06 | Production EA Lifecycle/Event Handler | NOT STARTED | EA shell และ OnInit/OnDeinit/OnTick/OnTimer/OnTradeTransaction ตามที่จำเป็น; initialize identity/config/storage/runtime อย่างถูกลำดับ; restart/recovery และ safe shutdown |
