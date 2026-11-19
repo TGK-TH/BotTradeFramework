@@ -1,10 +1,10 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-17
+อัปเดตล่าสุด: 2026-11-19
 
 ## ขอบเขตของเอกสาร
 
-เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity ระบบ Persistence, Lifecycle/Runtime Orchestration และ Order Execution Adapter รอบแรกที่รองรับการปิด Position ระหว่าง Reset เท่านั้น ยังไม่ครอบคลุมข้อกำหนด Grid V1 ทั้งหมด
+เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller และ Entry CTrade Adapter แล้ว อย่างไรก็ตาม Entry CTrade Adapter ยังไม่ได้เชื่อมเป็น Entry Pipeline กับ Production EA Event Handler และยังไม่ครอบคลุมข้อกำหนด Grid V1 ทั้งหมด
 
 ## ส่วนประกอบปัจจุบัน
 

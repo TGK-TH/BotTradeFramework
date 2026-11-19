@@ -80,4 +80,4 @@ Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5`; ใ�
 - ผู้ใช้รายงานว่า Compile/Run Test ทั้งหมดแล้ว ทุกไฟล์ผ่านหลังแก้ Reducer Test EA.
 - Failure เดิม `out-of-range Level query fails | actual=true` เกิดเพราะ assertion ใช้ index 2 ซึ่ง valid; Fixture มี 201 Grid Levels (รวม Anchor) และ valid normal indices 0–199.
 - ปรับ out-of-range test index เป็น 200 โดยไม่เปลี่ยน production Reducer; ผู้ใช้ยืนยันผล Compile/Run ผ่านหลังแก้เมื่อ 2026-11-18.
-- WP-02 ผ่านตามผลผู้ใช้รายงาน; WP-03 ยังไม่เริ่มจนกว่าจะได้รับอนุมัติแยกจากผู้ใช้.
+- WP-02 ปิดตามผลผู้ใช้รายงานเมื่อ 2026-11-18; ณ เวลานั้น WP-03 ยังไม่เริ่มและต้องรออนุมัติแยก. สถานะปัจจุบันของ WP-03 คือ Complete ตาม Phase Note `phase-grid-entry-execution-adapter-round-1.md` (ผู้ใช้รายงาน Compile/Run PASS เมื่อ 2026-11-19).

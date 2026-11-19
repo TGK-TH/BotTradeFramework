@@ -29,7 +29,7 @@ Last updated: 2026-11-19
 
 ## Current implementation snapshot
 
-มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Policy และ Resolver/Caller Source ตาม Phase Notes แล้ว อย่างไรก็ตาม **ยังไม่มี Entry CTrade Adapter, Entry Pipeline, Production EA Event Handler หรือ End-to-End Grid V1** ตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
+มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Policy, Resolver/Caller และ Entry CTrade Adapter ตาม Phase Notes แล้ว อย่างไรก็ตาม **ยังไม่มี Entry Pipeline Integration, Production EA Event Handler หรือ End-to-End Grid V1** ตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
 
 ## Evidence rules
 

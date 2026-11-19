@@ -53,7 +53,7 @@
 
 Coverage: policy/identity/volume guards, BUY/SELL metadata, Intent → Trade → Execution Result ordering, intent write failure, result write failure lock, `DONE`/`DONE_PARTIAL`/`PLACED` awaiting reconciliation, `MARKET_CLOSED`, failed-send retry with sequence-derived Request ID, duplicate prevention, decimal ticket strings > 2^53, and Journal/Reducer sequence mismatch after uncertain write.
 
-Static Review และ `git diff --check` ผ่าน; ยังไม่ได้ Compile/Run ใน MetaEditor/MT5. ผู้ใช้ต้อง Compile `test_grid_entry_execution.mq5` และ Run ร่วมกับ Grid Regression suite ที่เกี่ยวข้อง โดยไม่รัน Demo Integration Test ใน Gate นี้
+Static Review และ `git diff --check` ผ่าน; ผู้ใช้รายงานเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดหลัง WP-03 ผ่านใน MetaEditor/MT5. นี่เป็น User-reported PASS; Assistant ไม่ได้รัน MetaEditor/MT5 เอง. Test EA ใช้ Fake Port และไม่ส่ง Trade Request; Demo Integration Test ยังคงแยก Safety Gate และต้องได้รับอนุมัติแยกต่างหาก
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 

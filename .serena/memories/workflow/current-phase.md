@@ -1,39 +1,38 @@
 # Current TGK BotTradeFramework / Grid V1 Phase
 
-อัปเดต: 2026-11-18
+อัปเดต: 2026-11-19
 
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
+- Branch: `feature/grid-trading`
+- Last verified HEAD during status/docs update: `8034217`; working tree was clean before documentation edits.
 - Source of Truth: Repository source/tests/docs.
 - Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
 - Current status: `PROJECT_STATUS.md`
 - Grid technical docs: `Docs/EAs/Grid/`
-- Current Trello card: https://trello.com/c/KxLQWjWq/4-wp-02-grid-entry-execution-resolver-caller-integration
 
 ## Current Work Item
 WP-03 Entry CTrade Adapter is complete; user reported all Compile/Run tests passed on 2026-11-19. Stop at the WP boundary; WP-04 requires explicit user authorization.
 - WP-01 Entry Execution Policy: complete; user-reported Policy 44/44 and Grid Regression 15/15 Compile/Runtime PASS on 2026-11-17.
-- WP-02 Target-Level Resolver / Caller Integration: complete based on user-reported Compile/Run PASS on 2026-11-18 after correcting the Reducer out-of-range test index from 2 (valid) to 200. This is user-reported evidence, not independently run by Assistant.
-- WP-02 includes 17 Resolver/Caller test IDs plus direct Reducer/Coordinator context API coverage; see `Docs/EAs/Grid/Phases/phase-grid-entry-execution-resolver.md`.
-- WP-03 added `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` and 13 Fake Port tests in `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`. Static Review and `git diff --check` pass; user reported all Compile/Run tests passed on 2026-11-19. Production Port uses SnapshotStorage; sequence mismatch between storage and Reducer fails closed.
-- WP-03 user-reported baseline before source changes: Compile/Run tests passed on 2026-11-19.
-- Trello WP-03 card: https://trello.com/c/Jvj4Aawo/5-wp-03-grid-entry-ctrade-adapter (MT5 Testing).
+- WP-02 Target-Level Resolver / Caller Integration: complete based on user-reported Compile/Run PASS on 2026-11-18 after correcting Reducer out-of-range test index from 2 to 200. Includes 17 Resolver/Caller test IDs plus direct Reducer/Coordinator context API coverage.
+- WP-03 added `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` and 13 Fake Port tests in `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`. Static Review and `git diff --check` passed; user reported all Compile/Run tests passed on 2026-11-19. Production Port uses Snapshot Storage; sequence mismatch between storage and Reducer fails closed. No real Trade Request is sent by the WP-03 unit tests.
+- WP-03 accepted outcomes `DONE`, `DONE_PARTIAL`, `PLACED` remain unresolved until Position/Deal reconciliation; Adapter does not create Position Mapping or set Level ACTIVE itself.
+- Trello WP-03 card: https://trello.com/c/Jvj4Aawo/5-wp-03-grid-entry-ctrade-adapter (Done per project status).
+- WP-04 Entry Pipeline Integration: NOT STARTED; requires explicit user authorization.
+- WP-05 through WP-09: NOT STARTED.
+
+## Documentation update 2026-11-19
+- Corrected stale `PROJECT_STATUS.md` implementation snapshot: Entry CTrade Adapter exists; Entry Pipeline Integration, Production EA Event Handler, and End-to-End Grid V1 remain incomplete.
+- Updated `Docs/EAs/Grid/architecture.md` scope/date to include Entry Policy, Resolver/Caller, and Entry CTrade Adapter while clearly stating pipeline/EA event integration remains incomplete.
+- Updated `Docs/EAs/Grid/Testing/testing.md` WP-03 evidence from pending MT5 validation to user-reported Compile/Run PASS on 2026-11-19; Demo Entry Integration remains separately gated.
+- Corrected the historical WP-02 phase note so it states WP-03 was not started at the time WP-02 closed, and points to the current WP-03 completion record.
+- `Docs/EAs/Grid/ROADMAP.md` and `README.md` already reflected WP-03 complete / WP-04 awaiting approval and were not changed.
+- Grid test inventory verified from directory: 19 `.mq5` sources (15 component/regression + Policy + Resolver/Caller + Entry Adapter + separate Demo Integration).
+- Validation after docs changes: `git diff --check` passed; local Markdown link scan found 0 missing targets. No MQL5 source changed and no MT5 tests were run as part of this documentation-only update.
 
 ## Next Work
-- WP-03 user verification is complete: user reported all Compile/Run tests passed on 2026-11-19. Trello card is Done.
-- Demo Entry Integration remains excluded; it sends Trade Requests and requires separate explicit user approval.
-- Exact next step: await explicit user authorization before starting WP-04 Entry Pipeline Integration.
-- Current Grid test source inventory: 19 `.mq5` files under `Experts/TGK/Tests/Grids/`: 15 component/regression, Policy, Resolver/Caller, Entry Adapter tests, and 1 separate Demo Integration test. Recount before relying on this number.
-
-## Existing verified foundations
-User-reported MetaEditor/MT5 validation (not independently run by Assistant):
-- Grid identity, persistence, state machine, lifecycle, position reconciler, runtime orchestrator and close execution adapter.
-- Close adapter Demo Integration Test FINAL PASS on 2026-11-02.
-- Two-sided Grid Level Engine Round 1: 11/11 tests PASS on 2026-11-04.
-- Grid Level Runtime Coordinator Round 1: new test + 11 regression tests, 12/12 PASS on 2026-11-09.
-- Entry Mapping Journal Storage tests and regression PASS on 2026-11-12.
-- Typed Mapping Reducer, Snapshot Serialization/Journal Rotation, and current Grid regression tests PASS as reported on 2026-11-15.
-- User reported latest Grid Regression tests PASS on 2026-11-17 as precondition for Policy Phase 2.
+Await explicit user authorization before starting WP-04 Entry Pipeline Integration. Once approved, do Dependency Review, contract/design and Test Plan first; do not jump straight to implementation.
+Demo Entry Integration sends Trade Requests and remains excluded unless separately approved.
 
 ## Grid V1 non-negotiable design
 - MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.
@@ -48,8 +47,10 @@ User-reported MetaEditor/MT5 validation (not independently run by Assistant):
 - New chart is a new Instance; restoring original chart/profile restores original Instance; never adopt foreign/manual positions.
 
 ## Workflow / safety
-- Grid is test-first. Before each new feature/refactor, remind user to run latest Grid Regression Tests; run relevant tests again after source changes.
+- User cancelled DeepSeek Agent workflow; use original ChatGPT + Serena MCP workflow.
+- Before each new Grid feature/refactor, remind user to run latest Grid Regression Tests and record pre-change baseline; run relevant tests again after source changes.
 - User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
 - Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.
-- After each Work Package, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, and this memory. Preserve staged/unstaged work; do not commit/push unless asked.
-- Stop at every Phase boundary and ask for explicit user authorization before starting the next Phase, even if a prior kickoff authorized continuing through the Roadmap. Once a Phase is authorized, ensure an appropriately scoped Trello card exists before implementation when needed, and update it at meaningful status transitions and Phase completion to match verified progress.
+- After each WP, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, Serena current-phase memory, and Trello card as applicable.
+- Preserve staged/unstaged/untracked changes. No reset/checkout/clean/stash or overwrite unrelated work. No commit/push unless asked.
+- Stop at every WP/Phase boundary and ask for explicit user authorization before starting the next one.
