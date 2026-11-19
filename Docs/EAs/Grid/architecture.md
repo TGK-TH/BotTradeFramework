@@ -87,6 +87,7 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping และ Level State transition |
 | `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
 | `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; ผู้ใช้รายงาน WP-01 Compile/Runtime PASS |
+| `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | Entry orchestration ที่ Persist Intent ก่อนเรียก Port; Production `CTGKGridEntryCTradePort` เชื่อม Snapshot Storage กับ `CTrade`; accepted outcomes รอ Position Reconciliation |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
@@ -103,15 +104,18 @@ MQL5 Test EAs
 - Mapping ใช้ Position Identifier เป็น Logical Key; Order Comment ไม่ใช่ Mapping Key และ Accepted/PLACED ไม่ใช่หลักฐานว่า Position เปิดแล้ว
 - ผู้ใช้รายงาน Compile/Runtime PASS ของ Snapshot/Reducer/Regression เมื่อ 2026-11-15; ดูรายละเอียดใน [Entry Adapter Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
 
-## Entry Execution Policy — WP-01 Implementation
+## Entry Execution Policy, Resolver และ Adapter
 
 - Design/Contract และ Test Plan ได้รับอนุมัติ; Test EA มี 44 Test IDs / 6 Groups
 - Static Acceptance Checks ผ่าน 2026-11-17; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS
 - `GridEntryExecutionPolicy.mqh` ถูกสร้างตาม Contract; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
 - WP-02 Resolver/Caller ใช้ Runtime Coordinator สำหรับ Level State และ Mapping Reducer สำหรับ Instance/Mode/Config Epoch/Position Mapping; Resolver ปฏิเสธ disagreement และ Caller ไม่เรียก Policy เมื่อ Resolve ล้มเหลว
 - `GridEntryMappingReducer.mqh` เพิ่ม `MatchesContext()` และ `TryGetPositionMapping()` แบบ read-only; `GridLevelRuntimeCoordinator.mqh` เพิ่ม Mode match และ one-time `BindConfigEpoch()` เพื่อกัน stale runtime context
-- `GridEntryExecutionResolver.mqh` รวม Resolver กับ Caller; Test EA มี 17 cases และรอผู้ใช้ Compile/Run
+- `GridEntryExecutionResolver.mqh` รวม Resolver กับ Caller; Test EA มี 17 cases และผู้ใช้รายงาน Compile/Run PASS เมื่อ 2026-11-18
 - Resolver provenance เป็นความรับผิดชอบของ Caller และต้องทดสอบ Integration แยก; Resolve failure ต้อง Fail Closed และห้ามเรียก Policy
+- WP-03 `GridEntryExecutionAdapter.mqh` แยก intent/result orchestration ออกจาก Port; `ITGKGridEntryExecutionPort` เป็น seam สำหรับ Fake Unit Tests และ `CTGKGridEntryCTradePort` เป็น Production Port ที่ใช้ `GridEntryMappingSnapshotStorage.mqh`
+- Adapter บันทึก Typed `ENTRY_INTENT` และนำเข้า Reducer ก่อนส่ง BUY/SELL; จากนั้นบันทึก `EXECUTION_RESULT`; `DONE`, `DONE_PARTIAL`, `PLACED` ยังคง unresolved และไม่สร้าง Position Mapping
+- Entry Adapter Test EA มี 13 cases ใช้ Fake Port ไม่มี Trade Request หรือ File I/O; Static Review ผ่านและรอผู้ใช้ Compile/Run
 - ดู Contract เต็มใน [Entry Execution Policy](Phases/phase-grid-entry-execution-policy.md)
 
 ## Grid Level Engine — Design และ Round 1 Implementation
@@ -146,7 +150,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Position-to-Level Mapping ต้องระบุจาก Integration Layer ด้วย Anchor flag หรือ Level Index; Coordinator ไม่เดา Mapping จากราคา Fill
 - ACTIVE จะเกิดขึ้นเมื่อ Reconciliation ยืนยัน Position ที่ตรงกับ Request และ Mapping เท่านั้น; Accepted/Placed ไม่ใช่หลักฐานว่าเปิด Position แล้ว
 - Partial Close ที่ยังมี Volume เหลือต้องคง ACTIVE; Full Close ต้องมี Close Reason ที่ resolve แล้วก่อนเรียก Engine
-- Phase นี้ยังไม่ส่ง Entry ผ่าน CTrade และไม่เชื่อม Production EA Event Handler
+- WP-03 ส่ง Entry ผ่าน CTrade Port ได้ แต่ยังไม่เชื่อมกับ Production EA Event Handler; Caller-to-Adapter Pipeline Integration เป็น WP-04
 
 ## ขอบเขตที่ยังไม่เสร็จ
 
@@ -156,8 +160,8 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - ผล Demo นี้เสริม Unit/Regression Tests โดยยืนยัน Live Scan + ticket-specific close + Runtime reconciliation ใน Test Scenario ที่กำหนด; ไม่ได้หมายความว่า Grid V1 หรือ EA Event Handler Integration เสร็จสมบูรณ์
 - Entry Mapping Storage, Typed Reducer และ Snapshot/Journal Rotation มี Source แล้ว และผู้ใช้รายงานผล Compile/Runtime/Regression PASS เมื่อ 2026-11-15; ดูรายละเอียดใน `phase-grid-entry-execution-adapter-round-1.md`
 - Entry Execution Policy มี Design Baseline, Test-First Specification 44 Cases และ Policy Source แล้ว; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 ผ่าน Compile/Runtime
-- ยังไม่มี CTrade Entry Adapter ที่ส่ง Initial/Level BUY/SELL Request โดย Persist Intent ก่อน Trade API
-- Caller/Resolver Source และ Integration Test 17 cases เพิ่มใน WP-02 แล้ว; รอผู้ใช้ Compile/Run และ rerun Regression
+- CTrade Entry Adapter Source และ Fake Port Test EA 13 cases เพิ่มใน WP-03 แล้ว; Static PASS และรอผู้ใช้ Compile/Run กับ Regression
+- Caller/Resolver Source และ Integration Test 17 cases เพิ่มใน WP-02 แล้ว; ผู้ใช้รายงาน Compile/Run PASS
 - ยังไม่มี EA Event Handler adapter ที่เชื่อม Orchestrator/Execution จาก OnInit/OnTick/OnTimer/OnTradeTransaction แบบครบวงจร
 - ยังไม่มีการจัดการคำสั่งซื้อขายหลาย Level ของ Grid แบบ End-to-end ที่ผ่าน Acceptance Tests ครบ
 - ยังไม่มีการยืนยันว่าข้อกำหนดทุกข้อของ Grid V1 ถูกนำไปใช้และผ่าน MT5 validation แล้ว

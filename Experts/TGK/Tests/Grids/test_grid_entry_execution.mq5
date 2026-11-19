@@ -1,0 +1,611 @@
+#property strict
+#property version "1.00"
+#property description "Grid Entry Execution Adapter tests; fake ports only, no trading."
+
+#include <BotTrade/Testing/TestRunner.mqh>
+#include <BotTrade/Grid/GridEntryExecutionAdapter.mqh>
+
+CTGKTestRunner Tests;
+
+class CTGKGridEntryExecutionFakePort : public ITGKGridEntryExecutionPort
+{
+public:
+  bool fail_intent;
+  bool fail_result;
+  bool fail_intent_after_write;
+  bool send_return;
+  uint retcode;
+  string order_ticket;
+  string deal_ticket;
+  int call_count;
+  int send_count;
+  string call_order;
+  string intent_payload;
+  string result_payload;
+  string last_comment;
+  bool last_is_buy;
+  string last_symbol;
+  double last_volume;
+  long next_sequence;
+
+  CTGKGridEntryExecutionFakePort()
+  {
+    fail_intent = false;
+    fail_result = false;
+    fail_intent_after_write = false;
+    send_return = true;
+    retcode = TRADE_RETCODE_DONE;
+    order_ticket = "90071992547409931";
+    deal_ticket = "90071992547409932";
+    call_count = 0;
+    send_count = 0;
+    call_order = "";
+    intent_payload = "";
+    result_payload = "";
+    last_comment = "";
+    last_is_buy = true;
+    last_symbol = "";
+    last_volume = 0.0;
+    next_sequence = 2;
+  }
+
+  virtual bool NextSequence(long &sequence)
+  {
+    sequence = next_sequence;
+    return true;
+  }
+
+  virtual bool AppendRecord(
+    ENUM_TGK_GRID_MAPPING_RECORD_TYPE record_type,
+    const string payload
+  )
+  {
+    call_count++;
+    call_order += record_type == TGK_GRID_MAPPING_RECORD_ENTRY_INTENT
+                  ? "I"
+                  : "R";
+    if(record_type == TGK_GRID_MAPPING_RECORD_ENTRY_INTENT)
+    {
+      intent_payload = payload;
+      if(fail_intent)
+      {
+        if(fail_intent_after_write)
+          next_sequence++;
+        return false;
+      }
+      next_sequence++;
+      return true;
+    }
+    result_payload = payload;
+    if(fail_result)
+    {
+      next_sequence++;
+      return false;
+    }
+    next_sequence++;
+    return true;
+  }
+
+  virtual bool SendMarketOrder(
+    bool is_buy,
+    string symbol,
+    double volume,
+    long magic_number,
+    string comment,
+    uint &result_retcode,
+    string &order_ticket_result,
+    string &deal_ticket_result
+  )
+  {
+    send_count++;
+    call_order += "T";
+    last_is_buy = is_buy;
+    last_symbol = symbol;
+    last_volume = volume;
+    last_comment = comment;
+    result_retcode = retcode;
+    order_ticket_result = order_ticket;
+    deal_ticket_result = deal_ticket;
+    return send_return;
+  }
+};
+
+void AddConfiguration(STGKGridMappingJournalRecord &records[])
+{
+  ArrayResize(records, 1);
+  records[0].sequence = 1;
+  records[0].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[0].payload = "v1|RESET_COMMITTED|1|BUY|5.0|3960.0|4040.0|4000.0|17";
+}
+
+bool InitializeReducer(CTGKGridEntryMappingReducer &reducer)
+{
+  STGKGridMappingJournalRecord records[];
+  AddConfiguration(records);
+  bool initialized = reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE");
+  return initialized && reducer.Replay(records, ArraySize(records));
+}
+
+void SetCandidate(STGKGridEntryExecutionCandidate &candidate)
+{
+  candidate.instance_id = "UT_INSTANCE";
+  candidate.symbol = "XAUUSD";
+  candidate.magic_number = 710001;
+  candidate.mode = TGK_GRID_MODE_BUY;
+  candidate.config_epoch = 1;
+  candidate.target_level.is_anchor = false;
+  candidate.target_level.level_index = 0;
+  candidate.entry_price = 3995.0;
+}
+
+void SetAllowedResult(
+  STGKGridEntryExecutionResult &policy_result,
+  STGKGridEntryExecutionCandidate &candidate
+)
+{
+  policy_result.decision = TGK_GRID_ENTRY_DECISION_ALLOW;
+  policy_result.reason_code = TGK_GRID_ENTRY_REASON_ELIGIBLE;
+  policy_result.target_level = candidate.target_level;
+}
+
+void RunSuccessfulBuy()
+{
+  Tests.BeginTest("E01 persists intent before sending BUY and result");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("fixture ready and Execute succeeds", executed);
+  Tests.AssertEqualString("call order intent, trade, result", port.call_order, "ITR");
+  Tests.AssertEqualInt("trade seam called once", port.send_count, 1);
+  Tests.AssertTrue("accepted request requires reconciliation", outcome.requires_reconciliation);
+  Tests.AssertEqualString("outcome is DONE", outcome.execution_outcome, "DONE");
+  Tests.AssertTrue("reducer retains unresolved request", reducer.HasUnresolvedRequest());
+  Tests.EndTest();
+}
+
+void RunPolicyRejectHasNoEffects()
+{
+  Tests.BeginTest("E02 policy rejection causes no persistence or trade");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  policy_result.decision = TGK_GRID_ENTRY_DECISION_REJECT;
+  policy_result.reason_code = TGK_GRID_ENTRY_REASON_EXECUTION_BLOCKED;
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("Execute rejects", executed);
+  Tests.AssertEqualInt("no port calls", port.call_count, 0);
+  Tests.AssertEqualInt("no trade calls", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunIntentPersistenceFailure()
+{
+  Tests.BeginTest("E03 failed intent persistence blocks trade and adapter");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  port.fail_intent = true;
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("Execute fails closed", executed);
+  Tests.AssertEqualInt("intent attempted once", port.call_count, 1);
+  Tests.AssertEqualInt("trade not called", port.send_count, 0);
+  Tests.AssertTrue("adapter requires recovery", outcome.recovery_required);
+  Tests.AssertFalse("repeated call remains blocked", adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome));
+  Tests.AssertEqualInt("trade still not called", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAcceptedTicketPrecision()
+{
+  Tests.BeginTest("E04 accepted result retains ticket decimal strings");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("Execute succeeds", executed);
+  Tests.AssertEqualString(
+    "order ticket kept as decimal string",
+    outcome.order_ticket,
+    "90071992547409931");
+  Tests.AssertEqualString(
+    "deal ticket kept as decimal string",
+    outcome.deal_ticket,
+    "90071992547409932");
+  Tests.AssertEqualString(
+    "request id uses next journal sequence",
+    outcome.request_id,
+    "UT_INSTANCE-REQ-2");
+  Tests.AssertTrue(
+    "Order Ticket remains exact in journal payload",
+    StringFind(port.result_payload, "90071992547409931") >= 0);
+  Tests.AssertTrue(
+    "Deal Ticket remains exact in journal payload",
+    StringFind(port.result_payload, "90071992547409932") >= 0);
+  Tests.EndTest();
+}
+
+void RunDuplicateBlocked()
+{
+  Tests.BeginTest("E05 unresolved request prevents duplicate trade");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool first = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  bool second = first && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("first request succeeds", first);
+  Tests.AssertFalse("second request rejected", second);
+  Tests.AssertEqualInt("only one trade sent", port.send_count, 1);
+  Tests.EndTest();
+}
+
+void RunMarketClosed()
+{
+  Tests.BeginTest("E06 MARKET_CLOSED resolves request without mapping");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  port.retcode = TRADE_RETCODE_MARKET_CLOSED;
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("request is recorded", executed);
+  Tests.AssertEqualString(
+    "classified as MARKET_CLOSED",
+    outcome.execution_outcome,
+    "MARKET_CLOSED");
+  Tests.AssertFalse("request is resolved", reducer.HasUnresolvedRequest());
+  bool has_mapping = true;
+  bool mapping_query_ok = reducer.TryGetPositionMapping(false, 0, has_mapping);
+  Tests.AssertTrue("mapping query remains healthy", mapping_query_ok);
+  Tests.AssertFalse("no position mapping created", has_mapping);
+  Tests.AssertFalse("reconciliation not required", outcome.requires_reconciliation);
+  Tests.EndTest();
+}
+
+void RunSendFailureCanRetryWithNewId()
+{
+  Tests.BeginTest("E07 failed trade request resolves and retry gets next ID");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  port.send_return = false;
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool first = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  string first_request_id = outcome.request_id;
+  string first_outcome = outcome.execution_outcome;
+  port.send_return = true;
+  bool second = first && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("failed trade result is persisted", first);
+  Tests.AssertEqualString("first result is FAILED", first_outcome, "FAILED");
+  Tests.AssertEqualString(
+    "retry uses different ID",
+    outcome.request_id == first_request_id ? "same-id" : "new-id",
+    "new-id");
+  Tests.AssertTrue("new request allowed after persisted failure", second);
+  Tests.AssertEqualString(
+    "retry ID advances monotonically",
+    outcome.request_id,
+    "UT_INSTANCE-REQ-4");
+  Tests.EndTest();
+}
+
+void RunResultPersistenceFailure()
+{
+  Tests.BeginTest("E08 result persistence failure locks execution");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  port.fail_result = true;
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("Execute reports persistence failure", executed);
+  Tests.AssertEqualInt("trade was sent once", port.send_count, 1);
+  Tests.AssertTrue("unresolved intent remains", reducer.HasUnresolvedRequest());
+  Tests.AssertTrue("recovery flag is set", outcome.recovery_required);
+  port.fail_result = false;
+  Tests.AssertFalse("retry blocked until recovery", adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome));
+  Tests.AssertEqualInt("no duplicate trade", port.send_count, 1);
+  Tests.EndTest();
+}
+
+void RunSellAndPayloadBoundary()
+{
+  Tests.BeginTest("E09 SELL uses mode and logical target metadata");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  candidate.mode = TGK_GRID_MODE_SELL;
+  candidate.target_level.is_anchor = true;
+  candidate.target_level.level_index = -1;
+  SetAllowedResult(policy_result, candidate);
+  STGKGridMappingJournalRecord records[];
+  ArrayResize(records, 1);
+  records[0].sequence = 1;
+  records[0].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[0].payload = "v1|RESET_COMMITTED|1|SELL|5.0|3960.0|4040.0|4000.0|17";
+  bool initialized = reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE") &&
+                     reducer.Replay(records, 1) && adapter.Initialize();
+  bool executed = initialized && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertTrue("SELL request succeeds", executed);
+  Tests.AssertFalse("SELL direction sent", port.last_is_buy);
+  Tests.AssertEqualString("chart symbol passed", port.last_symbol, "XAUUSD");
+  Tests.AssertTrue(
+    "comment remains readable metadata",
+    StringFind(port.last_comment, "ANCHOR") >= 0);
+  Tests.EndTest();
+}
+
+void RunInvalidVolume()
+{
+  Tests.BeginTest("E10 invalid volume causes no persistence or trade");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.0,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("invalid volume rejected", executed);
+  Tests.AssertEqualInt("no persistence or trade", port.call_count + port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAcceptedPartialAndPlaced()
+{
+  Tests.BeginTest("E11 DONE_PARTIAL and PLACED remain unresolved");
+  uint accepted_codes[2] =
+  {
+    TRADE_RETCODE_DONE_PARTIAL,
+    TRADE_RETCODE_PLACED
+  };
+  string expected_outcomes[2] = {"DONE_PARTIAL", "PLACED"};
+  for(int index = 0; index < 2; index++)
+  {
+    CTGKGridEntryMappingReducer reducer;
+    CTGKGridEntryExecutionAdapter adapter;
+    CTGKGridEntryExecutionFakePort port;
+    STGKGridEntryExecutionCandidate candidate;
+    STGKGridEntryExecutionResult policy_result;
+    STGKGridEntryExecutionOutcome outcome;
+    SetCandidate(candidate);
+    SetAllowedResult(policy_result, candidate);
+    port.retcode = accepted_codes[index];
+    bool ready = InitializeReducer(reducer) && adapter.Initialize();
+    bool executed = ready && adapter.Execute(
+      candidate,
+      0.01,
+      policy_result,
+      reducer,
+      port,
+      outcome);
+    Tests.AssertTrue("accepted result recorded", executed);
+    Tests.AssertEqualString(
+      "accepted outcome classified",
+      outcome.execution_outcome,
+      expected_outcomes[index]);
+    Tests.AssertTrue("reconciliation remains required", outcome.requires_reconciliation);
+    Tests.AssertTrue("request remains unresolved", reducer.HasUnresolvedRequest());
+  }
+  Tests.EndTest();
+}
+
+void RunIdentityMismatch()
+{
+  Tests.BeginTest("E12 identity mismatch fails before persistence");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  candidate.magic_number++;
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  bool executed = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("Execute fails identity gate", executed);
+  Tests.AssertEqualInt("no persistence or trade", port.call_count + port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunJournalReducerSequenceMismatch()
+{
+  Tests.BeginTest("E13 journal sequence mismatch blocks trade after uncertain write");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  STGKGridEntryExecutionCandidate candidate;
+  STGKGridEntryExecutionResult policy_result;
+  STGKGridEntryExecutionOutcome outcome;
+  SetCandidate(candidate);
+  SetAllowedResult(policy_result, candidate);
+  bool ready = InitializeReducer(reducer) && adapter.Initialize();
+  port.fail_intent = true;
+  port.fail_intent_after_write = true;
+  bool first = ready && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("uncertain Intent write reports failure", first);
+  Tests.AssertTrue("recovery is required", outcome.recovery_required);
+  port.fail_intent = false;
+  bool reinitialized = adapter.Initialize();
+  bool retry = reinitialized && adapter.Execute(
+    candidate,
+    0.01,
+    policy_result,
+    reducer,
+    port,
+    outcome);
+  Tests.AssertFalse("journal and stale reducer mismatch blocks retry", retry);
+  Tests.AssertEqualInt("no second append or trade", port.call_count + port.send_count, 1);
+  Tests.AssertEqualInt("trade never sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+int OnInit()
+{
+  Tests.BeginSuite("Grid Entry Execution Adapter");
+  RunSuccessfulBuy();
+  RunPolicyRejectHasNoEffects();
+  RunIntentPersistenceFailure();
+  RunAcceptedTicketPrecision();
+  RunDuplicateBlocked();
+  RunMarketClosed();
+  RunSendFailureCanRetryWithNewId();
+  RunResultPersistenceFailure();
+  RunSellAndPayloadBoundary();
+  RunInvalidVolume();
+  RunAcceptedPartialAndPlaced();
+  RunIdentityMismatch();
+  RunJournalReducerSequenceMismatch();
+  Tests.EndSuite();
+  return INIT_SUCCEEDED;
+}
+
+void OnTick() {}

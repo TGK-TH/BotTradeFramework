@@ -1,15 +1,19 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-18
+Last updated: 2026-11-19
 
 ## Current focus
 
-**Grid V1 — WP-02 ผ่านตามผล Compile/Run ที่ผู้ใช้รายงาน; รออนุมัติแยกก่อนเริ่ม WP-03**
+**Grid V1 — WP-03 Entry CTrade Adapter: Implemented; Static Review ผ่าน; รอผู้ใช้ Compile/Run ใน MetaEditor/MT5**
 
 - Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
 - Current contract: [Grid Entry Execution Policy](Docs/EAs/Grid/Phases/phase-grid-entry-execution-policy.md)
 - Test EAs: ผู้ใช้รายงานเมื่อ 2026-11-18 ว่าหลังแก้ out-of-range query จาก index 2 เป็น 200 แล้ว Compile/Run ผ่าน; ก่อนหน้านั้นทุก test file ผ่านยกเว้น assertion นี้
-- Next: หยุดหลัง WP-02 และขออนุญาตผู้ใช้ก่อนเริ่ม WP-03 — Entry CTrade Adapter
+- WP-03 test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` มี 13 cases และใช้ Fake Port ในหน่วยความจำ; ไม่ส่ง Trade Request จริง
+- WP-03 Source: `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh`; Intent ถูก Persist + Apply ก่อนเรียก CTrade Port; Production Port ใช้ Snapshot Storage และตรวจ sequence ให้ตรงกับ Reducer ก่อน append; ผล accepted ยังคง unresolved เพื่อรอ reconciliation
+- WP-03 Static Review: `git diff --check`, delimiter/whitespace, test ID count และ no-trade test-source scan ผ่าน; ไม่มี Compile/Runtime claim
+- Regression baseline ก่อน WP-03: ผู้ใช้รายงาน Compile/Run ผ่านทั้งหมดเมื่อเริ่มงานนี้ (2026-11-19); ต้องรัน Test EA ใหม่และชุด Grid Regression ที่เกี่ยวข้องหลัง Source changes
+- Next: ผู้ใช้ Compile/Run Entry Adapter Test EA และ Grid Regression; เมื่อรายงานผลให้แก้ failure ถ้ามี แล้วปิด WP-03 และหยุดขออนุญาตก่อน WP-04
 
 ## Current phase evidence
 
@@ -20,7 +24,8 @@ Last updated: 2026-11-18
 - WP-02 dependency review พบช่องว่าง public read-only query; เพิ่ม Reducer context/mapping query และ Coordinator Mode/Config Epoch matching; เพิ่ม Resolver/Caller ที่ Fail Closed และไม่เรียก Policy เมื่อ context ไม่สอดคล้อง
 - WP-02 Static Review: 17 Resolver IDs; direct tests ครอบคลุม Reducer `MatchesContext()`/`TryGetPositionMapping()` และ Coordinator context/epoch APIs; static checks ผ่าน
 - WP-02 user-reported test result: หลังเปลี่ยน out-of-range assertion เป็น index 200 ผู้ใช้ยืนยัน Compile/Run ผ่านแล้ว
-- Trello: WP-01 Policy card และ WP-02 Resolver/Caller card แยกกัน; ปิดทั้งสองตามผลผู้ใช้รายงาน โดย WP-03 ยังไม่เริ่มจนกว่าจะได้รับอนุมัติ
+- WP-03: Adapter/Test EA เพิ่มแล้ว; Static PASS; รอ user-reported MetaEditor/MT5 Compile/Run
+- Trello: WP-01 Policy และ WP-02 Resolver/Caller cards อยู่ Done ตามผลผู้ใช้รายงาน; WP-03 card อยู่ MT5 Testing ระหว่างรอผล Compile/Run
 
 ## Current implementation snapshot
 
