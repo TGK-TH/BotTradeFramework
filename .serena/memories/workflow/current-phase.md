@@ -13,27 +13,14 @@
 - Grid technical docs: `Docs/EAs/Grid/`
 
 ## Current Work Item
-WP-03 Entry CTrade Adapter is complete; user reported all Compile/Run tests passed on 2026-11-19. Stop at the WP boundary; WP-04 requires explicit user authorization.
-- WP-01 Entry Execution Policy: complete; user-reported Policy 44/44 and Grid Regression 15/15 Compile/Runtime PASS on 2026-11-17.
-- WP-02 Target-Level Resolver / Caller Integration: complete based on user-reported Compile/Run PASS on 2026-11-18 after correcting Reducer out-of-range test index from 2 to 200. Includes 17 Resolver/Caller test IDs plus direct Reducer/Coordinator context API coverage.
-- WP-03 added `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` and 13 Fake Port tests in `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5`. Static Review and `git diff --check` passed; user reported all Compile/Run tests passed on 2026-11-19. Production Port uses Snapshot Storage; sequence mismatch between storage and Reducer fails closed. No real Trade Request is sent by the WP-03 unit tests.
-- WP-03 accepted outcomes `DONE`, `DONE_PARTIAL`, `PLACED` remain unresolved until Position/Deal reconciliation; Adapter does not create Position Mapping or set Level ACTIVE itself.
-- Trello WP-03 card: https://trello.com/c/Jvj4Aawo/5-wp-03-grid-entry-ctrade-adapter (Done per project status).
-- WP-04 Entry Pipeline Integration: NOT STARTED; requires explicit user authorization.
-- WP-05 through WP-09: NOT STARTED.
-
-## Documentation update 2026-11-19
-- Corrected stale `PROJECT_STATUS.md` implementation snapshot: Entry CTrade Adapter exists; Entry Pipeline Integration, Production EA Event Handler, and End-to-End Grid V1 remain incomplete.
-- Updated `Docs/EAs/Grid/architecture.md` scope/date to include Entry Policy, Resolver/Caller, and Entry CTrade Adapter while clearly stating pipeline/EA event integration remains incomplete.
-- Updated `Docs/EAs/Grid/Testing/testing.md` WP-03 evidence from pending MT5 validation to user-reported Compile/Run PASS on 2026-11-19; Demo Entry Integration remains separately gated.
-- Corrected the historical WP-02 phase note so it states WP-03 was not started at the time WP-02 closed, and points to the current WP-03 completion record.
-- `Docs/EAs/Grid/ROADMAP.md` and `README.md` already reflected WP-03 complete / WP-04 awaiting approval and were not changed.
-- Grid test inventory verified from directory: 19 `.mq5` sources (15 component/regression + Policy + Resolver/Caller + Entry Adapter + separate Demo Integration).
-- Validation after docs changes: `git diff --check` passed; local Markdown link scan found 0 missing targets. No MQL5 source changed and no MT5 tests were run as part of this documentation-only update.
-
-## Next Work
-Await explicit user authorization before starting WP-04 Entry Pipeline Integration. Once approved, do Dependency Review, contract/design and Test Plan first; do not jump straight to implementation.
-Demo Entry Integration sends Trade Requests and remains excluded unless separately approved.
+WP-04 Grid Entry Pipeline Integration is in progress, authorized by the user on 2026-11-20. Baseline: user reported all latest Grid Tests passed before changes; repository was clean on `feature/grid-trading` at HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`.
+- Contract/Test Plan: `Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md`.
+- Source added: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; it sends the exact offered candidate through Resolver/Policy/Adapter and updates Runtime Coordinator request state.
+- Test added: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` with 7 initial Fake Port tests. No MT5 Compile/Run has been reported for WP-04; no real Trade Request is sent by its test.
+- Accepted and uncertain requests remain unresolved until reconciliation. Pipeline does not create Position Mapping or set ACTIVE from CTrade return/retcode. Deal/Position reconciliation is a WP-05 dependency.
+- Trello WP-04 card: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (In Progress).
+- Next: complete static review and tests in the agreed Test Plan; user compiles/runs the new EA plus relevant Grid Regression before WP-04 can close. No Demo/Live trade request is authorized.
+- WP-01 through WP-03 remain complete on user-reported evidence. WP-05 through WP-09 remain not started.
 
 ## Grid V1 non-negotiable design
 - MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.

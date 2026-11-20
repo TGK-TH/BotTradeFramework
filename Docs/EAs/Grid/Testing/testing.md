@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-19
+อัปเดตล่าสุด: 2026-11-20
 
 ## ก่อนเริ่ม
 
@@ -43,7 +43,7 @@
 
 ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run ผ่านครบหลังแก้ Reducer boundary test.
 
-ณ 2026-11-19 มี Grid Test Sources 19 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile/Run Test ทั้งหมดหลัง WP-03 ผ่าน. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+ณ 2026-11-20 มี Grid Test Sources 20 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์, Pipeline Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-20 ว่ารัน Test ทั้งหมดก่อนเริ่ม WP-04 ผ่าน; WP-04 Test EA ยังรอ Compile/Run. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
 
 ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดผ่านหลังแก้ `test_grid_entry_mapping_reducer.mq5`: fixture มี valid normal level indices 0–199 ดังนั้น out-of-range query ใช้ index 200. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
 
@@ -54,6 +54,14 @@
 Coverage: policy/identity/volume guards, BUY/SELL metadata, Intent → Trade → Execution Result ordering, intent write failure, result write failure lock, `DONE`/`DONE_PARTIAL`/`PLACED` awaiting reconciliation, `MARKET_CLOSED`, failed-send retry with sequence-derived Request ID, duplicate prevention, decimal ticket strings > 2^53, and Journal/Reducer sequence mismatch after uncertain write.
 
 Static Review และ `git diff --check` ผ่าน; ผู้ใช้รายงานเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดหลัง WP-03 ผ่านใน MetaEditor/MT5. นี่เป็น User-reported PASS; Assistant ไม่ได้รัน MetaEditor/MT5 เอง. Test EA ใช้ Fake Port และไม่ส่ง Trade Request; Demo Integration Test ยังคงแยก Safety Gate และต้องได้รับอนุมัติแยกต่างหาก
+
+## WP-04 Entry Pipeline Integration — implementation in progress
+
+Contract และ Test Plan: [phase-grid-entry-pipeline-integration.md](../Phases/phase-grid-entry-pipeline-integration.md)
+
+เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh` เพื่อบังคับลำดับ Candidate → Resolver/Policy → Adapter → Runtime Coordinator request state. เพิ่ม `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` ซึ่งมี 7 Test IDs (P01–P07) รอบแรก ใช้ Fake Port ในหน่วยความจำเท่านั้น. Source review เบื้องต้นยังไม่ใช่ Compile/Runtime evidence; ผู้ใช้ยังไม่ได้ Compile/Run Test EA นี้.
+
+Accepted `DONE`, `DONE_PARTIAL`, `PLACED` และผลที่ Adapter ต้อง Recovery จะคง Coordinator request เป็น unresolved; Pipeline ไม่สร้าง Position Mapping และไม่ตั้ง Level เป็น `ACTIVE`. Deal/Position reconciliation ยังเป็น dependency ของ WP-05.
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 

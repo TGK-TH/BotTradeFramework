@@ -60,7 +60,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - Close request accepted ไม่เท่ากับปิดสำเร็จ; ต้อง Scan/Reconcile สถานะบัญชีใหม่
 - หากไม่มี Position เปิดอยู่ ยังต้อง Restore/รักษา Grid Level State ตาม Persistence Contract ไม่ใช่ลบ Level State ทั้งหมดเพียงเพราะไม่มี Position
 
-## 3. สถานะปัจจุบัน ณ 2026-11-17
+## 3. สถานะปัจจุบัน ณ 2026-11-20
 
 ### 3.1 Foundations ที่มี Source และผู้ใช้ยืนยันผลทดสอบแล้ว
 
@@ -84,10 +84,11 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-03 — Entry CTrade Adapter: Complete; Static Review ผ่าน; ผู้ใช้รายงาน Compile/Run Test ทั้งหมดผ่านเมื่อ 2026-11-19**
+**WP-04 — Entry Pipeline Integration: In Progress; Contract/Test Plan ถูกบันทึก; Test EA รอบแรกยังรอ MT5 validation**
 
-- Contract และ Test Plan: `Phases/phase-grid-entry-execution-policy.md`
-- Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
+- WP-01 Contract/Test Plan: `Phases/phase-grid-entry-execution-policy.md`
+- WP-04 Contract/Test Plan: `Phases/phase-grid-entry-pipeline-integration.md`
+- WP-01 Policy Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
 - 44 Test IDs; Groups A–F = 4/13/6/9/6/6
 - Static checks ผ่านตาม `PROJECT_STATUS.md`
 - WP-01 Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
@@ -98,15 +99,19 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-02 ผ่านตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18
 - WP-03 Source: `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` มี 13 cases ผ่าน Static Review; Fake Port เท่านั้น ไม่มี Trade Request ใน Unit Test
 - WP-03 ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดผ่าน; บันทึกเป็น User-reported PASS
-- WP-03 เสร็จแล้ว; หยุดที่ขอบเขต Work Package และรออนุญาตชัดเจนก่อน WP-04
+- WP-03 เสร็จตามผลผู้ใช้รายงาน; WP-04 ได้รับอนุญาตเมื่อ 2026-11-20 และกำลังทำตาม [Contract/Test Plan](Phases/phase-grid-entry-pipeline-integration.md)
+- WP-04 Source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` มี 7 tests (P01–P07) ใช้ Fake Port รอบแรก; Compile/Run ยัง pending
+- WP-04 baseline: ผู้ใช้รายงานว่ารัน Grid Tests ทั้งหมดผ่านก่อนเริ่ม; repository clean ที่ HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`
+- Trello WP-04: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (In Progress)
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
-มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 19 ไฟล์ ณ วันที่อัปเดต:
+มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 20 ไฟล์ ณ วันที่อัปเดต:
 - 15 existing component/regression test files ที่เป็น baseline ก่อน Policy Test
 - `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
 - `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-18
 - `test_grid_entry_execution.mq5` เป็น WP-03 Entry Adapter Unit Test EA จำนวน 13 cases; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
+- `test_grid_entry_execution_pipeline.mq5` เป็น WP-04 Fake Port Pipeline Test EA รอบแรก; ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด
@@ -120,7 +125,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | WP-01 | Entry Execution Policy Implementation | COMPLETE (USER-REPORTED PASS) | Header ตาม Phase 2 Contract; Policy Test EA 44 cases และ Full Regression ผ่านตามผู้ใช้รายงาน; ไม่มี Trade API/Mutation |
 | WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | COMPLETE (USER-REPORTED PASS 2026-11-19) | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
-| WP-04 | Entry Pipeline Integration | NOT STARTED | เชื่อม Engine Candidate → Resolver → Policy → Persistent Mapping/Reducer → CTrade Adapter → Runtime Coordinator; mapping จาก Deal/Position Identifier; ACTIVE หลัง reconciliation เท่านั้น |
+| WP-04 | Entry Pipeline Integration | IN PROGRESS (user authorized 2026-11-20) | เชื่อม Coordinator Candidate → Resolver → Policy → Entry Adapter → Coordinator request state; accepted/uncertain request รอ Deal/Position reconciliation; ห้ามสร้าง Mapping หรือ ACTIVE จาก CTrade result |
 | WP-05 | Close/Deal/Transaction Reconciliation Integration | NOT STARTED | เชื่อม partial fill, partial close, full close, TP/SL/manual close, Deal history และ Position transaction เข้ากับ Mapping/Coordinator/Engine; ไม่เดา Close Reason หรือ Logical Level |
 | WP-06 | Production EA Lifecycle/Event Handler | NOT STARTED | EA shell และ OnInit/OnDeinit/OnTick/OnTimer/OnTradeTransaction ตามที่จำเป็น; initialize identity/config/storage/runtime อย่างถูกลำดับ; restart/recovery และ safe shutdown |
 | WP-07 | Configuration, Bounds และ Runtime Safety Integration | NOT STARTED | Inputs และ validation ของ Mode/Bounds/Step/FixedLot; initial entry เฉพาะใน Bounds; no new entries นอก Bounds แต่ manage existing positions ต่อ; reset Mode/Step ตาม Contract |

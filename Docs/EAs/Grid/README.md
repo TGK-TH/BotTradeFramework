@@ -28,11 +28,12 @@
 - [Grid Entry Execution Adapter — Persistence/Mapping Round 1](Phases/phase-grid-entry-execution-adapter-round-1.md)
 - [Grid Entry Execution Policy — Design, Contract และ Test-First](Phases/phase-grid-entry-execution-policy.md)
 - [Grid Entry Execution Resolver — WP-02](Phases/phase-grid-entry-execution-resolver.md)
+- [Grid Entry Pipeline Integration — WP-04](Phases/phase-grid-entry-pipeline-integration.md)
 
 ## Current implementation boundary
 
 มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Entry Mapping Storage/Reducer/Snapshot Rotation แล้ว โดยผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
 
-Grid Entry Execution Policy WP-01, Resolver/Caller WP-02 และ Entry CTrade Adapter WP-03 เสร็จตามผล Compile/Run ที่ผู้ใช้รายงาน (WP-02 เมื่อ 2026-11-18; WP-03 เมื่อ 2026-11-19). WP-02 มี Resolver/Caller Source และ Test EA 17 cases; WP-03 มี Adapter Source และ Fake Port Test EA 13 cases. WP-04 ยังไม่เริ่มและต้องได้รับอนุญาตแยกก่อนเริ่ม
+Grid Entry Execution Policy WP-01, Resolver/Caller WP-02 และ Entry CTrade Adapter WP-03 เสร็จตามผล Compile/Run ที่ผู้ใช้รายงาน (WP-02 เมื่อ 2026-11-18; WP-03 เมื่อ 2026-11-19). WP-02 มี Resolver/Caller Source และ Test EA 17 cases; WP-03 มี Adapter Source และ Fake Port Test EA 13 cases. WP-04 Entry Pipeline Integration กำลังทำ โดย Test EA ใหม่ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5
 
 **ข้อสำคัญ:** การที่ Components แยกส่วนผ่าน Unit/Integration Tests ไม่ได้แปลว่า Grid V1 เสร็จ ต้องเชื่อม Production EA Event Handlers และทดสอบ End-to-End ตาม [Definition of Done](ROADMAP.md)

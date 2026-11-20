@@ -1,10 +1,10 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-19
+อัปเดตล่าสุด: 2026-11-20
 
 ## ขอบเขตของเอกสาร
 
-เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller และ Entry CTrade Adapter แล้ว อย่างไรก็ตาม Entry CTrade Adapter ยังไม่ได้เชื่อมเป็น Entry Pipeline กับ Production EA Event Handler และยังไม่ครอบคลุมข้อกำหนด Grid V1 ทั้งหมด
+เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component ระหว่างทำแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
 
 ## ส่วนประกอบปัจจุบัน
 
@@ -87,7 +87,8 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping และ Level State transition |
 | `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
 | `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; ผู้ใช้รายงาน WP-01 Compile/Runtime PASS |
-| `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | Entry orchestration ที่ Persist Intent ก่อนเรียก Port; Production `CTGKGridEntryCTradePort` เชื่อม Snapshot Storage กับ `CTrade`; accepted outcomes รอ Position Reconciliation |
+| `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | Entry Adapter ที่ Persist Intent ก่อนเรียก Port; Production `CTGKGridEntryCTradePort` เชื่อม Snapshot Storage กับ `CTrade`; accepted outcomes รอ Position Reconciliation |
+| `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh` | WP-04 ประสาน Offered Candidate → Resolver/Policy → Adapter → Coordinator request state; accepted/uncertain requests คง unresolved; ไม่สร้าง Position Mapping หรือยืนยัน `ACTIVE` |
 | `Include/BotTrade/Grid/GridStateMachine.mqh` | จัดการ Lifecycle transitions; ไม่ส่งคำสั่งซื้อขายและต้องรับจำนวน Position ที่ตรวจยืนยันแล้วจากผู้เรียก |
 | `Include/BotTrade/Grid/GridLifecycle.mqh` | ประสาน State Machine กับ Persistence สำหรับ Instance ที่มี Identity แล้ว; ไม่ส่งคำสั่งซื้อขาย |
 | `Include/BotTrade/Grid/GridPositionReconciler.mqh` | กรอง/นับ Position ของ Instance และประเมินผล close attempt จากสถานะบัญชีที่ตรวจใหม่; ไม่ส่งคำสั่งซื้อขาย |
@@ -150,7 +151,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Position-to-Level Mapping ต้องระบุจาก Integration Layer ด้วย Anchor flag หรือ Level Index; Coordinator ไม่เดา Mapping จากราคา Fill
 - ACTIVE จะเกิดขึ้นเมื่อ Reconciliation ยืนยัน Position ที่ตรงกับ Request และ Mapping เท่านั้น; Accepted/Placed ไม่ใช่หลักฐานว่าเปิด Position แล้ว
 - Partial Close ที่ยังมี Volume เหลือต้องคง ACTIVE; Full Close ต้องมี Close Reason ที่ resolve แล้วก่อนเรียก Engine
-- WP-03 ส่ง Entry ผ่าน CTrade Port ได้ แต่ยังไม่เชื่อมกับ Production EA Event Handler; Caller-to-Adapter Pipeline Integration เป็น WP-04
+- WP-03 ส่ง Entry ผ่าน CTrade Port ได้; WP-04 เพิ่ม Orchestration ระหว่าง Coordinator Candidate, Resolver/Policy, Adapter และ Coordinator request state โดยยังไม่มี Production EA Event Handler
 
 ## ขอบเขตที่ยังไม่เสร็จ
 
