@@ -1,6 +1,6 @@
 # Grid Entry Pipeline Integration — WP-04
 
-สถานะ: **กำลังทำ — Contract/Test Plan ถูกกำหนดจาก Roadmap และ Source ปัจจุบัน**
+สถานะ: **กำลังทำ — เพิ่ม P08/P11 แล้ว; รอผู้ใช้ Compile/Run ชุดล่าสุดและปิด Review**
 อัปเดตล่าสุด: 2026-11-20
 
 ## 1. Baseline ก่อนแก้ไข
@@ -49,11 +49,11 @@ Test EA ใหม่ภายใต้ `Experts/TGK/Tests/Grids/` ใช้ Fake
 - P05 (implemented): Intent append/sequence failure ไม่เรียก fake SendMarketOrder และล็อก Coordinator ให้กัน retry.
 - P06 (implemented): Terminal `MARKET_CLOSED` ถูกบันทึกและปลด Coordinator/Reducer unresolved state.
 - P07 (implemented): Execution result append failure ทำให้ recovery required และไม่เปิด request ซ้ำ.
-- P08: Candidate BUY/SELL คงทิศทาง, Symbol, Magic, Target และ Config Epoch ตามต้นทาง; ทดสอบ Anchor และ Normal Level.
-- P09: Position/Deal identifier serialization และ mapping state ครอบคลุม partial fill/one Position Identifier.
-- P10: Candidate เดียวต่อ price check; candidate ถัดไปถูก defer/ไม่ execute จน reconciliation.
-- P11: Malformed/foreign/stale Candidate ไม่แตะ Position นอก Instance/Symbol/Magic.
-- P12: Regression ของ Policy/Resolver/Adapter และ Grid suites ที่เกี่ยวข้องหลัง implementation.
+- P08 (เพิ่มแล้ว): ตรวจ BUY direction, Symbol, Magic, volume, Normal Level target และ Config Epoch ผ่าน Fake Port/Intent payload. Anchor และ SELL fidelity ยังไม่ครอบคลุมใน test นี้.
+- P09 (WP-05 dependency): Position/Deal mapping จาก partial fill และ one Position Identifier เป็น reconciliation behavior; ไม่รวม WP-04 เพราะ pipeline ไม่สร้าง Mapping/ACTIVE.
+- P10 (ครอบคลุมโดย P01): price check ถัดไปขณะ request unresolved ถูก block และไม่ส่ง request ซ้ำ.
+- P11 (เพิ่มแล้ว): foreign Instance ID ต้องถูกปฏิเสธก่อน Policy/Intent/Execution และไม่สร้าง Position Mapping. Foreign Symbol/Magic และ malformed/stale cases ครอบคลุมโดย P03/P04 เฉพาะ Target/Config Epoch; ยังไม่ครบทุก identity variant.
+- P12: ผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Grid Tests ทั้งหมดผ่านก่อนเพิ่ม P08/P11; ต้อง rerun หลังเปลี่ยน Test EA.
 
 ## 6. Acceptance Criteria
 

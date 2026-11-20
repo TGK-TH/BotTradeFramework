@@ -4,16 +4,16 @@ Last updated: 2026-11-20
 
 ## Current focus
 
-**Grid V1 — WP-04 Entry Pipeline Integration: In Progress; Fake Port Test EA added; MT5 Compile/Run pending user report**
+**Grid V1 — WP-04 Entry Pipeline Integration: In Progress; 9 Fake Port cases; user reported all tests passed 2026-11-20 before latest coverage additions; rerun pending**
 
 - Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
 - Current WP Contract/Test Plan: [WP-04 Entry Pipeline Integration](Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md)
 - Pre-change baseline: `feature/grid-trading`, HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`, clean working tree; user reported all latest Grid Tests passed on 2026-11-20.
 - WP-04 source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; coordinates the exact offered candidate through Resolver/Policy/Adapter and updates Coordinator request state.
-- WP-04 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5`; seven Fake Port tests (Test IDs P01–P07); no real Trade Request. Not yet compiled/run in MetaEditor/MT5.
+- WP-04 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5`; nine Fake Port tests (Test IDs P01–P08, P11); no real Trade Request. User reported all tests compiled/ran successfully on 2026-11-20 before P08/P11 were added; rerun those latest changes is pending.
 - Accepted execution outcomes remain unresolved until Deal/Position reconciliation; this pipeline does not create Position Mapping or set `ACTIVE` from CTrade results.
 - Trello: [WP-04 — Grid Entry Pipeline Integration](https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration) — In Progress.
-- Next: complete static review and Test Plan coverage, then user compiles/runs the WP-04 EA and relevant Grid Regression Tests. No Demo/Live Trade Request is authorized.
+- Next: static review is in progress; P09 mapping/partial-fill coverage is a WP-05 reconciliation dependency and P10 duplicate prevention is covered by P01. User should compile/run the updated WP-04 EA plus relevant Grid Regression Tests. No Demo/Live Trade Request is authorized.
 
 ## Current phase evidence
 

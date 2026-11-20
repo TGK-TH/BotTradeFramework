@@ -84,7 +84,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-04 — Entry Pipeline Integration: In Progress; Contract/Test Plan ถูกบันทึก; Test EA รอบแรกยังรอ MT5 validation**
+**WP-04 — Entry Pipeline Integration: In Progress; Test EA มี 9 Fake Port cases; รอ Compile/Run หลังเพิ่ม P08/P11**
 
 - WP-01 Contract/Test Plan: `Phases/phase-grid-entry-execution-policy.md`
 - WP-04 Contract/Test Plan: `Phases/phase-grid-entry-pipeline-integration.md`
@@ -100,7 +100,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-03 Source: `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` มี 13 cases ผ่าน Static Review; Fake Port เท่านั้น ไม่มี Trade Request ใน Unit Test
 - WP-03 ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดผ่าน; บันทึกเป็น User-reported PASS
 - WP-03 เสร็จตามผลผู้ใช้รายงาน; WP-04 ได้รับอนุญาตเมื่อ 2026-11-20 และกำลังทำตาม [Contract/Test Plan](Phases/phase-grid-entry-pipeline-integration.md)
-- WP-04 Source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` มี 7 tests (P01–P07) ใช้ Fake Port รอบแรก; Compile/Run ยัง pending
+- WP-04 Source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` มี 9 Test IDs (P01–P08, P11) ใช้ Fake Port; ผู้ใช้รายงาน Tests ทั้งหมดผ่านก่อนเพิ่ม P08/P11 และต้อง rerun ชุดล่าสุด
 - WP-04 baseline: ผู้ใช้รายงานว่ารัน Grid Tests ทั้งหมดผ่านก่อนเริ่ม; repository clean ที่ HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`
 - Trello WP-04: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (In Progress)
 
@@ -111,7 +111,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
 - `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-18
 - `test_grid_entry_execution.mq5` เป็น WP-03 Entry Adapter Unit Test EA จำนวน 13 cases; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
-- `test_grid_entry_execution_pipeline.mq5` เป็น WP-04 Fake Port Pipeline Test EA รอบแรก; ยังรอผู้ใช้ Compile/Run ใน MetaEditor/MT5
+- `test_grid_entry_execution_pipeline.mq5` เป็น WP-04 Fake Port Pipeline Test EA จำนวน 9 Test IDs (P01–P08, P11); รอผู้ใช้ Compile/Run หลังเพิ่ม P08/P11
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด

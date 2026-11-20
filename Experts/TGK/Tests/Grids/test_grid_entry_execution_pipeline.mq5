@@ -20,6 +20,12 @@ public:
   int intent_count;
   int result_count;
   int send_count;
+  bool last_is_buy;
+  string last_symbol;
+  double last_volume;
+  long last_magic_number;
+  string last_comment;
+  string last_intent_payload;
 
   CTGKGridEntryPipelineFakePort()
   {
@@ -33,6 +39,12 @@ public:
     intent_count = 0;
     result_count = 0;
     send_count = 0;
+    last_is_buy = false;
+    last_symbol = "";
+    last_volume = 0.0;
+    last_magic_number = 0;
+    last_comment = "";
+    last_intent_payload = "";
   }
 
   virtual bool NextSequence(long &sequence)
@@ -48,6 +60,7 @@ public:
   {
     if(record_type == TGK_GRID_MAPPING_RECORD_ENTRY_INTENT)
     {
+      last_intent_payload = payload;
       intent_count++;
       if(fail_intent)
         return false;
@@ -74,6 +87,11 @@ public:
   )
   {
     send_count++;
+    last_is_buy = is_buy;
+    last_symbol = symbol;
+    last_volume = volume;
+    last_magic_number = magic_number;
+    last_comment = comment;
     result_retcode = retcode;
     order_ticket_result = order_ticket;
     deal_ticket_result = deal_ticket;
@@ -439,6 +457,106 @@ void RunMarketClosedReleasesCandidate()
   Tests.EndTest();
 }
 
+void RunCandidateFieldsReachExecutionExactly()
+{
+  Tests.BeginTest("P08 candidate identity direction target and epoch are preserved");
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionPipeline pipeline;
+  CTGKGridEntryPipelineFakePort port;
+  STGKGridLevelCandidate grid_candidate;
+  STGKGridEntryExecutionCandidate execution_candidate;
+  STGKGridEntryPipelineOutcome outcome;
+
+  bool ready = InitializeFixture(
+    coordinator,
+    reducer,
+    grid_candidate,
+    execution_candidate) &&
+    adapter.Initialize() &&
+    pipeline.Initialize();
+  bool processed = ready && pipeline.ProcessCandidate(
+    grid_candidate,
+    execution_candidate,
+    0.01,
+    TGK_GRID_ENTRY_EXECUTION_NORMAL,
+    coordinator,
+    reducer,
+    adapter,
+    port,
+    outcome);
+
+  Tests.AssertTrue("candidate executed through fake port", processed);
+  Tests.AssertTrue("BUY direction preserved", port.last_is_buy);
+  Tests.AssertEqualString("candidate Symbol preserved",
+    port.last_symbol, "XAUUSD");
+  Tests.AssertEqualInt("candidate Magic preserved",
+    (int)port.last_magic_number, 710001);
+  Tests.AssertTrue("requested volume preserved",
+    MathAbs(port.last_volume - 0.01) < 0.00000001);
+  string expected_level_comment = StringFormat(
+    "L%d",
+    grid_candidate.level_index);
+  string expected_target_payload = StringFormat(
+    "|BUY|LEVEL|%d|",
+    execution_candidate.target_level.level_index);
+  Tests.AssertTrue("offered candidate is a Normal Level",
+    !grid_candidate.is_anchor && !execution_candidate.target_level.is_anchor);
+  Tests.AssertEqualInt("execution target matches offered Level",
+    execution_candidate.target_level.level_index,
+    grid_candidate.level_index);
+  Tests.AssertTrue("Normal Level target is carried in comment metadata",
+    StringFind(port.last_comment, expected_level_comment) >= 0);
+  Tests.AssertTrue("intent stores BUY target and Config Epoch",
+    StringFind(port.last_intent_payload, expected_target_payload) >= 0 &&
+    StringFind(port.last_intent_payload, "|1|UT_INSTANCE") >= 0);
+  Tests.EndTest();
+}
+
+void RunForeignInstanceCandidateFailsClosed()
+{
+  Tests.BeginTest("P11 foreign Instance candidate cannot reach execution");
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionPipeline pipeline;
+  CTGKGridEntryPipelineFakePort port;
+  STGKGridLevelCandidate grid_candidate;
+  STGKGridEntryExecutionCandidate execution_candidate;
+  STGKGridEntryPipelineOutcome outcome;
+
+  bool ready = InitializeFixture(
+    coordinator,
+    reducer,
+    grid_candidate,
+    execution_candidate) &&
+    adapter.Initialize() &&
+    pipeline.Initialize();
+  execution_candidate.instance_id = "FOREIGN_INSTANCE";
+  bool processed = ready && pipeline.ProcessCandidate(
+    grid_candidate,
+    execution_candidate,
+    0.01,
+    TGK_GRID_ENTRY_EXECUTION_NORMAL,
+    coordinator,
+    reducer,
+    adapter,
+    port,
+    outcome);
+
+  Tests.AssertTrue("foreign Instance is rejected", !processed);
+  Tests.AssertTrue("foreign identity rejected before Policy",
+    !outcome.policy_evaluated);
+  Tests.AssertEqualInt("foreign candidate writes no Intent",
+    port.intent_count, 0);
+  Tests.AssertEqualInt("foreign candidate sends no request",
+    port.send_count, 0);
+  Tests.AssertEqualInt("foreign candidate creates no Position Mapping",
+    reducer.PositionCount(), 0);
+  Tests.EndTest();
+}
+
 int OnInit()
 {
   Tests.BeginSuite("Grid Entry Execution Pipeline");
@@ -449,6 +567,8 @@ int OnInit()
   RunStaleConfigDoesNotExecute();
   RunResultFailureKeepsRequestLocked();
   RunMarketClosedReleasesCandidate();
+  RunCandidateFieldsReachExecutionExactly();
+  RunForeignInstanceCandidateFailsClosed();
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }
