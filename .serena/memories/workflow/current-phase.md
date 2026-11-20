@@ -13,13 +13,13 @@
 - Grid technical docs: `Docs/EAs/Grid/`
 
 ## Current Work Item
-WP-04 Grid Entry Pipeline Integration is in progress, authorized by the user on 2026-11-20. Baseline: user reported all latest Grid Tests passed before changes; repository was clean on `feature/grid-trading` at HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`.
+WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 and is now complete. The user reported all tests compiled and ran successfully on 2026-11-20, including the latest P08/P11 additions. Baseline before implementation: repository was clean on `feature/grid-trading` at HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`.
 - Contract/Test Plan: `Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md`.
 - Source added: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; it sends the exact offered candidate through Resolver/Policy/Adapter and updates Runtime Coordinator request state.
-- Test added: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` now has 9 Fake Port tests (P01–P08, P11). User reported all tests passed on 2026-11-20 before P08/P11 were added; latest additions still need user Compile/Run. No real Trade Request is sent.
+- Test added: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` has 9 Fake Port tests (P01–P08, P11). User reported Compile/Run of all tests passed on 2026-11-20, including the latest P08/P11 additions. No real Trade Request is sent.
 - Accepted and uncertain requests remain unresolved until reconciliation. Pipeline does not create Position Mapping or set ACTIVE from CTrade return/retcode. Deal/Position reconciliation is a WP-05 dependency.
-- Trello WP-04 card: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (In Progress).
-- Next: complete static review and tests in the agreed Test Plan; user compiles/runs the new EA plus relevant Grid Regression before WP-04 can close. No Demo/Live trade request is authorized.
+- Trello WP-04 card: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (Done; user-reported Compile/Run PASS 2026-11-20).
+- WP-04 is complete after source/test review and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 partial-fill mapping remains a WP-05 reconciliation dependency; P10 duplicate blocking is covered by P01. Stop at the WP boundary and wait for separate explicit user approval before WP-05. No Demo/Live trade request is authorized.
 - WP-01 through WP-03 remain complete on user-reported evidence. WP-05 through WP-09 remain not started.
 
 ## Grid V1 non-negotiable design

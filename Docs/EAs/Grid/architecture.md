@@ -4,7 +4,7 @@
 
 ## ขอบเขตของเอกสาร
 
-เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component ระหว่างทำแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
+เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component เสร็จแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
 
 ## ส่วนประกอบปัจจุบัน
 

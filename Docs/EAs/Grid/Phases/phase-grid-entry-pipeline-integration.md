@@ -1,6 +1,6 @@
 # Grid Entry Pipeline Integration — WP-04
 
-สถานะ: **กำลังทำ — เพิ่ม P08/P11 แล้ว; รอผู้ใช้ Compile/Run ชุดล่าสุดและปิด Review**
+สถานะ: **เสร็จแล้ว — Static/Documentation Review ผ่าน; ผู้ใช้รายงาน Compile/Run Tests ทั้งหมดผ่านเมื่อ 2026-11-20**
 อัปเดตล่าสุด: 2026-11-20
 
 ## 1. Baseline ก่อนแก้ไข
@@ -53,7 +53,7 @@ Test EA ใหม่ภายใต้ `Experts/TGK/Tests/Grids/` ใช้ Fake
 - P09 (WP-05 dependency): Position/Deal mapping จาก partial fill และ one Position Identifier เป็น reconciliation behavior; ไม่รวม WP-04 เพราะ pipeline ไม่สร้าง Mapping/ACTIVE.
 - P10 (ครอบคลุมโดย P01): price check ถัดไปขณะ request unresolved ถูก block และไม่ส่ง request ซ้ำ.
 - P11 (เพิ่มแล้ว): foreign Instance ID ต้องถูกปฏิเสธก่อน Policy/Intent/Execution และไม่สร้าง Position Mapping. Foreign Symbol/Magic และ malformed/stale cases ครอบคลุมโดย P03/P04 เฉพาะ Target/Config Epoch; ยังไม่ครบทุก identity variant.
-- P12: ผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Grid Tests ทั้งหมดผ่านก่อนเพิ่ม P08/P11; ต้อง rerun หลังเปลี่ยน Test EA.
+- Compile/Runtime evidence: ผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Compile และ Run Tests ทั้งหมดผ่าน รวมการเปลี่ยนแปลง P08/P11 ล่าสุดใน MetaEditor/MT5.
 
 ## 6. Acceptance Criteria
 
@@ -62,8 +62,9 @@ Test EA ใหม่ภายใต้ `Experts/TGK/Tests/Grids/` ใช้ Fake
 - Fail-closed paths ไม่ส่งคำขอและไม่สร้าง/เปลี่ยน Mapping โดยอาศัยผลที่ไม่ยืนยัน.
 - Accepted result ยังคง unresolved; no request duplicate; ไม่มี Level `ACTIVE` ก่อน reconciliation.
 - Static Review, `git diff --check`, test inventory, local Markdown links และ Documentation Consistency Gate ผ่าน.
-- ผู้ใช้ Compile/Run test EA และ Grid Regression ใน MetaEditor/MT5 แล้วรายงานผลก่อนปิด WP-04.
-- ไม่อ้างผล MT5 Compile/Runtime ก่อนผู้ใช้รายงาน; ไม่ Commit/Push.
+- ผู้ใช้รายงาน Compile/Run test EA และ Grid Regression ใน MetaEditor/MT5 ผ่านทั้งหมดเมื่อ 2026-11-20.
+- Source/Test Review และ Documentation Consistency Gate ผ่าน; ไม่มีการ Compile/Run MT5 โดย Assistant.
+- ไม่ Commit/Push.
 
 ## 7. ประเด็นเชื่อมกับ WP-05
 

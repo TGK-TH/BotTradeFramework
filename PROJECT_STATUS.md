@@ -4,16 +4,16 @@ Last updated: 2026-11-20
 
 ## Current focus
 
-**Grid V1 — WP-04 Entry Pipeline Integration: In Progress; 9 Fake Port cases; user reported all tests passed 2026-11-20 before latest coverage additions; rerun pending**
+**Grid V1 — WP-04 Entry Pipeline Integration: Complete; 9 Fake Port cases; user reported all tests compiled and ran successfully on 2026-11-20**
 
 - Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
 - Current WP Contract/Test Plan: [WP-04 Entry Pipeline Integration](Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md)
 - Pre-change baseline: `feature/grid-trading`, HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`, clean working tree; user reported all latest Grid Tests passed on 2026-11-20.
 - WP-04 source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; coordinates the exact offered candidate through Resolver/Policy/Adapter and updates Coordinator request state.
-- WP-04 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5`; nine Fake Port tests (Test IDs P01–P08, P11); no real Trade Request. User reported all tests compiled/ran successfully on 2026-11-20 before P08/P11 were added; rerun those latest changes is pending.
+- WP-04 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5`; nine Fake Port tests (Test IDs P01–P08, P11); no real Trade Request. User reported all tests compiled and ran successfully on 2026-11-20, including the latest additions.
 - Accepted execution outcomes remain unresolved until Deal/Position reconciliation; this pipeline does not create Position Mapping or set `ACTIVE` from CTrade results.
-- Trello: [WP-04 — Grid Entry Pipeline Integration](https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration) — In Progress.
-- Next: static review is in progress; P09 mapping/partial-fill coverage is a WP-05 reconciliation dependency and P10 duplicate prevention is covered by P01. User should compile/run the updated WP-04 EA plus relevant Grid Regression Tests. No Demo/Live Trade Request is authorized.
+- Trello: [WP-04 — Grid Entry Pipeline Integration](https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration) — Done.
+- WP-04 completed after source/test review, static/documentation checks, and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 mapping/partial-fill coverage remains a WP-05 reconciliation dependency; P10 duplicate prevention is covered by P01. Next: stop at the WP boundary and wait for separate explicit approval before WP-05. No Demo/Live Trade Request is authorized.
 
 ## Current phase evidence
 
@@ -25,11 +25,11 @@ Last updated: 2026-11-20
 - WP-02 Static Review: 17 Resolver IDs; direct tests ครอบคลุม Reducer `MatchesContext()`/`TryGetPositionMapping()` และ Coordinator context/epoch APIs; static checks ผ่าน
 - WP-02 user-reported test result: หลังเปลี่ยน out-of-range assertion เป็น index 200 ผู้ใช้ยืนยัน Compile/Run ผ่านแล้ว
 - WP-03: Adapter/Test EA เพิ่มแล้ว; Static PASS; ผู้ใช้รายงาน Compile/Run ของ Test ทั้งหมดผ่านเมื่อ 2026-11-19
-- Trello: WP-01 Policy, WP-02 Resolver/Caller และ WP-03 Entry CTrade Adapter อยู่ Done; WP-04 Entry Pipeline Integration อยู่ In Progress ตามการอนุมัติของผู้ใช้เมื่อ 2026-11-20
+- Trello: WP-01 Policy, WP-02 Resolver/Caller, WP-03 Entry CTrade Adapter และ WP-04 Entry Pipeline Integration อยู่ Done; ผู้ใช้ยืนยัน Compile/Run tests ทั้งหมดผ่านเมื่อ 2026-11-20
 
 ## Current implementation snapshot
 
-มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Policy, Resolver/Caller และ Entry CTrade Adapter แล้ว; WP-04 Entry Pipeline Integration อยู่ระหว่างทำ ส่วน Production EA Event Handler และ End-to-End Grid V1 ยังไม่เริ่มตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
+มี Foundations สำหรับ Identity/Persistence, Lifecycle/State Machine, Position Reconciliation/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Policy, Resolver/Caller และ Entry CTrade Adapter แล้ว; WP-04 Entry Pipeline Integration เสร็จแล้วตามผล Compile/Run ที่ผู้ใช้รายงาน ส่วน Production EA Event Handler และ End-to-End Grid V1 ยังไม่เริ่มตาม [Roadmap](Docs/EAs/Grid/ROADMAP.md)
 
 ## Evidence rules
 
