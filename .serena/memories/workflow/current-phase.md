@@ -35,7 +35,10 @@ WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 a
 - New chart is a new Instance; restoring original chart/profile restores original Instance; never adopt foreign/manual positions.
 
 ## Workflow / safety
-- User cancelled DeepSeek Agent workflow; use original ChatGPT + Serena MCP workflow.
+- Workflow V2 adopted on 2026-11-21: ChatGPT = CTO/Technical Lead (design, specifications, final review, documentation; does not implement source code); Freebuff = Developer Agent (implements within approved Card/spec); user = Product Owner/QA (approves scope, runs MetaEditor/MT5 compile/tests, reports results, authorizes next work).
+- Freebuff can read repository files directly and must not depend on or be instructed to use Serena MCP. `AGENTS.md` is its durable repository instruction entry point. ChatGPT may use available project tools for read-only inspection/review.
+- Developer handoff uses separate `SPEC.md` and `TEST_PLAN.md`, plus `IMPLEMENTATION_REPORT.md` and `CODE_REVIEW.md` as needed. ChatGPT formal Code Review starts only after user reports Compile/Test PASS; any review fix returns through Freebuff and user re-verification.
+- WP-05A Phase 1 approved design is split into two proposed implementation Cards: 1.1 Anchor State Model, then 1.2 Anchor State Transitions. Implementation has not started; Pre-change Grid Regression Baseline is still pending.
 - Before each new Grid feature/refactor, remind user to run latest Grid Regression Tests and record pre-change baseline; run relevant tests again after source changes.
 - User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
 - Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.

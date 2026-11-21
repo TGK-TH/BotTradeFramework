@@ -15,15 +15,37 @@ At the beginning of every repository task:
 Do not assume a prior chat transcript or model memory is visible to Codex. Durable instructions must live in this repository.
 
 ## Workflow and authorization
-- Work in small, testable Work Packages/Phases with explicit scope and Acceptance Criteria.
-- Do not silently expand product scope or change approved contracts.
-- Finish only the currently authorized Phase. At every Phase boundary, stop and ask the user for explicit authorization before starting the next Phase. A broad roadmap/kickoff authorization does not waive this per-Phase approval requirement.
-- When a new Phase is authorized, check whether a Trello card already matches its scope; create a separate card when needed before implementation. Keep the card's list, description, and progress log aligned with the actual current state, and update it at meaningful transitions and when the Phase ends.
+- Work in small, testable Work Packages/Phases and implementation Cards with explicit scope and Acceptance Criteria.
+- Do not silently expand product scope or change approved contracts. If implementation reveals a material design/contract issue, stop and request a decision.
+- **Roles:** ChatGPT acts as CTO/Technical Lead: owns architecture/design, contracts, task breakdown, developer specifications, final code review, and technical documentation. Freebuff acts as Developer Agent: implements code and tests strictly within the approved specification. The user acts as Product Owner/QA: approves scope/design, runs MetaEditor/MT5 compile and tests, reports actual results, and authorizes the next task.
+- ChatGPT must not implement or patch source code on Freebuff's behalf. Code changes are assigned to Freebuff unless the user explicitly changes this role agreement.
+- Freebuff must be able to work by reading repository files directly. **Do not require Freebuff to install, connect to, or use Serena MCP.** `AGENTS.md`, task `SPEC.md`, `TEST_PLAN.md`, and relevant repository documentation are its durable instructions and context. Serena/MCP availability is optional for Freebuff and must never be a blocker.
+- Before implementation, ChatGPT prepares and the user approves the Design/Contract, then creates or updates the Trello implementation Card and prepares separate `SPEC.md` and `TEST_PLAN.md` files. Do not start implementation until the Card is in the active implementation state and the user explicitly authorizes the task.
+- Freebuff implements only the active Card's scope. It must report changed files, behavior, tests added/run, exact results, and anything not verified in `IMPLEMENTATION_REPORT.md` (or the agreed Card-linked report). It must not silently change Design/Contract or expand scope.
+- After Freebuff reports implementation complete, the user performs MetaEditor/MT5 Compile and the specified tests first. **ChatGPT's formal Code Review starts only after the user reports Compile and Test PASS.** If user verification fails, return the Card to implementation and have Freebuff fix it; do not start formal review yet.
+- After user verification passes, ChatGPT reviews the actual source diff against `SPEC.md`, `TEST_PLAN.md`, Acceptance Criteria, architecture, and reported test evidence. Record findings in a Card-linked `CODE_REVIEW.md` (or the agreed durable review file). Each finding must include an ID, severity, file/location, problem, required fix, and acceptance condition.
+- Review outcomes are `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`. For `CHANGES_REQUESTED`, Freebuff fixes only the recorded findings; the user must compile/test the revised code again before ChatGPT reviews it again. Repeat until approved.
+- Mark a Card Done only after user-reported Compile/Test PASS, ChatGPT Code Review APPROVED, required documentation updates, and user confirmation. A written implementation report or static review alone is insufficient.
+- At every Phase boundary, stop and ask the user for explicit authorization before starting the next Phase. A broad roadmap/kickoff authorization does not waive this requirement.
+- When a new Phase/task is authorized, check whether a Trello card already matches its scope; create or update a separate card when needed before implementation. Keep its list, description, links, and progress log aligned with the actual state.
 - Blanket authorization does NOT authorize live trading, Demo tests that send Trade Requests, touching non-test positions, destructive account actions, changing product scope, or choosing between unresolved material design alternatives. Stop and ask the user for these.
-- Always stop at Phase boundaries and request approval before starting the next Phase, even if an earlier kickoff authorized continuing the roadmap.
-- Do not commit or push unless explicitly asked.
-- Never place live trades or enable live trading as part of development/testing unless the user explicitly authorizes it.
+- Do not commit or push unless explicitly asked. Never place live trades or enable live trading as part of development/testing unless the user explicitly authorizes it.
 - Explain changed files, behavior, rationale, validation, and next step after each Work Package.
+
+## Trello implementation lifecycle
+- Use the board's existing lists where possible; if needed, create/agree on a dedicated **User Verification** stage so user Compile/Test happens before formal CTO Code Review.
+- The intended lifecycle is: `Product Backlog -> Ready -> In Progress -> User Verification -> Code Review -> Done`.
+- If user Compile/Test fails, return to `In Progress` for Freebuff fixes, then repeat User Verification. If CTO review requests changes, use `Changes Requested` (or the board's equivalent), then repeat User Verification before the next formal review.
+- If the board has no exact matching list, do not silently create or rename lists; report the mismatch and agree with the user on the mapping first.
+- Trello is the concise work/status tracker. Repository Markdown files are the durable technical contract and handoff. Link each implementation Card to its `SPEC.md`, `TEST_PLAN.md`, implementation report, and code review record as applicable.
+
+## Developer handoff files
+- Each implementation Card must link to a dedicated `SPEC.md` and a separate `TEST_PLAN.md`.
+- `SPEC.md` defines objective, scope/out-of-scope, dependencies, allowed files, technical contract, implementation constraints, and Acceptance Criteria.
+- `TEST_PLAN.md` defines preconditions, test IDs/scenarios, expected results, regression coverage, and safety restrictions.
+- Freebuff records implementation details and evidence in `IMPLEMENTATION_REPORT.md` (or a clearly agreed Card-linked report).
+- ChatGPT records review status and actionable findings in `CODE_REVIEW.md` (or a clearly agreed Card-linked review file). Keep these files concise and scoped to the individual implementation Card.
+- Do not require Freebuff to recover requirements from chat history; the approved Card and linked repository files are the complete task handoff.
 
 ## Repository and editing
 - Repository root: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`.
@@ -68,4 +90,4 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 - For Grid tasks, `Docs/EAs/Grid/ROADMAP.md` is the master roadmap and Definition of Done.
 - Grid V1 is not complete merely because individual modules or test EAs pass. Production EA integration and end-to-end behavior must be validated against the roadmap.
 - At completion, review every Definition of Done item, record evidence, and obtain the user's final acceptance.
-- If Serena/MCP access fails, tell the user to check that the MCP Serena server is running.
+- If ChatGPT's configured Serena/MCP project access fails during a task that requires it, tell the user to check the MCP Serena server. This does not apply to Freebuff: Freebuff works directly with repository files and does not require Serena MCP.
