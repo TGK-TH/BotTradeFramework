@@ -85,6 +85,7 @@ private:
   bool m_initialized;
   bool m_failed;
   ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS m_recovery_status;
+  ENUM_TGK_GRID_LEVEL_STATE m_anchor_state;
 
   STGKGridMappingRequestState m_requests[];
   STGKGridMappingDealState m_deals[];
@@ -614,6 +615,13 @@ private:
     return true;
   }
 
+  bool IsValidGridLevelStateValue(ENUM_TGK_GRID_LEVEL_STATE state)
+  {
+    int state_value = (int)state;
+    return state_value >= (int)TGK_GRID_LEVEL_READY &&
+           state_value <= (int)TGK_GRID_LEVEL_WAIT_ACTIVATION;
+  }
+
   bool ApplyEntryIntent(string payload)
   {
     string fields[];
@@ -1046,6 +1054,7 @@ private:
       m_levels[level_index].level_index = level_index;
       m_levels[level_index].state = TGK_GRID_LEVEL_READY;
     }
+    m_anchor_state = TGK_GRID_LEVEL_READY;
     return true;
   }
 
@@ -1121,6 +1130,7 @@ public:
     m_initialized = false;
     m_failed = false;
     m_recovery_status = TGK_GRID_MAPPING_STATUS_NORMAL;
+    m_anchor_state = TGK_GRID_LEVEL_READY;
   }
 
   bool Initialize(
@@ -1150,6 +1160,7 @@ public:
     m_upper_level_count = 0;
     m_failed = false;
     m_recovery_status = TGK_GRID_MAPPING_STATUS_NORMAL;
+    m_anchor_state = TGK_GRID_LEVEL_READY;
     ArrayResize(m_requests, 0);
     ArrayResize(m_deals, 0);
     ArrayResize(m_positions, 0);
@@ -1853,6 +1864,23 @@ public:
       return false;
 
     has_position_mapping = matching_positions == 1;
+    return true;
+  }
+
+  // Returns the Anchor State of a healthy Reducer only after a committed
+  // RESET_COMMITTED established the Grid configuration. An invalid stored
+  // value fails closed, and the output always receives a deterministic default.
+  bool TryGetAnchorState(ENUM_TGK_GRID_LEVEL_STATE &state)
+  {
+    state = TGK_GRID_LEVEL_READY;
+    if(!m_initialized ||
+       m_failed ||
+       m_recovery_status != TGK_GRID_MAPPING_STATUS_NORMAL ||
+       m_config_epoch <= 0 ||
+       !IsValidGridLevelStateValue(m_anchor_state))
+      return false;
+
+    state = m_anchor_state;
     return true;
   }
 

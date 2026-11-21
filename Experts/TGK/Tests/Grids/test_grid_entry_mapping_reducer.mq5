@@ -938,6 +938,221 @@ int OnInit()
   Tests.AssertFalse("failed Recovery Error query clears output", has_mapping);
   Tests.EndTest();
 
+  Tests.BeginTest("Anchor State is not exposed before a committed configuration");
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_WAIT_ACTIVATION;
+  CTGKGridEntryMappingReducer uninitialized_anchor_reducer;
+  Tests.AssertFalse(
+    "uninitialized Reducer exposes no Anchor State",
+    uninitialized_anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "failed Anchor query returns the deterministic default",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  CTGKGridEntryMappingReducer initialized_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize unconfigured Anchor Reducer",
+    initialized_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  anchor_state = TGK_GRID_LEVEL_WAIT_RETURN;
+  Tests.AssertFalse(
+    "initialized Reducer without RESET_COMMITTED exposes no Anchor State",
+    initialized_anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "unconfigured Anchor query returns the deterministic default",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("Committed Reset exposes a READY Anchor State without changing Normal Level States");
+  STGKGridMappingJournalRecord anchor_records[];
+  AddBaseConfiguration(anchor_records);
+  int anchor_mapping_sequence = 3;
+  AddMappedPosition(
+    anchor_records,
+    anchor_mapping_sequence,
+    "REQ-ANCHOR-LEVEL",
+    "LEVEL",
+    1,
+    9101);
+  AddMappedPosition(
+    anchor_records,
+    anchor_mapping_sequence,
+    "REQ-ANCHOR-POSITION",
+    "ANCHOR",
+    -1,
+    9102);
+
+  CTGKGridEntryMappingReducer anchor_reducer;
+  Tests.AssertTrue(
+    "initialize committed Anchor Reducer",
+    anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay committed Anchor configuration",
+    anchor_reducer.Replay(anchor_records, ArraySize(anchor_records)));
+  Tests.AssertTrue(
+    "committed Reducer exposes Anchor State",
+    anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "Anchor State is READY after RESET_COMMITTED",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "mapped Level remains ACTIVE",
+    anchor_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.AssertEqualInt(
+    "unmapped Level remains READY",
+    anchor_reducer.LevelStateAt(0),
+    (int)TGK_GRID_LEVEL_READY);
+
+  long anchor_last_sequence = anchor_reducer.LastSequence();
+  int anchor_level_count = anchor_reducer.LevelCount();
+  int anchor_position_count = anchor_reducer.PositionCount();
+  int anchor_level_state = anchor_reducer.LevelStateAt(1);
+  for(int i = 0; i < 3; i++)
+  {
+    Tests.AssertTrue(
+      "repeated Anchor query succeeds",
+      anchor_reducer.TryGetAnchorState(anchor_state));
+    Tests.AssertEqualInt(
+      "repeated Anchor query returns READY",
+      (int)anchor_state,
+      (int)TGK_GRID_LEVEL_READY);
+  }
+  Tests.AssertEqualLong(
+    "Anchor query preserves Sequence",
+    anchor_reducer.LastSequence(),
+    anchor_last_sequence);
+  Tests.AssertEqualInt(
+    "Anchor query preserves Level count",
+    anchor_reducer.LevelCount(),
+    anchor_level_count);
+  Tests.AssertEqualInt(
+    "Anchor query preserves Position count",
+    anchor_reducer.PositionCount(),
+    anchor_position_count);
+  Tests.AssertEqualInt(
+    "Anchor query preserves Level State",
+    anchor_reducer.LevelStateAt(1),
+    anchor_level_state);
+  Tests.EndTest();
+
+  Tests.BeginTest("Anchor State fails closed when the Reducer is invalid or unhealthy");
+  STGKGridMappingJournalRecord invalid_anchor_reset_records[];
+  AddRecord(
+    invalid_anchor_reset_records,
+    1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|RESET_COMMITTED|1|BUY|1.0|3900.0|4100.0|4000.0|200");
+  CTGKGridEntryMappingReducer invalid_anchor_reset_reducer;
+  Tests.AssertTrue(
+    "initialize invalid Reset Anchor Reducer",
+    invalid_anchor_reset_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "invalid RESET_COMMITTED is rejected",
+    invalid_anchor_reset_reducer.Replay(
+      invalid_anchor_reset_records,
+      ArraySize(invalid_anchor_reset_records)));
+  Tests.AssertEqualInt(
+    "invalid Reset enters RECOVERY_ERROR",
+    (int)invalid_anchor_reset_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  anchor_state = TGK_GRID_LEVEL_ACTIVE;
+  Tests.AssertFalse(
+    "invalid Reset exposes no Anchor State",
+    invalid_anchor_reset_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "invalid Reset returns the deterministic default",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  STGKGridMappingJournalRecord failed_anchor_records[];
+  AddBaseConfiguration(failed_anchor_records);
+  AddRecord(
+    failed_anchor_records,
+    4,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|LEVEL_STATE|1|1|ACTIVE");
+  CTGKGridEntryMappingReducer failed_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize failing Anchor Reducer",
+    failed_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "Sequence gap after committed Reset is rejected",
+    failed_anchor_reducer.Replay(
+      failed_anchor_records,
+      ArraySize(failed_anchor_records)));
+  Tests.AssertEqualInt(
+    "post-Reset failure enters RECOVERY_ERROR",
+    (int)failed_anchor_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  anchor_state = TGK_GRID_LEVEL_WAIT_RETURN;
+  Tests.AssertFalse(
+    "unhealthy Reducer exposes no Anchor State",
+    failed_anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "unhealthy Reducer returns the deterministic default",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  STGKGridMappingJournalRecord committed_anchor_records[];
+  AddBaseConfiguration(committed_anchor_records);
+  CTGKGridEntryMappingReducer failed_snapshot_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize failed Snapshot Anchor Reducer",
+    failed_snapshot_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay committed configuration before failed Snapshot",
+    failed_snapshot_anchor_reducer.Replay(
+      committed_anchor_records,
+      ArraySize(committed_anchor_records)));
+  Tests.AssertFalse(
+    "malformed Snapshot is rejected",
+    failed_snapshot_anchor_reducer.RestoreSnapshot("v1|STATE", 2));
+  anchor_state = TGK_GRID_LEVEL_ACTIVE;
+  Tests.AssertFalse(
+    "failed Snapshot restore exposes no Anchor State",
+    failed_snapshot_anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "failed Snapshot restore returns the deterministic default",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("Second committed Reset re-establishes a READY Anchor State");
+  STGKGridMappingJournalRecord second_anchor_reset_records[];
+  AddBaseConfiguration(second_anchor_reset_records);
+  AddRecord(
+    second_anchor_reset_records,
+    3,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|RESET_COMMITTED|2|SELL|2.0|3800.0|4200.0|4000.0|201");
+  CTGKGridEntryMappingReducer second_anchor_reset_reducer;
+  Tests.AssertTrue(
+    "initialize second Reset Anchor Reducer",
+    second_anchor_reset_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "second committed Reset is accepted",
+    second_anchor_reset_reducer.Replay(
+      second_anchor_reset_records,
+      ArraySize(second_anchor_reset_records)));
+  Tests.AssertTrue(
+    "second committed Reset exposes Anchor State",
+    second_anchor_reset_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "Anchor State is READY for the new Configuration Epoch",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "Normal Level States are rebuilt READY",
+    second_anchor_reset_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "new Configuration Epoch rebuilds 200 Level States",
+    second_anchor_reset_reducer.LevelCount(),
+    200);
+  Tests.EndTest();
+
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }
