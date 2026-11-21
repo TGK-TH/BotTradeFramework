@@ -5,26 +5,33 @@
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
+- HEAD observed after WP-05A.1 closure: `4aa36961f4ae0948afa99ab70203ccac07f68bdb` — documentation/status completion commit, author shown by Git as Tatchagon Koonkoei, 2026-11-21 15:58 +07. ChatGPT did not run a commit or push command.
 - Source of Truth: Repository source/tests/docs.
 - Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
 - Current status: `PROJECT_STATUS.md`
-- Grid technical docs: `Docs/EAs/Grid/`
 
 ## Current Work Item
-WP-04 Grid Entry Pipeline Integration was completed after the user reported all tests compiled and ran successfully on 2026-11-20, including latest P08/P11 additions. No real Trade Request was sent by its Fake Port tests. Accepted/uncertain requests remain unresolved until reconciliation; Pipeline does not create Position Mapping or set ACTIVE from CTrade result. WP-04 is complete; P09 partial-fill mapping remains a WP-05 reconciliation dependency and P10 duplicate blocking is covered by P01.
+WP-05A — Persistence Foundation remains In Progress. WP-05A.1 — Anchor State Model is **Done**:
+- User reported MetaEditor Compile and all Tests PASS on 2026-11-21 after correcting A06.
+- CTO formal Code Review: **APPROVED**, no code fixes requested.
+- User explicitly confirmed closure on 2026-11-21.
+- Trello WP-05A.1: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — in Done and marked complete.
+- SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`; TEST_PLAN: same directory; Implementation Report: `IMPLEMENTATION_REPORT.md`; CTO Review: `CODE_REVIEW.md`.
+- Source: `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`; tests: `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`.
+- Implemented typed in-memory Anchor State, default READY with configured-state gate, successful RESET_COMMITTED initialization, enum validation, and read-only TryGetAnchorState. Normal Level behavior preserved.
+- Not implemented in WP-05A.1: Journal/Snapshot serialization, Anchor close transitions, runtime restore, reconciliation, production event integration, or trade execution.
+- WP-05A.2 — Anchor State Transitions remains Product Backlog planning placeholder. No detailed SPEC/TEST_PLAN approval and no implementation authorization. Stop and ask user before proceeding.
+- WP-05A parent remains In Progress; Journal/Snapshot persistence and remaining Cards are still open.
+- Latest observed working tree after closure: documentation and Serena current-phase memory have uncommitted modifications; Git status showed no staged changes. The HEAD commit exists as noted above. Do not infer any push occurred.
 
-WP-05A — Persistence Foundation is now active:
-- WP-05A approved architecture: `CTGKGridPersistence` owns Instance/Lifecycle/Configuration persistence; `CTGKGridEntryMappingReducer` + `CTGKGridEntryMappingSnapshotStorage` own canonical Trading State (Entry Request/Deal associations, Position Mappings, Normal Level States, Anchor State).
-- Schema remains V1; revised V1 requires Anchor State; old incomplete V1 is unsupported; no migration/backward compatibility. Missing/invalid Anchor State must fail closed / Recovery Required.
-- WP-05A.1 — Anchor State Model implementation is complete. User reported MetaEditor Compile and all Tests PASS on 2026-11-21 after fixing the A06 Test Harness issue. CTO formal Code Review is **APPROVED**, no code fixes requested.
-- WP-05A.1 Trello: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — moved to Code Review; awaiting user confirmation before Done.
-- WP-05A.1 files: `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`, `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`, and `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/IMPLEMENTATION_REPORT.md`.
-- SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`; TEST_PLAN: same directory; CTO Review: `CODE_REVIEW.md`.
-- Implementation adds typed in-memory Anchor State, default READY with configured-state gate, successful RESET_COMMITTED initialization, enum validation, and read-only TryGetAnchorState. Normal Level behavior preserved. No Journal/Snapshot serialization, Anchor close transitions, runtime restore, reconciliation, production event integration, or trade execution changes.
-- Known planned boundary: Anchor State is not durable across restart in this Card; WP-05A.2 handles Anchor Mapping/close transitions; later WP-05A Cards handle Journal/Snapshot persistence.
-- WP-05A.2 — Anchor State Transitions remains Product Backlog planning placeholder; no detailed SPEC/TEST_PLAN approval or implementation authorization yet. Stop and ask user before proceeding.
-- WP-05B through WP-09 remain not started.
-- Working tree: Freebuff's implementation/test/report files are staged; CTO review and documentation updates are unstaged/untracked. No commit/push has been made.
+## WP-05A approved architecture / contract
+- CTGKGridPersistence owns Instance/Lifecycle/Configuration persistence.
+- CTGKGridEntryMappingReducer + CTGKGridEntryMappingSnapshotStorage own canonical Trading State (Entry Requests/Deal associations, Position Mappings, Normal Level States, Anchor State).
+- Anchor State and Position Mapping changes from one close event must be one durable logical transition.
+- Schema remains V1; revised V1 requires Anchor State; old incomplete V1 unsupported; no migration/backward compatibility.
+- Missing/invalid required Anchor State or persistence/recovery inconsistency => Fail Closed / Recovery Required.
+- Engine transition semantics remain authoritative; persistence must not invent transitions.
+- WP-05A plan: Reducer model/transitions; Journal replay; Snapshot/checkpoint/rotation/recovery; end-to-end hardening/tests/docs. Each implementation Card needs separate SPEC/TEST_PLAN and user approval.
 
 ## Grid V1 non-negotiable design
 - MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.
@@ -40,7 +47,7 @@ WP-05A — Persistence Foundation is now active:
 
 ## Workflow / safety
 - Workflow V2: ChatGPT = CTO/Technical Lead (design, specifications, formal review, documentation; does not implement source code); Freebuff = Developer Agent (implements within approved Card/spec, works directly from repository and must not use Serena MCP); user = Product Owner/QA and runs MetaEditor/MT5 compile/tests.
-- Formal review starts only after user reports Compile/Test PASS. Review outcomes and fixes are recorded in Card-linked CODE_REVIEW.md. After APPROVED, update docs/status and wait for user confirmation before Done.
+- Formal review starts only after user reports Compile/Test PASS. Review outcomes and fixes are recorded in CODE_REVIEW.md. After APPROVED, update docs/status and wait for user confirmation before Done.
 - Developer handoff uses separate SPEC.md and TEST_PLAN.md, plus IMPLEMENTATION_REPORT.md and CODE_REVIEW.md. Do not rely on chat history as Freebuff task handoff.
 - Before new Grid feature/refactor, remind user to run latest relevant Grid Regression Tests and record pre-change baseline.
 - Unit tests never send Trade Requests. Demo tests require separate explicit user approval and designated test positions. Never send Live orders.

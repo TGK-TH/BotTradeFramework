@@ -63,11 +63,11 @@
 
 ไม่ต้องมี Freebuff Code Fix สำหรับ WP-05A.1
 
-ยังไม่ Mark Card Done: เอกสาร/สถานะได้รับการอัปเดตและ Documentation Consistency Gate ผ่านแล้ว; รอ User Confirmation ก่อนปิด Card ตาม Workflow V2
+ผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21; Trello Card ถูกย้ายไป `Done` และ Mark Complete แล้ว
 
 ## 7. Next Gate
 
-- WP-05A.1 ผ่าน Documentation / Status Update และ Documentation Consistency Gate แล้ว; ขั้นถัดไปคือ User Confirmation ก่อน Mark Done
+- ผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21; WP-05A.1 ถูกย้ายไป Trello `Done` และ Mark Complete แล้ว
 - WP-05A.2 ยังคงเป็น Product Backlog placeholder เท่านั้น
 - ห้ามเริ่ม WP-05A.2 จนกว่าจะจัดทำ SPEC/TEST_PLAN แยกและได้รับอนุมัติจากผู้ใช้
 - ไม่มี Commit/Push ในการ Review รอบนี้

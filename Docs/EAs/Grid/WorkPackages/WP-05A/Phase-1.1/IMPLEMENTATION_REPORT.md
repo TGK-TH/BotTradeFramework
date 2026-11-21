@@ -96,7 +96,7 @@ Implementation Card: WP-05A.1 — Anchor State Model
 - ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และรัน Tests ผ่านทั้งหมด หลังแก้ไข A06 ตาม Section 7
 - CTO ตรวจ Source Diff เทียบกับ SPEC, TEST_PLAN และ WP-05A Architecture แล้วให้ผล **APPROVED**
 - รายละเอียด Findings, Scope Boundary และ Review Checks อยู่ใน [CODE_REVIEW.md](CODE_REVIEW.md)
-- Card อยู่ในขั้น Code Review / รอ User Confirmation; ยังไม่ Mark Done และไม่มี Commit/Push
+- ผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21; Trello Card ถูกย้ายไป Done และ Mark Complete แล้ว ไม่มี Commit/Push
 
 ## 7. แก้ไขหลังรอบ MT5 Testing ครั้งแรก (2026-11-21)
 

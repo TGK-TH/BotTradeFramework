@@ -85,12 +85,12 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-05A — Persistence Foundation: Design/Contract approved; WP-05A.1 in-memory Anchor State Model is implemented, user-verified and CTO-approved (2026-11-21). WP-05A remains in progress; Journal/Snapshot persistence and later Cards are not implemented.**
+**WP-05A — Persistence Foundation: Design/Contract approved; WP-05A.1 in-memory Anchor State Model is implemented, user-verified, CTO-approved, and marked Done after user confirmation (2026-11-21). WP-05A remains in progress; Journal/Snapshot persistence and later Cards are not implemented.**
 
 - WP-05A Contract/Test Plan และ 4-Phase Implementation Plan ได้รับอนุมัติจากผู้ใช้เมื่อ 2026-11-20; Schema V1 ฉบับปรับปรุงต้องมี Anchor State เป็น Required Field และไม่รองรับ V1 รูปแบบเก่า/ไม่ทำ Migration
 - Architecture boundary: `CTGKGridPersistence` เก็บ Instance/Lifecycle/Configuration; `CTGKGridEntryMappingReducer` + `CTGKGridEntryMappingSnapshotStorage` เป็น Canonical Trading State Persistence Authority สำหรับ Request/Deal/Position Mapping, Normal Level State และ Anchor State
 - WP-05A implementation breakdown: [WP-05A README](WorkPackages/WP-05A/README.md)
-- WP-05A.1 Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — Code Review; CTO APPROVED, awaiting User Confirmation
+- WP-05A.1 Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — Done; user Compile/Test PASS and CTO APPROVED 2026-11-21
 - WP-05A.1 SPEC: `WorkPackages/WP-05A/Phase-1.1/SPEC.md`
 - WP-05A.1 TEST_PLAN: `WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`
 - WP-05A.1 จำกัดเฉพาะ Reducer In-memory Anchor State Model, Initialize/RESET_COMMITTED, validation, typed getter และ Unit Tests; Anchor Mapping/Partial/Full Close Transitions เป็น WP-05A.2; Journal และ Snapshot Serialization อยู่ใน Cards ภายหลัง

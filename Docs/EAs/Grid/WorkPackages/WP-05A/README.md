@@ -16,7 +16,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 
 | Card | ผลลัพธ์ | สถานะ | Dependency |
 |---|---|---|---|
-| [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | User Verification PASS; CTO Code Review APPROVED; รอ User Confirmation | ไม่มี |
+| [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | Done — User Verification PASS, CTO Code Review APPROVED และผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21 | ไม่มี |
 | [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial Close, Full TP/NON_TP Close, Atomic Reducer Transition และ Tests | Product Backlog; planning placeholder, SPEC/TEST_PLAN ยังไม่จัดทำ | WP-05A.1 |
 
 WP-05A Cards ในลำดับถัดไปจะครอบคลุม Journal Persistence, Snapshot Persistence และ Integration/Hardening โดยแต่ละ Card ต้องมี Scope, SPEC, TEST_PLAN และ User Approval แยกต่างหากก่อนเริ่ม Implementation
@@ -36,7 +36,7 @@ WP-05A Cards ในลำดับถัดไปจะครอบคลุม 
 3. Freebuff Implement ตาม SPEC เท่านั้น และจัดทำ `IMPLEMENTATION_REPORT.md`
 4. ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และ Run Tests ผ่านทั้งหมด
 5. CTO ตรวจ Diff เทียบ SPEC/TEST_PLAN/Architecture แล้วบันทึก `CODE_REVIEW.md` เป็น APPROVED
-6. เอกสารและสถานะโครงการได้รับการอัปเดต; WP-05A.1 รอ User Confirmation ก่อน Mark Done
+6. เอกสารและสถานะโครงการได้รับการอัปเดต; WP-05A.1 ปิดแล้วใน Trello `Done` และ Mark Complete หลัง User Confirmation เมื่อ 2026-11-21
 7. WP-05A.2 ยังคงเป็น Product Backlog placeholder; ต้องจัดทำ SPEC/TEST_PLAN และได้รับ Approval แยกก่อนเริ่ม
 
 ไม่มี Demo หรือ Live Trade Request ได้รับอนุญาต
