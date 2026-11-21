@@ -4,20 +4,20 @@ Last updated: 2026-11-21
 
 ## Current focus
 
-**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 Anchor State Model is In Progress for Freebuff implementation. Pre-change baseline is recorded from the user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). No WP-05A source implementation has been reported yet.**
+**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 Anchor State Model has passed user Compile/Test verification and CTO Code Review (APPROVED) on 2026-11-21. Documentation/status update is complete; awaiting user confirmation before marking the Card Done. WP-05A.2 remains unauthorized.**
 
 - Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
 - WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
-- Active implementation candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — Trello status **In Progress** (Freebuff implementation authorized).
+- Current review candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — user Compile/Test PASS; CTO Code Review APPROVED; awaiting user confirmation before Done.
 - Next dependent implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) — **Product Backlog planning placeholder**; detailed SPEC/TEST_PLAN and separate approval required after WP-05A.1.
 - Developer Specification: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`.
 - Test Plan: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`.
 - Approved scope: Reducer in-memory Anchor State model, initialization/reset semantics, validation, typed getter, and focused Unit Tests. Anchor mapping/close transitions are deferred to WP-05A.2; Journal and Snapshot serialization are later WP-05A cards.
 - Workflow V2: ChatGPT = CTO/Technical Lead (no source implementation); Freebuff = Developer Agent (direct repository access; no Serena MCP required); user = Product Owner/QA. Formal CTO Code Review begins only after the user reports MetaEditor Compile/Test PASS.
 - Trello workflow mapping: `MT5 Testing` is User Verification; `Code Review` is CTO review; `In Progress` is used for implementation and review fixes with explicit comments.
-- **Pre-change Grid Regression Baseline: recorded from the user's 2026-11-20 report** that the full no-trade Grid suite passed. Current inventory: 20 Grid Test EAs = 19 no-trade tests + `test_grid_order_execution_demo.mq5` (separate Demo Trade Request safety gate, excluded). No `.mq5`/`.mqh` source/test files have changed since that baseline. User authorized WP-05A.1 on 2026-11-21; Card is now In Progress for Freebuff.
+- **Pre-change Grid Regression Baseline:** recorded from the user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). WP-05A.1 source/test changes are now present and user-reported Compile/Test PASS was received on 2026-11-21; CTO review is APPROVED. The current test inventory remains 20 Grid Test EAs (19 no-trade + 1 separately safety-gated Demo Trade Request test).
 - No Demo or Live Trade Request is authorized. No commit/push is authorized.
-- Last source baseline observed before this documentation-only preparation: branch `feature/grid-trading`, clean working tree. No MQL5 compile/runtime was performed as part of this preparation.
+- Current branch: `feature/grid-trading`. WP-05A.1 implementation changes are staged from Freebuff; CTO review/documentation changes are unstaged. User-reported MetaEditor/MT5 Compile and Tests PASS on 2026-11-21. No Commit/Push has been made.
 
 ---
 

@@ -65,14 +65,14 @@ Contract และ Test Plan: [phase-grid-entry-pipeline-integration.md](../Phas
 
 Accepted `DONE`, `DONE_PARTIAL`, `PLACED` และผลที่ Adapter ต้อง Recovery จะคง Coordinator request เป็น unresolved; Pipeline ไม่สร้าง Position Mapping และไม่ตั้ง Level เป็น `ACTIVE`. Deal/Position reconciliation ยังเป็น dependency ของ WP-05.
 
-## WP-05A.1 — Anchor State Model (Specification/Test Plan prepared; implementation not started)
+## WP-05A.1 — Anchor State Model (Implemented; user-reported Compile/Test PASS; CTO Review APPROVED 2026-11-21)
 
 Developer handoff:
 - Specification: [SPEC.md](../WorkPackages/WP-05A/Phase-1.1/SPEC.md)
 - Test Plan: [TEST_PLAN.md](../WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md)
-- Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model (Ready; waiting for user-reported Pre-change Grid Regression Baseline)
+- Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model (Code Review; CTO APPROVED; awaiting User Confirmation)
 
-ขอบเขต Test ที่วางแผน: Reducer Anchor State initialization, availability before/after RESET_COMMITTED, reset-to-READY behavior, fail-closed getter, no side effects from getter และ Normal Level regression. Tests จะเพิ่มใน `test_grid_entry_mapping_reducer.mq5`; ไม่มี Trade Request. ยังไม่มี Source/Test implementation เพิ่ม และยังไม่มี Compile/Runtime result สำหรับ WP-05A.1. Formal CTO Code Review จะเริ่มหลังผู้ใช้รายงาน Compile/Test PASS เท่านั้น
+Test Coverage: เพิ่ม 4 Test Blocks ครอบคลุม A01–A08 ใน `test_grid_entry_mapping_reducer.mq5`; Existing Reducer Suite เดิมคงไว้สำหรับ A09. ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า Compile และ Run Tests ผ่านทั้งหมด. Unit Tests ใช้ In-memory Records และไม่มี Trade Request. Review Record: [CODE_REVIEW.md](../WorkPackages/WP-05A/Phase-1.1/CODE_REVIEW.md). Anchor State ยังไม่ Durable ข้าม Restart เพราะ Journal/Snapshot serialization เป็น Scope ของ WP-05A Cards ถัดไป.
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 

@@ -79,22 +79,22 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | Snapshot Serialization + Journal Rotation | Implemented; ผู้ใช้รายงาน Snapshot/Reducer/Regression ผ่าน 2026-11-15 |
 | Entry Execution Policy — Phase 1 Design | Approved |
 | Entry Execution Policy — WP-01 | Implemented; ผู้ใช้รายงาน Policy 44/44 และ Grid Regression 15/15 Compile/Runtime PASS 2026-11-17 |
-| WP-05A Persistence Foundation | Contract/Test Plan/Implementation Plan approved; WP-05A.1 SPEC/TEST_PLAN prepared; source implementation not started; Pre-change Baseline pending |
+| WP-05A Persistence Foundation | Contract/Test Plan/Implementation Plan approved; WP-05A.1 in-memory Anchor State implemented, user-reported Compile/Test PASS and CTO Review APPROVED 2026-11-21; Journal/Snapshot persistence and remaining Cards open |
 
 ผล Compile/Runtime ในตารางเป็น User-reported เท่านั้น; Codex/Assistant ห้ามเขียนว่าเป็นผลที่ตนเองรัน
 
 ### 3.2 Current Work Item
 
-**WP-05A — Persistence Foundation: Design/Contract approved; WP-05A.1 implementation card is Ready, waiting for user-reported Pre-change Grid Regression Baseline. No source implementation has started.**
+**WP-05A — Persistence Foundation: Design/Contract approved; WP-05A.1 in-memory Anchor State Model is implemented, user-verified and CTO-approved (2026-11-21). WP-05A remains in progress; Journal/Snapshot persistence and later Cards are not implemented.**
 
 - WP-05A Contract/Test Plan และ 4-Phase Implementation Plan ได้รับอนุมัติจากผู้ใช้เมื่อ 2026-11-20; Schema V1 ฉบับปรับปรุงต้องมี Anchor State เป็น Required Field และไม่รองรับ V1 รูปแบบเก่า/ไม่ทำ Migration
 - Architecture boundary: `CTGKGridPersistence` เก็บ Instance/Lifecycle/Configuration; `CTGKGridEntryMappingReducer` + `CTGKGridEntryMappingSnapshotStorage` เป็น Canonical Trading State Persistence Authority สำหรับ Request/Deal/Position Mapping, Normal Level State และ Anchor State
 - WP-05A implementation breakdown: [WP-05A README](WorkPackages/WP-05A/README.md)
-- WP-05A.1 Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — Ready; แยก SPEC และ TEST_PLAN แล้ว
+- WP-05A.1 Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — Code Review; CTO APPROVED, awaiting User Confirmation
 - WP-05A.1 SPEC: `WorkPackages/WP-05A/Phase-1.1/SPEC.md`
 - WP-05A.1 TEST_PLAN: `WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`
 - WP-05A.1 จำกัดเฉพาะ Reducer In-memory Anchor State Model, Initialize/RESET_COMMITTED, validation, typed getter และ Unit Tests; Anchor Mapping/Partial/Full Close Transitions เป็น WP-05A.2; Journal และ Snapshot Serialization อยู่ใน Cards ภายหลัง
-- Pre-change Grid Regression Baseline ยังรอผู้ใช้รายงาน; ห้ามย้าย Card ไป In Progress หรือเริ่ม Freebuff ก่อนผู้ใช้รายงาน Baseline และสั่งเริ่ม Card อย่างชัดเจน
+- ผู้ใช้รายงาน WP-05A.1 Compile/Test PASS เมื่อ 2026-11-21; CTO Review APPROVED. WP-05A.2 ยังเป็น Product Backlog placeholder และยังไม่ได้รับอนุญาตให้เริ่ม
 - Workflow V2: ChatGPT เป็น CTO (ไม่ Implement Source), Freebuff เป็น Developer (อ่าน Repository โดยตรง ไม่ต้องใช้ Serena MCP), ผู้ใช้เป็น Product Owner/QA และเป็นผู้ Compile/Run MetaEditor/MT5
 - Trello mapping: `MT5 Testing` ใช้เป็น User Verification; `Code Review` ใช้เป็น CTO Review; `In Progress` ใช้สำหรับ Implement และ Review Fixes โดยต้องระบุวัตถุประสงค์ใน Comment
 - WP-04 ยังคง Complete ตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-20; Card อยู่ Done: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration
@@ -122,7 +122,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | COMPLETE (USER-REPORTED PASS 2026-11-19) | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | COMPLETE (user-reported Compile/Run PASS 2026-11-20) | เชื่อม Coordinator Candidate → Resolver → Policy → Entry Adapter → Coordinator request state; accepted/uncertain request รอ Deal/Position reconciliation; ห้ามสร้าง Mapping หรือ ACTIVE จาก CTrade result |
-| WP-05 | Close/Deal/Transaction Reconciliation Integration | IN PROGRESS (WP-05A design approved; WP-05A.1 Ready, baseline pending) | WP-05A Persistence Foundation → WP-05B Runtime Restoration → WP-05C Deal/Position Reconciliation; WP-05D Production Event Integration เป็น Roadmap Placeholder แยกตาม Dependency |
+| WP-05 | Close/Deal/Transaction Reconciliation Integration | IN PROGRESS (WP-05A design approved; WP-05A.1 user-verified and CTO-approved; remaining WP-05A Cards open) | WP-05A Persistence Foundation → WP-05B Runtime Restoration → WP-05C Deal/Position Reconciliation; WP-05D Production Event Integration เป็น Roadmap Placeholder แยกตาม Dependency |
 | WP-06 | Production EA Lifecycle/Event Handler | NOT STARTED | EA shell และ OnInit/OnDeinit/OnTick/OnTimer/OnTradeTransaction ตามที่จำเป็น; initialize identity/config/storage/runtime อย่างถูกลำดับ; restart/recovery และ safe shutdown |
 | WP-07 | Configuration, Bounds และ Runtime Safety Integration | NOT STARTED | Inputs และ validation ของ Mode/Bounds/Step/FixedLot; initial entry เฉพาะใน Bounds; no new entries นอก Bounds แต่ manage existing positions ต่อ; reset Mode/Step ตาม Contract |
 | WP-08 | End-to-End Test & Demo Validation | NOT STARTED | Integration Test ครอบคลุม BUY/SELL, multi-level crossing, TP/re-entry, partial fills/closes, foreign-position isolation, restart, Mode/Step reset, Storage failure และ Recovery; Demo Test เฉพาะเมื่อผู้ใช้อนุมัติขั้นตอน Trade Request |

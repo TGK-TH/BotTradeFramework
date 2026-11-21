@@ -16,7 +16,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 
 | Card | ผลลัพธ์ | สถานะ | Dependency |
 |---|---|---|---|
-| [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | In Progress; Freebuff implementation authorized after recorded baseline | ไม่มี |
+| [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | User Verification PASS; CTO Code Review APPROVED; รอ User Confirmation | ไม่มี |
 | [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial Close, Full TP/NON_TP Close, Atomic Reducer Transition และ Tests | Product Backlog; planning placeholder, SPEC/TEST_PLAN ยังไม่จัดทำ | WP-05A.1 |
 
 WP-05A Cards ในลำดับถัดไปจะครอบคลุม Journal Persistence, Snapshot Persistence และ Integration/Hardening โดยแต่ละ Card ต้องมี Scope, SPEC, TEST_PLAN และ User Approval แยกต่างหากก่อนเริ่ม Implementation
@@ -25,6 +25,8 @@ WP-05A Cards ในลำดับถัดไปจะครอบคลุม 
 
 - Specification: [SPEC.md](Phase-1.1/SPEC.md)
 - Test Plan: [TEST_PLAN.md](Phase-1.1/TEST_PLAN.md)
+- Implementation Report: [IMPLEMENTATION_REPORT.md](Phase-1.1/IMPLEMENTATION_REPORT.md)
+- CTO Code Review: [CODE_REVIEW.md](Phase-1.1/CODE_REVIEW.md)
 - Trello: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model
 
 ## Workflow Gates
@@ -32,9 +34,9 @@ WP-05A Cards ในลำดับถัดไปจะครอบคลุม 
 1. Pre-change Grid Regression Baseline บันทึกจากผลที่ผู้ใช้รายงานเมื่อ 2026-11-20: no-trade Grid Test EAs ทั้ง 19 ไฟล์ผ่าน; Demo Trade Request Test แยก Safety Gate และไม่รวม
 2. ผู้ใช้อนุมัติเริ่ม WP-05A.1 เมื่อ 2026-11-21; Card ถูกย้ายจาก Ready ไป In Progress เพื่อส่งให้ Freebuff
 3. Freebuff Implement ตาม SPEC เท่านั้น และจัดทำ `IMPLEMENTATION_REPORT.md`
-4. ผู้ใช้ Compile และ Run Tests ใน MetaEditor/MT5; ใช้ List `MT5 Testing` บน Board เป็น User Verification
-5. ChatGPT เริ่ม Formal Code Review หลังผู้ใช้รายงาน PASS เท่านั้น
-6. หาก Review ขอแก้ Freebuff แก้ไข และผู้ใช้ Compile/Test ซ้ำก่อนส่ง Review รอบใหม่
-7. หลัง Review APPROVED และ Documentation Consistency Checks ผ่าน จึงปิด Card และหยุดรอ Approval ก่อน WP-05A.2
+4. ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และ Run Tests ผ่านทั้งหมด
+5. CTO ตรวจ Diff เทียบ SPEC/TEST_PLAN/Architecture แล้วบันทึก `CODE_REVIEW.md` เป็น APPROVED
+6. เอกสารและสถานะโครงการได้รับการอัปเดต; WP-05A.1 รอ User Confirmation ก่อน Mark Done
+7. WP-05A.2 ยังคงเป็น Product Backlog placeholder; ต้องจัดทำ SPEC/TEST_PLAN และได้รับ Approval แยกก่อนเริ่ม
 
 ไม่มี Demo หรือ Live Trade Request ได้รับอนุญาต

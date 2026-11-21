@@ -6,7 +6,7 @@
 
 เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component เสร็จแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
 
-**สถานะ Anchor State ใน Persistence:** `GridLevelEngine` มี Anchor State สำหรับ Runtime อยู่แล้ว แต่ `CTGKGridEntryMappingReducer` และ Canonical Trading State Snapshot ยังไม่มี Anchor State. WP-05A ได้รับอนุมัติ Design/Contract แล้ว; WP-05A.1 เตรียม SPEC/TEST_PLAN สำหรับเพิ่ม Reducer In-memory Anchor State Model แต่ยังไม่ Implement และรอ Pre-change Grid Regression Baseline. ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
+**สถานะ Anchor State ใน Persistence (2026-11-21):** `GridLevelEngine` มี Anchor State สำหรับ Runtime และ `CTGKGridEntryMappingReducer` มี Typed In-memory Anchor State แล้วจาก WP-05A.1 (ผู้ใช้รายงาน Compile/Test PASS และ CTO Review APPROVED). อย่างไรก็ตาม Anchor State ยังไม่ถูก Serialize ลง Journal/Snapshot และยังไม่ Durable ข้าม Restart; Anchor Mapping/Close Transitions อยู่ใน WP-05A.2 และ Persistence Serialization อยู่ใน Cards ถัดไป. ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
 
 ## ส่วนประกอบปัจจุบัน
 

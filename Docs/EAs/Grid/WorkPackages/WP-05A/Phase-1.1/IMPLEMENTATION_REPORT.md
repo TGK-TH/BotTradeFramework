@@ -1,6 +1,6 @@
 # WP-05A.1 — Anchor State Model Implementation Report
 
-สถานะ: Implement เสร็จ — รอผู้ใช้ Compile และ Run Tests (User Verification Stage: `MT5 Testing`)
+สถานะ: User Verification PASS และ CTO Code Review APPROVED (2026-11-21)
 Parent: WP-05A — Persistence Foundation
 Implementation Card: WP-05A.1 — Anchor State Model
 ผู้ Implement: Freebuff
@@ -91,16 +91,17 @@ Implementation Card: WP-05A.1 — Anchor State Model
 3. `RestoreSnapshotInternal()` ไม่ได้กำหนด `m_anchor_state` ใหม่ เพราะ Snapshot Payload ยังไม่มี Anchor State (ห้ามแก้ Wire Format ใน Card นี้) ค่าที่ Getter เห็นหลัง Restore จึงเป็น Internal Default `READY` ที่ Gate ด้วย Committed Configuration Epoch
 4. ไม่มีการทดสอบ Invalid Internal Enum Value ผ่าน Public Path ได้จริง เนื่องจากไม่มี Public API ที่เขียน Anchor State เป็นค่าอื่นได้ใน Card นี้ — Helper Validation ถูกเรียกใน Getter แล้ว แต่ Path นี้จะถูกครอบด้วย Test จริงเมื่อ WP-05A.2 เพิ่ม Transition
 
-## 6. Next Step
+## 6. User Verification และ CTO Review
 
-1. ผู้ใช้ Compile `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` ใน MetaEditor
-2. ผู้ใช้รัน Test และรายงานผล A01–A09 พร้อม Regression Suite ที่ระบุใน `TEST_PLAN.md`
-3. Trello Card ถูกย้ายไป `MT5 Testing` เพื่อรอผลจากผู้ใช้ — ยังไม่ย้ายไป `Code Review` เพราะ CTO จะ Review หลังผู้ใช้รายงาน Compile/Test PASS เท่านั้น
+- ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และรัน Tests ผ่านทั้งหมด หลังแก้ไข A06 ตาม Section 7
+- CTO ตรวจ Source Diff เทียบกับ SPEC, TEST_PLAN และ WP-05A Architecture แล้วให้ผล **APPROVED**
+- รายละเอียด Findings, Scope Boundary และ Review Checks อยู่ใน [CODE_REVIEW.md](CODE_REVIEW.md)
+- Card อยู่ในขั้น Code Review / รอ User Confirmation; ยังไม่ Mark Done และไม่มี Commit/Push
 
 ## 7. แก้ไขหลังรอบ MT5 Testing ครั้งแรก (2026-11-21)
 
 - ผลรอบแรก: Compile ผ่าน, รัน Test แล้ว Fail 1 รายการ — `FAIL: replay committed configuration before failed Snapshot | actual=false` (A06 ข้อ 2)
 - สาเหตุ: เป็น Defect ของ Test Harness ไม่ใช่ Behavior ของ Reducer — Test เรียก `Replay(failed_anchor_records, ArraySize(failed_anchor_records) - 1)` แต่ `Replay()` ตาม Contract ปฏิเสธ `record_count` ที่ไม่เท่ากับ `ArraySize(records)` (Guard: `record_count != ArraySize(records)`) จึงคืน `false` ทุกครั้ง
 - การแก้: สร้าง Array `committed_anchor_records[]` ที่มีเฉพาะ Base Configuration (2 Records, ไม่มี Record ที่ทำให้เกิด Sequence Gap) แล้วเรียก `Replay(committed_anchor_records, ArraySize(committed_anchor_records))` — ไม่แก้ Reducer และไม่แตะ Product Code
-- ผลลัพธ์ที่คาด: Replay สำเร็จ → `RestoreSnapshot("v1|STATE", 2)` ถูก Reject และ Getter คืน `false` พร้อม Default `READY` ตาม A06
-- ต้องรัน Compile/Test ซ้ำบน MT5 เพื่อยืนยัน — ยังไม่มีหลักฐาน PASS ของรอบนี้
+- ผลรันหลังแก้ไข: ผู้ใช้รายงานว่า A06 และ Tests ทั้งหมดผ่าน; ผลที่คาดไว้ได้รับการยืนยันจากการรันจริงของผู้ใช้
+- ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า Compile และ Run Tests หลังแก้ไขผ่านทั้งหมด (ผล User Verification รอบแก้ไข)

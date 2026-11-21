@@ -5,22 +5,26 @@
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
-- Historical HEAD during the 2026-11-19 WP-03 status/docs update: `8034217`.
-- Documentation Consistency Gate work started from HEAD `b3bb2d7` on `feature/grid-trading`; working tree was clean before these workflow edits.
 - Source of Truth: Repository source/tests/docs.
 - Grid master roadmap and Definition of Done: `Docs/EAs/Grid/ROADMAP.md`
 - Current status: `PROJECT_STATUS.md`
 - Grid technical docs: `Docs/EAs/Grid/`
 
 ## Current Work Item
-WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 and is now complete. The user reported all tests compiled and ran successfully on 2026-11-20, including the latest P08/P11 additions. Baseline before implementation: repository was clean on `feature/grid-trading` at HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`.
-- Contract/Test Plan: `Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md`.
-- Source added: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; it sends the exact offered candidate through Resolver/Policy/Adapter and updates Runtime Coordinator request state.
-- Test added: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` has 9 Fake Port tests (P01–P08, P11). User reported Compile/Run of all tests passed on 2026-11-20, including the latest P08/P11 additions. No real Trade Request is sent.
-- Accepted and uncertain requests remain unresolved until reconciliation. Pipeline does not create Position Mapping or set ACTIVE from CTrade return/retcode. Deal/Position reconciliation is a WP-05 dependency.
-- Trello WP-04 card: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (Done; user-reported Compile/Run PASS 2026-11-20).
-- WP-04 is complete after source/test review and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 partial-fill mapping remains a WP-05 reconciliation dependency; P10 duplicate blocking is covered by P01. At WP-04 completion, work stopped pending separate WP-05 approval; the user subsequently approved WP-05A design/preparation on 2026-11-21. No Demo/Live trade request is authorized.
-- WP-01 through WP-04 remain complete on user-reported evidence. WP-05A is in approved design/specification preparation. WP-05A.1 — Anchor State Model has approved SPEC/TEST_PLAN and its Trello Card is In Progress for Freebuff implementation. Pre-change baseline is recorded from the user's 2026-11-20 report that all 19 no-trade Grid Test EAs passed; the Demo Trade Request test remains excluded. Repository check on 2026-11-21 confirmed no `.mq5`/`.mqh` source/test changes since that baseline. WP-05A.2 — Anchor State Transitions is a Product Backlog planning placeholder. WP-05B through WP-09 remain not started.
+WP-04 Grid Entry Pipeline Integration was completed after the user reported all tests compiled and ran successfully on 2026-11-20, including latest P08/P11 additions. No real Trade Request was sent by its Fake Port tests. Accepted/uncertain requests remain unresolved until reconciliation; Pipeline does not create Position Mapping or set ACTIVE from CTrade result. WP-04 is complete; P09 partial-fill mapping remains a WP-05 reconciliation dependency and P10 duplicate blocking is covered by P01.
+
+WP-05A — Persistence Foundation is now active:
+- WP-05A approved architecture: `CTGKGridPersistence` owns Instance/Lifecycle/Configuration persistence; `CTGKGridEntryMappingReducer` + `CTGKGridEntryMappingSnapshotStorage` own canonical Trading State (Entry Request/Deal associations, Position Mappings, Normal Level States, Anchor State).
+- Schema remains V1; revised V1 requires Anchor State; old incomplete V1 is unsupported; no migration/backward compatibility. Missing/invalid Anchor State must fail closed / Recovery Required.
+- WP-05A.1 — Anchor State Model implementation is complete. User reported MetaEditor Compile and all Tests PASS on 2026-11-21 after fixing the A06 Test Harness issue. CTO formal Code Review is **APPROVED**, no code fixes requested.
+- WP-05A.1 Trello: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — moved to Code Review; awaiting user confirmation before Done.
+- WP-05A.1 files: `Include/BotTrade/Grid/GridEntryMappingReducer.mqh`, `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5`, and `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/IMPLEMENTATION_REPORT.md`.
+- SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`; TEST_PLAN: same directory; CTO Review: `CODE_REVIEW.md`.
+- Implementation adds typed in-memory Anchor State, default READY with configured-state gate, successful RESET_COMMITTED initialization, enum validation, and read-only TryGetAnchorState. Normal Level behavior preserved. No Journal/Snapshot serialization, Anchor close transitions, runtime restore, reconciliation, production event integration, or trade execution changes.
+- Known planned boundary: Anchor State is not durable across restart in this Card; WP-05A.2 handles Anchor Mapping/close transitions; later WP-05A Cards handle Journal/Snapshot persistence.
+- WP-05A.2 — Anchor State Transitions remains Product Backlog planning placeholder; no detailed SPEC/TEST_PLAN approval or implementation authorization yet. Stop and ask user before proceeding.
+- WP-05B through WP-09 remain not started.
+- Working tree: Freebuff's implementation/test/report files are staged; CTO review and documentation updates are unstaged/untracked. No commit/push has been made.
 
 ## Grid V1 non-negotiable design
 - MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.
@@ -35,19 +39,11 @@ WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 a
 - New chart is a new Instance; restoring original chart/profile restores original Instance; never adopt foreign/manual positions.
 
 ## Workflow / safety
-- Workflow V2 adopted on 2026-11-21: ChatGPT = CTO/Technical Lead (design, specifications, final review, documentation; does not implement source code); Freebuff = Developer Agent (implements within approved Card/spec); user = Product Owner/QA (approves scope, runs MetaEditor/MT5 compile/tests, reports results, authorizes next work).
-- Freebuff can read repository files directly and must not depend on or be instructed to use Serena MCP. `AGENTS.md` is its durable repository instruction entry point. ChatGPT may use available project tools for read-only inspection/review.
-- Developer handoff uses separate `SPEC.md` and `TEST_PLAN.md`, plus `IMPLEMENTATION_REPORT.md` and `CODE_REVIEW.md` as needed. ChatGPT formal Code Review starts only after user reports Compile/Test PASS; any review fix returns through Freebuff and user re-verification.
-- WP-05A Phase 1 approved design is split into implementation Cards: WP-05A.1 Anchor State Model, then WP-05A.2 Anchor State Transitions. WP-05A.1 Trello card https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model is in Ready; SPEC.md and TEST_PLAN.md are prepared at Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/. Parent index: Docs/EAs/Grid/WorkPackages/WP-05A/README.md. Pre-change Grid Regression Baseline is pending; Freebuff implementation has not started. Board mapping: MT5 Testing=User Verification; Code Review=CTO review; In Progress=implementation and requested fixes.
-- Before each new Grid feature/refactor, remind user to run latest Grid Regression Tests and record pre-change baseline; run relevant tests again after source changes.
-- User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
-- Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.
-- After each WP, update PROJECT_STATUS.md, relevant Thai technical docs, Testing inventory, Serena current-phase memory, and Trello card as applicable.
-- Preserve staged/unstaged/untracked changes. No reset/checkout/clean/stash or overwrite unrelated work. No commit/push unless asked.
-- Stop at every WP/Phase boundary and ask for explicit user authorization before starting the next one.
-
-## Documentation Consistency Gate — added 2026-11-19
-- Mandatory before closing any WP/Phase or documentation-maintenance task; details: `Docs/Development/documentation-consistency-gate.md`.
-- Gate compares current status across status/docs/source/tests/Serena memories, checks positive and negative stale claims, evidence levels, actual test inventory, historical-context labeling, and exact authorization boundary.
-- Final checks: inspect full diff, `git diff --check`, local Markdown links, actual test inventory when affected, and final working-tree state.
-- Do not report the gate passed or close work while contradictions remain unresolved.
+- Workflow V2: ChatGPT = CTO/Technical Lead (design, specifications, formal review, documentation; does not implement source code); Freebuff = Developer Agent (implements within approved Card/spec, works directly from repository and must not use Serena MCP); user = Product Owner/QA and runs MetaEditor/MT5 compile/tests.
+- Formal review starts only after user reports Compile/Test PASS. Review outcomes and fixes are recorded in Card-linked CODE_REVIEW.md. After APPROVED, update docs/status and wait for user confirmation before Done.
+- Developer handoff uses separate SPEC.md and TEST_PLAN.md, plus IMPLEMENTATION_REPORT.md and CODE_REVIEW.md. Do not rely on chat history as Freebuff task handoff.
+- Before new Grid feature/refactor, remind user to run latest relevant Grid Regression Tests and record pre-change baseline.
+- Unit tests never send Trade Requests. Demo tests require separate explicit user approval and designated test positions. Never send Live orders.
+- Preserve staged/unstaged/untracked changes. No destructive Git operations. No commit/push unless explicitly requested.
+- Stop at every WP/Phase boundary and obtain explicit user authorization before starting the next one.
+- After each WP/Phase, update PROJECT_STATUS.md, relevant Thai docs, test inventory where applicable, Serena current-phase memory, and Trello. Run Documentation Consistency Gate, validate local Markdown links, and run git diff --check.
