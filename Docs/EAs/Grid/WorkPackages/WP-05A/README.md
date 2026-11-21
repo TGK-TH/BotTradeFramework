@@ -1,0 +1,42 @@
+# WP-05A — Persistence Foundation
+
+Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation
+
+## Design Boundary ที่อนุมัติแล้ว
+
+- `CTGKGridPersistence` รับผิดชอบ Instance/Lifecycle/Configuration Persistence ต่อไป
+- `CTGKGridEntryMappingReducer` ร่วมกับ `CTGKGridEntryMappingSnapshotStorage` เป็น Canonical Trading State Persistence Authority
+- Canonical Trading State ประกอบด้วย Entry Request/Deal Associations, Position Mappings, Normal Level States และ Anchor State
+- Anchor State และ Position Mapping ที่เปลี่ยนจาก Close Event เดียวกัน ต้องเป็น Durable Logical Transition เดียวกัน
+- Schema คง V1 โดย V1 ฉบับปรับปรุงต้องมี Anchor State เป็น Required Field; ไม่รองรับ V1 รูปแบบเก่าและไม่ทำ Migration/Backward Compatibility
+- Anchor State ที่ขาด/Invalid ใน Snapshot หรือ Persistence/Recovery Inconsistency ต้อง Fail Closed / Recovery Required
+- ห้ามสร้าง Anchor Persistence Authority ซ้ำใน `GridPersistence`
+
+## Implementation Breakdown
+
+| Card | ผลลัพธ์ | สถานะ | Dependency |
+|---|---|---|---|
+| [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | Done — User Verification PASS, CTO Code Review APPROVED และผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21 | ไม่มี |
+| [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial Close, Full TP/NON_TP Close, Atomic Reducer Transition และ Tests | Product Backlog; planning placeholder, SPEC/TEST_PLAN ยังไม่จัดทำ | WP-05A.1 |
+
+WP-05A Cards ในลำดับถัดไปจะครอบคลุม Journal Persistence, Snapshot Persistence และ Integration/Hardening โดยแต่ละ Card ต้องมี Scope, SPEC, TEST_PLAN และ User Approval แยกต่างหากก่อนเริ่ม Implementation
+
+## WP-05A.1 Handoff
+
+- Specification: [SPEC.md](Phase-1.1/SPEC.md)
+- Test Plan: [TEST_PLAN.md](Phase-1.1/TEST_PLAN.md)
+- Implementation Report: [IMPLEMENTATION_REPORT.md](Phase-1.1/IMPLEMENTATION_REPORT.md)
+- CTO Code Review: [CODE_REVIEW.md](Phase-1.1/CODE_REVIEW.md)
+- Trello: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model
+
+## Workflow Gates
+
+1. Pre-change Grid Regression Baseline บันทึกจากผลที่ผู้ใช้รายงานเมื่อ 2026-11-20: no-trade Grid Test EAs ทั้ง 19 ไฟล์ผ่าน; Demo Trade Request Test แยก Safety Gate และไม่รวม
+2. ผู้ใช้อนุมัติเริ่ม WP-05A.1 เมื่อ 2026-11-21; Card ถูกย้ายจาก Ready ไป In Progress เพื่อส่งให้ Freebuff
+3. Freebuff Implement ตาม SPEC เท่านั้น และจัดทำ `IMPLEMENTATION_REPORT.md`
+4. ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และ Run Tests ผ่านทั้งหมด
+5. CTO ตรวจ Diff เทียบ SPEC/TEST_PLAN/Architecture แล้วบันทึก `CODE_REVIEW.md` เป็น APPROVED
+6. เอกสารและสถานะโครงการได้รับการอัปเดต; WP-05A.1 ปิดแล้วใน Trello `Done` และ Mark Complete หลัง User Confirmation เมื่อ 2026-11-21
+7. WP-05A.2 ยังคงเป็น Product Backlog placeholder; ต้องจัดทำ SPEC/TEST_PLAN และได้รับ Approval แยกก่อนเริ่ม
+
+ไม่มี Demo หรือ Live Trade Request ได้รับอนุญาต
