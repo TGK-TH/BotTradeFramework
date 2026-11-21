@@ -1,6 +1,6 @@
 # TGK Grid V1 — Master Roadmap และ Completion Contract
 
-อัปเดตล่าสุด: 2026-11-19
+อัปเดตล่าสุด: 2026-11-21
 
 > เอกสารนี้เป็นแผนงานหลักของ Grid V1 สำหรับทั้งผู้พัฒนาและ Codex ใช้ร่วมกับ Source Code, Test EAs และ Phase Notes ที่อ้างอิงไว้ ห้ามถือว่า Roadmap หรือ Design ที่อนุมัติแล้วเป็นหลักฐานว่า Implementation เสร็จ
 
@@ -60,7 +60,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - Close request accepted ไม่เท่ากับปิดสำเร็จ; ต้อง Scan/Reconcile สถานะบัญชีใหม่
 - หากไม่มี Position เปิดอยู่ ยังต้อง Restore/รักษา Grid Level State ตาม Persistence Contract ไม่ใช่ลบ Level State ทั้งหมดเพียงเพราะไม่มี Position
 
-## 3. สถานะปัจจุบัน ณ 2026-11-20
+## 3. สถานะปัจจุบัน ณ 2026-11-21
 
 ### 3.1 Foundations ที่มี Source และผู้ใช้ยืนยันผลทดสอบแล้ว
 
@@ -79,30 +79,26 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | Snapshot Serialization + Journal Rotation | Implemented; ผู้ใช้รายงาน Snapshot/Reducer/Regression ผ่าน 2026-11-15 |
 | Entry Execution Policy — Phase 1 Design | Approved |
 | Entry Execution Policy — WP-01 | Implemented; ผู้ใช้รายงาน Policy 44/44 และ Grid Regression 15/15 Compile/Runtime PASS 2026-11-17 |
+| WP-05A Persistence Foundation | Contract/Test Plan/Implementation Plan approved; WP-05A.1 SPEC/TEST_PLAN prepared; source implementation not started; Pre-change Baseline pending |
 
 ผล Compile/Runtime ในตารางเป็น User-reported เท่านั้น; Codex/Assistant ห้ามเขียนว่าเป็นผลที่ตนเองรัน
 
 ### 3.2 Current Work Item
 
-**WP-04 — Entry Pipeline Integration: Complete; 9 Fake Port cases; ผู้ใช้รายงาน Compile/Run Tests ทั้งหมดผ่าน 2026-11-20**
+**WP-05A — Persistence Foundation: Design/Contract approved; WP-05A.1 implementation card is Ready, waiting for user-reported Pre-change Grid Regression Baseline. No source implementation has started.**
 
-- WP-01 Contract/Test Plan: `Phases/phase-grid-entry-execution-policy.md`
-- WP-04 Contract/Test Plan: `Phases/phase-grid-entry-pipeline-integration.md`
-- WP-01 Policy Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5`
-- 44 Test IDs; Groups A–F = 4/13/6/9/6/6
-- Static checks ผ่านตาม `PROJECT_STATUS.md`
-- WP-01 Policy Source: `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh`; ผู้ใช้รายงาน Policy Test 44/44 และ Grid Regression 15/15 Compile/Runtime PASS เมื่อ 2026-11-17
-- WP-02 ต้องทดสอบ Target-Level Resolver/Caller, exact Instance/Target provenance, fresh context, Mapping Reducer query และ fail-closed โดยไม่ส่ง Trade Request
-- Dependency review พบ Mapping Reducer ไม่มี public read-only query และ Coordinator ไม่มี Mode/Config Epoch matcher; WP-02 เพิ่ม APIs ดังกล่าวแล้ว
-- WP-02 เพิ่ม Resolver/Caller Test EA จำนวน 17 Test IDs และ direct tests สำหรับ Reducer/Coordinator; Static Review ผ่าน; ผู้ใช้รายงานว่า Compile/Run ของ Resolver, Policy, Reducer, Coordinator และ Grid Regression ที่เกี่ยวข้องผ่านเมื่อ 2026-11-18 หลังแก้ assertion กรณี Level index นอกขอบเขตใน Reducer Test เป็น index 200
-- WP-02 เปลี่ยน Reducer/Coordinator public read-only context APIs และเพิ่ม Resolver/Caller; รายละเอียดอยู่ใน `Phases/phase-grid-entry-execution-resolver.md`
-- WP-02 ผ่านตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-18
-- WP-03 Source: `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` มี 13 cases ผ่าน Static Review; Fake Port เท่านั้น ไม่มี Trade Request ใน Unit Test
-- WP-03 ผู้ใช้ยืนยันเมื่อ 2026-11-19 ว่า Compile และ Run Test ทั้งหมดผ่าน; บันทึกเป็น User-reported PASS
-- WP-03 และ WP-04 เสร็จตามผลผู้ใช้รายงาน; WP-04 ได้รับอนุญาตเมื่อ 2026-11-20 และผ่าน Compile/Run ทั้งหมดตาม [Contract/Test Plan](Phases/phase-grid-entry-pipeline-integration.md)
-- WP-04 Source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; Test EA `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` มี 9 Test IDs (P01–P08, P11) ใช้ Fake Port; ผู้ใช้รายงาน Compile/Run Tests ทั้งหมดผ่านเมื่อ 2026-11-20 รวม P08/P11
-- WP-04 baseline: ผู้ใช้รายงานว่ารัน Grid Tests ทั้งหมดผ่านก่อนเริ่ม; repository clean ที่ HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`
-- Trello WP-04: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (Done)
+- WP-05A Contract/Test Plan และ 4-Phase Implementation Plan ได้รับอนุมัติจากผู้ใช้เมื่อ 2026-11-20; Schema V1 ฉบับปรับปรุงต้องมี Anchor State เป็น Required Field และไม่รองรับ V1 รูปแบบเก่า/ไม่ทำ Migration
+- Architecture boundary: `CTGKGridPersistence` เก็บ Instance/Lifecycle/Configuration; `CTGKGridEntryMappingReducer` + `CTGKGridEntryMappingSnapshotStorage` เป็น Canonical Trading State Persistence Authority สำหรับ Request/Deal/Position Mapping, Normal Level State และ Anchor State
+- WP-05A implementation breakdown: [WP-05A README](WorkPackages/WP-05A/README.md)
+- WP-05A.1 Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model — Ready; แยก SPEC และ TEST_PLAN แล้ว
+- WP-05A.1 SPEC: `WorkPackages/WP-05A/Phase-1.1/SPEC.md`
+- WP-05A.1 TEST_PLAN: `WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`
+- WP-05A.1 จำกัดเฉพาะ Reducer In-memory Anchor State Model, Initialize/RESET_COMMITTED, validation, typed getter และ Unit Tests; Anchor Mapping/Partial/Full Close Transitions เป็น WP-05A.2; Journal และ Snapshot Serialization อยู่ใน Cards ภายหลัง
+- Pre-change Grid Regression Baseline ยังรอผู้ใช้รายงาน; ห้ามย้าย Card ไป In Progress หรือเริ่ม Freebuff ก่อนผู้ใช้รายงาน Baseline และสั่งเริ่ม Card อย่างชัดเจน
+- Workflow V2: ChatGPT เป็น CTO (ไม่ Implement Source), Freebuff เป็น Developer (อ่าน Repository โดยตรง ไม่ต้องใช้ Serena MCP), ผู้ใช้เป็น Product Owner/QA และเป็นผู้ Compile/Run MetaEditor/MT5
+- Trello mapping: `MT5 Testing` ใช้เป็น User Verification; `Code Review` ใช้เป็น CTO Review; `In Progress` ใช้สำหรับ Implement และ Review Fixes โดยต้องระบุวัตถุประสงค์ใน Comment
+- WP-04 ยังคง Complete ตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-20; Card อยู่ Done: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration
+- ไม่มี Demo/Live Trade Request ได้รับอนุญาต; ไม่มี Commit/Push ได้รับอนุญาต
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
@@ -126,7 +122,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | COMPLETE (USER-REPORTED PASS 2026-11-19) | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | COMPLETE (user-reported Compile/Run PASS 2026-11-20) | เชื่อม Coordinator Candidate → Resolver → Policy → Entry Adapter → Coordinator request state; accepted/uncertain request รอ Deal/Position reconciliation; ห้ามสร้าง Mapping หรือ ACTIVE จาก CTrade result |
-| WP-05 | Close/Deal/Transaction Reconciliation Integration | NOT STARTED | เชื่อม partial fill, partial close, full close, TP/SL/manual close, Deal history และ Position transaction เข้ากับ Mapping/Coordinator/Engine; ไม่เดา Close Reason หรือ Logical Level |
+| WP-05 | Close/Deal/Transaction Reconciliation Integration | IN PROGRESS (WP-05A design approved; WP-05A.1 Ready, baseline pending) | WP-05A Persistence Foundation → WP-05B Runtime Restoration → WP-05C Deal/Position Reconciliation; WP-05D Production Event Integration เป็น Roadmap Placeholder แยกตาม Dependency |
 | WP-06 | Production EA Lifecycle/Event Handler | NOT STARTED | EA shell และ OnInit/OnDeinit/OnTick/OnTimer/OnTradeTransaction ตามที่จำเป็น; initialize identity/config/storage/runtime อย่างถูกลำดับ; restart/recovery และ safe shutdown |
 | WP-07 | Configuration, Bounds และ Runtime Safety Integration | NOT STARTED | Inputs และ validation ของ Mode/Bounds/Step/FixedLot; initial entry เฉพาะใน Bounds; no new entries นอก Bounds แต่ manage existing positions ต่อ; reset Mode/Step ตาม Contract |
 | WP-08 | End-to-End Test & Demo Validation | NOT STARTED | Integration Test ครอบคลุม BUY/SELL, multi-level crossing, TP/re-entry, partial fills/closes, foreign-position isolation, restart, Mode/Step reset, Storage failure และ Recovery; Demo Test เฉพาะเมื่อผู้ใช้อนุมัติขั้นตอน Trade Request |

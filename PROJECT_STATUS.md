@@ -1,19 +1,25 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-20
+Last updated: 2026-11-21
 
 ## Current focus
 
-**Grid V1 — WP-04 Entry Pipeline Integration: Complete; 9 Fake Port cases; user reported all tests compiled and ran successfully on 2026-11-20**
+**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 Anchor State Model is In Progress for Freebuff implementation. Pre-change baseline is recorded from the user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). No WP-05A source implementation has been reported yet.**
 
-- Master plan: [Grid V1 Roadmap + Definition of Done](Docs/EAs/Grid/ROADMAP.md)
-- Current WP Contract/Test Plan: [WP-04 Entry Pipeline Integration](Docs/EAs/Grid/Phases/phase-grid-entry-pipeline-integration.md)
-- Pre-change baseline: `feature/grid-trading`, HEAD `9d4a4965a182348dea8a2e01e8b9c23d8dc1998d`, clean working tree; user reported all latest Grid Tests passed on 2026-11-20.
-- WP-04 source: `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh`; coordinates the exact offered candidate through Resolver/Policy/Adapter and updates Coordinator request state.
-- WP-04 Test EA: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5`; nine Fake Port tests (Test IDs P01–P08, P11); no real Trade Request. User reported all tests compiled and ran successfully on 2026-11-20, including the latest additions.
-- Accepted execution outcomes remain unresolved until Deal/Position reconciliation; this pipeline does not create Position Mapping or set `ACTIVE` from CTrade results.
-- Trello: [WP-04 — Grid Entry Pipeline Integration](https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration) — Done.
-- WP-04 completed after source/test review, static/documentation checks, and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 mapping/partial-fill coverage remains a WP-05 reconciliation dependency; P10 duplicate prevention is covered by P01. Next: stop at the WP boundary and wait for separate explicit approval before WP-05. No Demo/Live Trade Request is authorized.
+- Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
+- WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
+- Active implementation candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — Trello status **In Progress** (Freebuff implementation authorized).
+- Next dependent implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) — **Product Backlog planning placeholder**; detailed SPEC/TEST_PLAN and separate approval required after WP-05A.1.
+- Developer Specification: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`.
+- Test Plan: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`.
+- Approved scope: Reducer in-memory Anchor State model, initialization/reset semantics, validation, typed getter, and focused Unit Tests. Anchor mapping/close transitions are deferred to WP-05A.2; Journal and Snapshot serialization are later WP-05A cards.
+- Workflow V2: ChatGPT = CTO/Technical Lead (no source implementation); Freebuff = Developer Agent (direct repository access; no Serena MCP required); user = Product Owner/QA. Formal CTO Code Review begins only after the user reports MetaEditor Compile/Test PASS.
+- Trello workflow mapping: `MT5 Testing` is User Verification; `Code Review` is CTO review; `In Progress` is used for implementation and review fixes with explicit comments.
+- **Pre-change Grid Regression Baseline: recorded from the user's 2026-11-20 report** that the full no-trade Grid suite passed. Current inventory: 20 Grid Test EAs = 19 no-trade tests + `test_grid_order_execution_demo.mq5` (separate Demo Trade Request safety gate, excluded). No `.mq5`/`.mqh` source/test files have changed since that baseline. User authorized WP-05A.1 on 2026-11-21; Card is now In Progress for Freebuff.
+- No Demo or Live Trade Request is authorized. No commit/push is authorized.
+- Last source baseline observed before this documentation-only preparation: branch `feature/grid-trading`, clean working tree. No MQL5 compile/runtime was performed as part of this preparation.
+
+---
 
 ## Current phase evidence
 

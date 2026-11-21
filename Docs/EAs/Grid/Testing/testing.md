@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-20
+อัปเดตล่าสุด: 2026-11-21
 
 ## ก่อนเริ่ม
 
@@ -33,8 +33,10 @@
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_policy.mq5` | Entry Policy pure-decision tests 44 Cases / 6 Groups; ไม่มี Trade API หรือ File I/O | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18; log ล่าสุดไม่ได้แจกแจงจำนวน cases |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` | Resolver/Caller provenance, stale context, fail-closed และ fresh mapping tests; ไม่มี Trade Request | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18 |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | Entry Adapter Fake Port tests 13 cases: Persist-before-send, Policy/Identity gate, retcode, duplicate prevention, retry IDs, ticket precision, sequence mismatch และ Recovery lock; Test EA ไม่เรียก CTrade หรือ File I/O | Static PASS; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19 |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` | Entry Pipeline integration ด้วย Fake Port: Candidate → Resolver/Policy → Adapter → Coordinator request state; 9 cases P01–P08, P11; ไม่มี Real Trade Request | ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-20 |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
+| `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5` | Grid State Machine: Initial State, Anchor จาก Fill, Mode/Step Reset และ Recovery Error | ผ่าน (ผู้ใช้รายงาน 2026-10-27) |
 | `Experts/TGK/Tests/Grids/test_grid_position_reconciler.mq5` | Ownership filtering ด้วย Symbol + Magic Number, close-attempt outcomes, fresh position reconciliation และ retry policy | ผ่าน (ผู้ใช้รายงาน 2026-10-29; ยืนยันซ้ำ 2026-10-30) |
 | `Experts/TGK/Tests/Grids/test_grid_runtime_orchestrator.mq5` | ประสาน Lifecycle/Position Reconciler, reset-close retry, restart ระหว่าง reset และ safe recovery | ผ่าน (ผู้ใช้รายงาน 2026-10-30) |
 | `Experts/TGK/Tests/Grids/test_grid_order_execution.mq5` | Ownership filtering, CLOSE_REQUIRED gate, retcode classification, aggregate batch result และ Adapter identity guard; ไม่มี trade request | ผ่าน (ผู้ใช้รายงาน 2026-10-31) |
@@ -62,6 +64,15 @@ Contract และ Test Plan: [phase-grid-entry-pipeline-integration.md](../Phas
 เพิ่ม `Include/BotTrade/Grid/GridEntryExecutionPipeline.mqh` เพื่อบังคับลำดับ Candidate → Resolver/Policy → Adapter → Runtime Coordinator request state. เพิ่ม `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` ซึ่งมี 9 Test IDs (P01–P08, P11) ใช้ Fake Port ในหน่วยความจำเท่านั้น. ผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Compile และ Run Tests ทั้งหมดผ่าน รวม Test EA และ Grid Regression ที่เกี่ยวข้องหลังเพิ่ม coverage P08/P11.
 
 Accepted `DONE`, `DONE_PARTIAL`, `PLACED` และผลที่ Adapter ต้อง Recovery จะคง Coordinator request เป็น unresolved; Pipeline ไม่สร้าง Position Mapping และไม่ตั้ง Level เป็น `ACTIVE`. Deal/Position reconciliation ยังเป็น dependency ของ WP-05.
+
+## WP-05A.1 — Anchor State Model (Specification/Test Plan prepared; implementation not started)
+
+Developer handoff:
+- Specification: [SPEC.md](../WorkPackages/WP-05A/Phase-1.1/SPEC.md)
+- Test Plan: [TEST_PLAN.md](../WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md)
+- Trello Card: https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model (Ready; waiting for user-reported Pre-change Grid Regression Baseline)
+
+ขอบเขต Test ที่วางแผน: Reducer Anchor State initialization, availability before/after RESET_COMMITTED, reset-to-READY behavior, fail-closed getter, no side effects from getter และ Normal Level regression. Tests จะเพิ่มใน `test_grid_entry_mapping_reducer.mq5`; ไม่มี Trade Request. ยังไม่มี Source/Test implementation เพิ่ม และยังไม่มี Compile/Runtime result สำหรับ WP-05A.1. Formal CTO Code Review จะเริ่มหลังผู้ใช้รายงาน Compile/Test PASS เท่านั้น
 
 ## Grid Entry Mapping Storage — implementation foundation (ผ่านตามผลผู้ใช้รายงาน 2026-11-12)
 

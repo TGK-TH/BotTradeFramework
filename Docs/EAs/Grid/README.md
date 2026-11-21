@@ -29,6 +29,7 @@
 - [Grid Entry Execution Policy — Design, Contract และ Test-First](Phases/phase-grid-entry-execution-policy.md)
 - [Grid Entry Execution Resolver — WP-02](Phases/phase-grid-entry-execution-resolver.md)
 - [Grid Entry Pipeline Integration — WP-04](Phases/phase-grid-entry-pipeline-integration.md)
+- [WP-05A — Persistence Foundation and Freebuff Handoff](WorkPackages/WP-05A/README.md)
 
 ## Current implementation boundary
 

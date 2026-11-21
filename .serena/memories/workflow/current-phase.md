@@ -1,6 +1,6 @@
 # Current TGK BotTradeFramework / Grid V1 Phase
 
-อัปเดต: 2026-11-19
+อัปเดต: 2026-11-21
 
 ## Repository and authority
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
@@ -19,8 +19,8 @@ WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 a
 - Test added: `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` has 9 Fake Port tests (P01–P08, P11). User reported Compile/Run of all tests passed on 2026-11-20, including the latest P08/P11 additions. No real Trade Request is sent.
 - Accepted and uncertain requests remain unresolved until reconciliation. Pipeline does not create Position Mapping or set ACTIVE from CTrade return/retcode. Deal/Position reconciliation is a WP-05 dependency.
 - Trello WP-04 card: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration (Done; user-reported Compile/Run PASS 2026-11-20).
-- WP-04 is complete after source/test review and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 partial-fill mapping remains a WP-05 reconciliation dependency; P10 duplicate blocking is covered by P01. Stop at the WP boundary and wait for separate explicit user approval before WP-05. No Demo/Live trade request is authorized.
-- WP-01 through WP-03 remain complete on user-reported evidence. WP-05 through WP-09 remain not started.
+- WP-04 is complete after source/test review and user-reported Compile/Run PASS for all tests on 2026-11-20. P09 partial-fill mapping remains a WP-05 reconciliation dependency; P10 duplicate blocking is covered by P01. At WP-04 completion, work stopped pending separate WP-05 approval; the user subsequently approved WP-05A design/preparation on 2026-11-21. No Demo/Live trade request is authorized.
+- WP-01 through WP-04 remain complete on user-reported evidence. WP-05A is in approved design/specification preparation. WP-05A.1 — Anchor State Model has approved SPEC/TEST_PLAN and its Trello Card is In Progress for Freebuff implementation. Pre-change baseline is recorded from the user's 2026-11-20 report that all 19 no-trade Grid Test EAs passed; the Demo Trade Request test remains excluded. Repository check on 2026-11-21 confirmed no `.mq5`/`.mqh` source/test changes since that baseline. WP-05A.2 — Anchor State Transitions is a Product Backlog planning placeholder. WP-05B through WP-09 remain not started.
 
 ## Grid V1 non-negotiable design
 - MT5 Hedging; one Grid Instance per chart; chart Symbol only; BUY/SELL; system-managed Instance ID and Magic.
@@ -38,7 +38,7 @@ WP-04 Grid Entry Pipeline Integration was authorized by the user on 2026-11-20 a
 - Workflow V2 adopted on 2026-11-21: ChatGPT = CTO/Technical Lead (design, specifications, final review, documentation; does not implement source code); Freebuff = Developer Agent (implements within approved Card/spec); user = Product Owner/QA (approves scope, runs MetaEditor/MT5 compile/tests, reports results, authorizes next work).
 - Freebuff can read repository files directly and must not depend on or be instructed to use Serena MCP. `AGENTS.md` is its durable repository instruction entry point. ChatGPT may use available project tools for read-only inspection/review.
 - Developer handoff uses separate `SPEC.md` and `TEST_PLAN.md`, plus `IMPLEMENTATION_REPORT.md` and `CODE_REVIEW.md` as needed. ChatGPT formal Code Review starts only after user reports Compile/Test PASS; any review fix returns through Freebuff and user re-verification.
-- WP-05A Phase 1 approved design is split into two proposed implementation Cards: 1.1 Anchor State Model, then 1.2 Anchor State Transitions. Implementation has not started; Pre-change Grid Regression Baseline is still pending.
+- WP-05A Phase 1 approved design is split into implementation Cards: WP-05A.1 Anchor State Model, then WP-05A.2 Anchor State Transitions. WP-05A.1 Trello card https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model is in Ready; SPEC.md and TEST_PLAN.md are prepared at Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/. Parent index: Docs/EAs/Grid/WorkPackages/WP-05A/README.md. Pre-change Grid Regression Baseline is pending; Freebuff implementation has not started. Board mapping: MT5 Testing=User Verification; Code Review=CTO review; In Progress=implementation and requested fixes.
 - Before each new Grid feature/refactor, remind user to run latest Grid Regression Tests and record pre-change baseline; run relevant tests again after source changes.
 - User runs MetaEditor/MT5 compile/runtime and reports results. Never claim those results independently.
 - Unit tests never send Trade Requests. Demo tests require explicit separate user approval and Safety Gate. Never send live orders.

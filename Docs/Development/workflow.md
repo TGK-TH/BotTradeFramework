@@ -36,6 +36,7 @@ ChatGPT ทำหน้าที่ CTO/Review ไม่ใช่ผู้ Imple
 - CTO Review ขอแก้: ใช้ `Changes Requested` (หรือ List ที่ตกลงให้เทียบเท่า) แล้วกลับ User Verification ก่อน Review รอบใหม่
 - ห้ามย้ายเป็น `Done` จากคำรายงานว่าเขียน Code เสร็จเพียงอย่างเดียว
 - Trello ใช้ติดตามสถานะและชี้ไปยังไฟล์ใน Repository; Repository Markdown เป็นแหล่ง Contract/Technical Handoff ที่ละเอียดและเป็นหลัก
+- Mapping ปัจจุบันของบอร์ด TGK Grid Bot (2026-11-21): `MT5 Testing` ใช้เป็น User Verification, `Code Review` ใช้สำหรับ CTO Review, `In Progress` ใช้ทั้งช่วง Freebuff Implement และช่วงแก้ Review Findings (ต้องระบุเหตุผลใน Comment), `Blocked` ใช้เมื่อมี Dependency/ข้อขัดข้องที่หยุดงานไว้ ทั้งนี้ไม่ต้องสร้างหรือเปลี่ยนชื่อ List เพิ่ม
 
 ## ทำงานเป็น Phase
 

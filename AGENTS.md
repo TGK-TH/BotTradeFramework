@@ -5,12 +5,12 @@ TGK BotTradeFramework is a reusable MQL5 trading framework for multiple EAs, wit
 
 ## Mandatory startup context
 At the beginning of every repository task:
-1. Read this file and `PROJECT_STATUS.md`.
-2. If the task concerns Grid, read `Docs/EAs/Grid/ROADMAP.md`, `Docs/EAs/Grid/README.md`, `Docs/EAs/Grid/architecture.md`, and `Docs/EAs/Grid/Testing/testing.md`.
-3. Read the current Work Package's Phase Note and directly related Design/ADR documents before changing source.
-4. Inspect current source files and tests; docs and memories can be stale.
+1. Read this file (`AGENTS.md`).
+2. **ChatGPT / CTO:** read `PROJECT_STATUS.md`; for Grid work, also read `Docs/EAs/Grid/ROADMAP.md`, `Docs/EAs/Grid/README.md`, `Docs/EAs/Grid/architecture.md`, `Docs/EAs/Grid/Testing/testing.md`, and the current Work Package's relevant Phase/Design/ADR documents.
+3. **Freebuff / Developer:** read only the active Trello Card's linked `SPEC.md` and `TEST_PLAN.md`, plus the exact source/test files and any additional repository document explicitly referenced by that Specification. Do not load the entire Grid Roadmap/Architecture/Testing history by default; request clarification if the task handoff is incomplete. This keeps the task context bounded.
+4. Inspect the current source files and tests within the Card's allowed scope; do not rely on docs/memories as proof that Source matches them.
 5. Run `git status --short --untracked-files=all` before editing and preserve all pre-existing staged, unstaged, and untracked user work.
-6. If Serena/MCP project access is available, consult the relevant project memories, especially `workflow/current-phase`, `workflow/development-and-trello-workflow`, `workflow/documentation`, and `conventions`.
+6. Serena/MCP memories are optional context for ChatGPT when available. Freebuff must not use Serena MCP or depend on Serena memories.
 
 Do not assume a prior chat transcript or model memory is visible to Codex. Durable instructions must live in this repository.
 
@@ -37,6 +37,7 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 - The intended lifecycle is: `Product Backlog -> Ready -> In Progress -> User Verification -> Code Review -> Done`.
 - If user Compile/Test fails, return to `In Progress` for Freebuff fixes, then repeat User Verification. If CTO review requests changes, use `Changes Requested` (or the board's equivalent), then repeat User Verification before the next formal review.
 - If the board has no exact matching list, do not silently create or rename lists; report the mismatch and agree with the user on the mapping first.
+- Current TGK Grid Bot board mapping (2026-11-21): `MT5 Testing` is the User Verification stage; `Code Review` is formal CTO review; `In Progress` is used for Freebuff implementation and fixes requested by CTO (the specific purpose must be stated in the Card comment); `Blocked` is used when work cannot proceed. Do not create/rename lists unless the user later approves it.
 - Trello is the concise work/status tracker. Repository Markdown files are the durable technical contract and handoff. Link each implementation Card to its `SPEC.md`, `TEST_PLAN.md`, implementation report, and code review record as applicable.
 
 ## Developer handoff files
