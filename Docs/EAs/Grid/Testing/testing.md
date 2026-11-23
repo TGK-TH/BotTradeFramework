@@ -108,7 +108,7 @@ Test cases ที่เขียนไว้:
 
 สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-14**
 
-## WP-05A.2 — Anchor State Transitions (Approved 2026-11-23; Not Yet Implemented)
+## WP-05A.2 — Anchor State Transitions (Implemented 2026-11-23; User Verification PASS 2026-11-23; CTO Code Review CHANGES REQUESTED (CR-01))
 
 SPEC: [WP-05A.2 SPEC](../WorkPackages/WP-05A/Phase-1.2/SPEC.md)
 TEST_PLAN: [WP-05A.2 TEST_PLAN](../WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md)
@@ -124,7 +124,7 @@ Approved target test coverage:
 - Append/flush/apply failures, invalid payloads, conflicting evidence and snapshot round-trip.
 - No Closing Deal History integration and no test Trade Requests.
 
-**Gate:** User approved SPEC/TEST_PLAN on 2026-11-23. Freebuff source implementation is blocked until the user reports the pre-change no-trade Grid Regression Baseline. The existing reducer tests still assert legacy TP/WAIT_RETURN behavior until implementation replaces those expectations; do not treat this approved plan as evidence that the code has changed or passed.
+**Implementation state (2026-11-23):** Source and tests were implemented by Freebuff after the user-reported pre-change no-trade Grid Regression Baseline passed. The reducer/engine tests now assert the reason-free transition contract and `WAIT_RETURN` normalization. Evidence and any limitations are recorded in [IMPLEMENTATION_REPORT.md](../WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md). The user reported (2026-11-23) that every changed file compiled PASS in MetaEditor. The first full run had 3 failing assertions in `test_grid_entry_mapping_reducer` (C16 interrupted replay) because the fixture passed a truncated `record_count` while `Replay()` requires `record_count == ArraySize(records)`; Freebuff fixed only the fixture, and the user then reported the tests PASS. Formal CTO Code Review is still pending.
 
 ## Snapshot Serialization + Journal Rotation — Design Contract (ตกลง 2026-11-14; ยังไม่ Implement)
 

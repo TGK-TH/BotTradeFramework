@@ -24,13 +24,6 @@ enum ENUM_TGK_GRID_ENTRY_RESOLUTION
   TGK_GRID_ENTRY_RESOLUTION_TERMINAL_NO_POSITION_NO_ORDER
 };
 
-enum ENUM_TGK_GRID_LEVEL_CLOSE_REASON
-{
-  TGK_GRID_LEVEL_CLOSE_REASON_UNKNOWN = 0,
-  TGK_GRID_LEVEL_CLOSE_REASON_TP,
-  TGK_GRID_LEVEL_CLOSE_REASON_NON_TP
-};
-
 // Integration Layer must provide explicit mapping. The Coordinator never
 // infers a Level from an approximate fill price.
 struct STGKGridLevelPositionRecord
@@ -43,11 +36,12 @@ struct STGKGridLevelPositionRecord
   double volume;
 };
 
+// Full Close is keyed by the logical mapping only. Close reason, close price
+// and Deal History are not part of the Grid state transition contract.
 struct STGKGridLevelCloseEvent
 {
   bool is_anchor;
   int level_index;
-  ENUM_TGK_GRID_LEVEL_CLOSE_REASON reason;
 };
 
 struct STGKGridLevelCandidate
@@ -149,7 +143,7 @@ private:
   }
 
   // Checks whether this candidate is in a state ready to enter a trade.
-  // The trade-entry-ready states are READY and WAIT_RETURN.
+  // READY is the only operational entry-eligible state.
   bool IsCandidateEligible(STGKGridLevelCandidate &candidate)
   {
     ENUM_TGK_GRID_LEVEL_STATE state;
@@ -159,8 +153,7 @@ private:
     else if(!m_engine.GetLevelState(candidate.level_index, state))
       return false;
 
-    return state == TGK_GRID_LEVEL_READY ||
-           state == TGK_GRID_LEVEL_WAIT_RETURN;
+    return TGKGridNormalizeLevelState(state) == TGK_GRID_LEVEL_READY;
   }
 
   // Checks whether the positions data is valid and contains no duplicates.
@@ -256,10 +249,10 @@ private:
     return found;
   }
 
-  // Validates that each close event has a valid mapping and a TP or NON_TP
-  // reason, refers to a position in the previous snapshot that is disappear
-  // from the current snapshot, and is not duplicated. Also requires a close
-  // event for every position that disappeared from the previous snapshot.
+  // Validates that each close event has a valid mapping, refers to a position
+  // in the previous snapshot that is absent from the current snapshot, and is
+  // not duplicated. Also requires a close event for every position that
+  // disappeared from the previous snapshot.
   bool ValidateCloseEvents(
     STGKGridLevelPositionRecord &positions[],
     STGKGridLevelCloseEvent &close_events[]
@@ -269,9 +262,7 @@ private:
     {
       if(!IsValidMapping(
         close_events[index].is_anchor,
-        close_events[index].level_index) ||
-         (close_events[index].reason != TGK_GRID_LEVEL_CLOSE_REASON_TP &&
-          close_events[index].reason != TGK_GRID_LEVEL_CLOSE_REASON_NON_TP))
+        close_events[index].level_index))
         return false;
 
       int position_index = FindPositionByMapping(
@@ -470,17 +461,12 @@ private:
         m_positions[index].is_anchor,
         m_positions[index].level_index);
 
-      if(close_index < 0 ||
-         close_events[close_index].reason == TGK_GRID_LEVEL_CLOSE_REASON_UNKNOWN)
+      if(close_index < 0)
         return false;
-
-      bool closed_by_tp =
-        close_events[close_index].reason == TGK_GRID_LEVEL_CLOSE_REASON_TP;
 
       if(!m_engine.RecordPositionClosed(
         m_positions[index].is_anchor,
         m_positions[index].level_index,
-        closed_by_tp,
         m_current_bid,
         m_current_ask))
         return false;

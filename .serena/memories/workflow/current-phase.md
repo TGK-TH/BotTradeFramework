@@ -12,7 +12,7 @@
 ## WP-05A status
 - WP-05A parent remains In Progress.
 - WP-05A.1 — Anchor State Model: Done. User reported MetaEditor Compile/Test PASS 2026-11-21; CTO Code Review APPROVED; user confirmed closure; Trello Done.
-- WP-05A.2 — Anchor State Transitions: Product Owner approved SPEC and TEST_PLAN on 2026-11-23. User reported all current Grid Regression test files passed, excluding tests that open orders on Demo; no fresh compile was run because source had not changed. Pre-change baseline accepted. Trello card moved to In Progress and baseline/implementation authorization recorded. Freebuff is cleared to implement approved scope only.
+- WP-05A.2 — Anchor State Transitions: Freebuff implementation completed and user reported MetaEditor Compile/Test PASS on 2026-11-23. CTO review returned CHANGES REQUESTED (CR-01, P1): Anchor WAIT_ACTIVATION has no durable transition back to READY, so the Reducer can permanently block subsequent Anchor re-entry. Review: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/CODE_REVIEW.md`. Trello remains in Code Review with finding comment. CTO made no source changes; a separate explicit implementation handoff is required before Freebuff fixes it.
 - Handoff files:
   - `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`
   - `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`

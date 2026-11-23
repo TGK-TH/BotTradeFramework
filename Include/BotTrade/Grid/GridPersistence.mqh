@@ -214,6 +214,7 @@ public:
        level_state > TGK_GRID_LEVEL_WAIT_ACTIVATION)
       return false;
 
+    level_state = TGKGridNormalizeLevelState(level_state);
     if(!WriteValue(StringFormat("lv.%d", level_index), (double)level_state))
       return false;
 
@@ -232,7 +233,8 @@ public:
        (int)value > TGK_GRID_LEVEL_WAIT_ACTIVATION)
       return false;
 
-    level_state = (ENUM_TGK_GRID_LEVEL_STATE)(int)value;
+    level_state = TGKGridNormalizeLevelState(
+      (ENUM_TGK_GRID_LEVEL_STATE)(int)value);
     return true;
   }
 

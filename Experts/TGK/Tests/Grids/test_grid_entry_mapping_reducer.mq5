@@ -182,7 +182,7 @@ int OnInit()
     "18446744073709551610");
   Tests.EndTest();
 
-  Tests.BeginTest("Partial close retains Mapping; confirmed full close prunes Mapping but retains Level State");
+  Tests.BeginTest("Partial close retains Mapping; legacy full close prunes Mapping and normalizes state");
   AddRecord(
     records,
     9,
@@ -224,9 +224,9 @@ int OnInit()
   Tests.AssertEqualInt("closed Position Mapping removed", closed_reducer.PositionCount(), 0);
   Tests.AssertEqualInt("closed Position Deal history pruned", closed_reducer.DealCount(), 0);
   Tests.AssertEqualInt(
-    "Level State retained as WAIT_RETURN",
+    "legacy WAIT_RETURN normalized to READY on replay",
     closed_reducer.LevelStateAt(1),
-    (int)TGK_GRID_LEVEL_WAIT_RETURN);
+    (int)TGK_GRID_LEVEL_READY);
 
   AddRecord(
     records,
@@ -963,7 +963,7 @@ int OnInit()
     (int)TGK_GRID_LEVEL_READY);
   Tests.EndTest();
 
-  Tests.BeginTest("Committed Reset exposes a READY Anchor State without changing Normal Level States");
+  Tests.BeginTest("Anchor mapping confirmation activates Anchor State without changing Normal Level States");
   STGKGridMappingJournalRecord anchor_records[];
   AddBaseConfiguration(anchor_records);
   int anchor_mapping_sequence = 3;
@@ -993,9 +993,9 @@ int OnInit()
     "committed Reducer exposes Anchor State",
     anchor_reducer.TryGetAnchorState(anchor_state));
   Tests.AssertEqualInt(
-    "Anchor State is READY after RESET_COMMITTED",
+    "Anchor State becomes ACTIVE when its Position Mapping is confirmed",
     (int)anchor_state,
-    (int)TGK_GRID_LEVEL_READY);
+    (int)TGK_GRID_LEVEL_ACTIVE);
   Tests.AssertEqualInt(
     "mapped Level remains ACTIVE",
     anchor_reducer.LevelStateAt(1),
@@ -1015,9 +1015,9 @@ int OnInit()
       "repeated Anchor query succeeds",
       anchor_reducer.TryGetAnchorState(anchor_state));
     Tests.AssertEqualInt(
-      "repeated Anchor query returns READY",
+      "repeated Anchor query returns ACTIVE",
       (int)anchor_state,
-      (int)TGK_GRID_LEVEL_READY);
+      (int)TGK_GRID_LEVEL_ACTIVE);
   }
   Tests.AssertEqualLong(
     "Anchor query preserves Sequence",
@@ -1151,6 +1151,892 @@ int OnInit()
     "new Configuration Epoch rebuilds 200 Level States",
     second_anchor_reset_reducer.LevelCount(),
     200);
+  Tests.EndTest();
+
+  Tests.BeginTest("Anchor becomes ACTIVE only when a confirmed Position Mapping exists");
+  STGKGridMappingJournalRecord anchor_activation_records[];
+  AddBaseConfiguration(anchor_activation_records);
+  AddRecord(
+    anchor_activation_records,
+    3,
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    "v1|REQ-A-ANCHOR|XAUUSD|710001|BUY|ANCHOR|-1|0.01|1|UT-INSTANCE");
+
+  CTGKGridEntryMappingReducer anchor_intent_reducer;
+  Tests.AssertTrue(
+    "initialize Anchor intent Reducer",
+    anchor_intent_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Anchor Entry Intent",
+    anchor_intent_reducer.Replay(
+      anchor_activation_records,
+      ArraySize(anchor_activation_records)));
+  Tests.AssertTrue(
+    "A01 Anchor intent alone exposes Anchor State",
+    anchor_intent_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "A01 Anchor intent alone does not activate Anchor",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  AddRecord(
+    anchor_activation_records,
+    4,
+    TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT,
+    "v1|REQ-A-ANCHOR|DONE|7000001|7000002");
+  AddRecord(
+    anchor_activation_records,
+    5,
+    TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION,
+    "v1|REQ-A-ANCHOR|7000002|7000003|0.01");
+
+  CTGKGridEntryMappingReducer anchor_deal_reducer;
+  Tests.AssertTrue(
+    "initialize Anchor Deal Reducer",
+    anchor_deal_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Anchor Execution Result and Deal Association",
+    anchor_deal_reducer.Replay(
+      anchor_activation_records,
+      ArraySize(anchor_activation_records)));
+  Tests.AssertTrue(
+    "A02/A03 Anchor stays mapped-free without a Position Mapping",
+    anchor_deal_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "A02/A03 Accepted result and Deal Association do not activate Anchor",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "A02/A03 no Position Mapping is created",
+    anchor_deal_reducer.PositionCount(),
+    0);
+
+  AddRecord(
+    anchor_activation_records,
+    6,
+    TGK_GRID_MAPPING_RECORD_POSITION_MAPPING,
+    "v1|REQ-A-ANCHOR|XAUUSD|710001|ANCHOR|-1|7000003|7000004|0.01|1|UT-INSTANCE");
+
+  CTGKGridEntryMappingReducer anchor_mapped_reducer;
+  Tests.AssertTrue(
+    "initialize confirmed Anchor Reducer",
+    anchor_mapped_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay confirmed Anchor Position Mapping",
+    anchor_mapped_reducer.Replay(
+      anchor_activation_records,
+      ArraySize(anchor_activation_records)));
+  Tests.AssertTrue(
+    "A04 confirmed Anchor mapping exposes Anchor State",
+    anchor_mapped_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "A04 confirmed Anchor mapping activates Anchor State",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.EndTest();
+
+  Tests.BeginTest("Invalid or duplicate Anchor mapping is rejected before mutation");
+  STGKGridMappingJournalRecord duplicate_anchor_records[];
+  AddBaseConfiguration(duplicate_anchor_records);
+  int duplicate_sequence = 3;
+  AddMappedPosition(
+    duplicate_anchor_records,
+    duplicate_sequence,
+    "REQ-ANCHOR-FIRST",
+    "ANCHOR",
+    -1,
+    9201);
+  AddRecord(
+    duplicate_anchor_records,
+    duplicate_sequence,
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    "v1|REQ-ANCHOR-SECOND|XAUUSD|710001|BUY|ANCHOR|-1|0.01|1|UT-INSTANCE");
+
+  CTGKGridEntryMappingReducer duplicate_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize duplicate Anchor Reducer",
+    duplicate_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "A05 second Anchor mapping is rejected",
+    duplicate_anchor_reducer.Replay(
+      duplicate_anchor_records,
+      ArraySize(duplicate_anchor_records)));
+  Tests.AssertEqualInt(
+    "A05 duplicate Anchor mapping enters RECOVERY_ERROR",
+    (int)duplicate_anchor_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.AssertEqualInt(
+    "A05 only the first Anchor mapping remains",
+    duplicate_anchor_reducer.PositionCount(),
+    1);
+
+  STGKGridMappingJournalRecord invalid_anchor_records[];
+  AddBaseConfiguration(invalid_anchor_records);
+  AddRecord(
+    invalid_anchor_records,
+    3,
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    "v1|REQ-A-BAD|XAUUSD|710001|BUY|ANCHOR|-1|0.01|1|UT-INSTANCE");
+  AddRecord(
+    invalid_anchor_records,
+    4,
+    TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT,
+    "v1|REQ-A-BAD|DONE|7000101|7000102");
+  AddRecord(
+    invalid_anchor_records,
+    5,
+    TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION,
+    "v1|REQ-A-BAD|7000102|7000103|0.01");
+  AddRecord(
+    invalid_anchor_records,
+    6,
+    TGK_GRID_MAPPING_RECORD_POSITION_MAPPING,
+    "v1|REQ-A-BAD|XAUUSD|710002|ANCHOR|-1|7000103|7000104|0.01|1|UT-INSTANCE");
+
+  CTGKGridEntryMappingReducer invalid_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize invalid Anchor Reducer",
+    invalid_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "A06 Anchor mapping with invalid identity is rejected",
+    invalid_anchor_reducer.Replay(
+      invalid_anchor_records,
+      ArraySize(invalid_anchor_records)));
+  Tests.AssertEqualInt(
+    "A06 invalid Anchor identity enters RECOVERY_ERROR",
+    (int)invalid_anchor_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.AssertEqualInt(
+    "A06 no Position Mapping is stored",
+    invalid_anchor_reducer.PositionCount(),
+    0);
+  Tests.EndTest();
+
+  Tests.BeginTest("Anchor and Level Partial Close update Volume and Ticket while staying ACTIVE");
+  STGKGridMappingJournalRecord metadata_records[];
+  AddBaseConfiguration(metadata_records);
+  int metadata_sequence = 3;
+  AddMappedPosition(
+    metadata_records,
+    metadata_sequence,
+    "REQ-META-ANCHOR",
+    "ANCHOR",
+    -1,
+    9301);
+  AddRecord(
+    metadata_records,
+    metadata_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009301|0.006|4009301");
+  AddRecord(
+    metadata_records,
+    metadata_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009301|0.006|4009401");
+
+  CTGKGridEntryMappingReducer metadata_reducer;
+  Tests.AssertTrue(
+    "initialize metadata Reducer",
+    metadata_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Partial Close metadata",
+    metadata_reducer.Replay(
+      metadata_records,
+      ArraySize(metadata_records)));
+  Tests.AssertEqualInt("P01 Anchor mapping remains", metadata_reducer.PositionCount(), 1);
+  Tests.AssertEqualDouble("P01 Anchor Volume updated", metadata_reducer.PositionVolumeAt(0), 0.006);
+  Tests.AssertEqualString("P04 refreshed Position Ticket", metadata_reducer.PositionTicketAt(0), "4009401");
+  Tests.AssertEqualString("P04 Position Identifier unchanged", metadata_reducer.PositionIdentifierAt(0), "3009301");
+  Tests.AssertTrue(
+    "P04/P05 Anchor State remains queryable",
+    metadata_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "P04/P05 Anchor remains ACTIVE after Partial Close",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  AddRecord(
+    metadata_records,
+    ArraySize(metadata_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009301|0.006|4009401");
+  CTGKGridEntryMappingReducer duplicate_metadata_reducer;
+  Tests.AssertTrue(
+    "initialize duplicate metadata Reducer",
+    duplicate_metadata_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "I09 unchanged metadata observation is rejected",
+    duplicate_metadata_reducer.Replay(
+      metadata_records,
+      ArraySize(metadata_records)));
+  Tests.EndTest();
+
+  Tests.BeginTest("Conflicting Partial Close metadata fails closed");
+  STGKGridMappingJournalRecord metadata_anchor_fixture[];
+  AddBaseConfiguration(metadata_anchor_fixture);
+  int metadata_anchor_sequence = 3;
+  AddMappedPosition(
+    metadata_anchor_fixture,
+    metadata_anchor_sequence,
+    "REQ-META-CONFLICT",
+    "ANCHOR",
+    -1,
+    9401);
+
+  STGKGridMappingJournalRecord grown_volume_records[];
+  ArrayResize(grown_volume_records, ArraySize(metadata_anchor_fixture));
+  for(int i = 0; i < ArraySize(metadata_anchor_fixture); i++)
+    grown_volume_records[i] = metadata_anchor_fixture[i];
+  AddRecord(
+    grown_volume_records,
+    ArraySize(grown_volume_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009401|0.02|4009401");
+  CTGKGridEntryMappingReducer grown_volume_reducer;
+  Tests.AssertTrue(
+    "initialize grown-Volume Reducer",
+    grown_volume_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "P07 increased Volume for the same Position is rejected",
+    grown_volume_reducer.Replay(
+      grown_volume_records,
+      ArraySize(grown_volume_records)));
+  Tests.AssertEqualInt(
+    "P07 conflicting Volume enters RECOVERY_ERROR",
+    (int)grown_volume_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+
+  STGKGridMappingJournalRecord zero_volume_records[];
+  ArrayResize(zero_volume_records, ArraySize(metadata_anchor_fixture));
+  for(int i = 0; i < ArraySize(metadata_anchor_fixture); i++)
+    zero_volume_records[i] = metadata_anchor_fixture[i];
+  AddRecord(
+    zero_volume_records,
+    ArraySize(zero_volume_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009401|0|4009401");
+  CTGKGridEntryMappingReducer zero_volume_reducer;
+  Tests.AssertTrue(
+    "initialize zero-Volume Reducer",
+    zero_volume_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "P06 zero Volume must use the Full Close transition",
+    zero_volume_reducer.Replay(
+      zero_volume_records,
+      ArraySize(zero_volume_records)));
+
+  STGKGridMappingJournalRecord unknown_metadata_records[];
+  ArrayResize(unknown_metadata_records, ArraySize(metadata_anchor_fixture));
+  for(int i = 0; i < ArraySize(metadata_anchor_fixture); i++)
+    unknown_metadata_records[i] = metadata_anchor_fixture[i];
+  AddRecord(
+    unknown_metadata_records,
+    ArraySize(unknown_metadata_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_METADATA|3009999|0.005|4009999");
+  CTGKGridEntryMappingReducer unknown_metadata_reducer;
+  Tests.AssertTrue(
+    "initialize unknown-Identifier Reducer",
+    unknown_metadata_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "P08 unknown Position Identifier is rejected",
+    unknown_metadata_reducer.Replay(
+      unknown_metadata_records,
+      ArraySize(unknown_metadata_records)));
+  Tests.EndTest();
+
+  Tests.BeginTest("Reason-free Full Close updates Anchor and Level state atomically");
+  STGKGridMappingJournalRecord anchor_close_records[];
+  AddBaseConfiguration(anchor_close_records);
+  int anchor_close_sequence = 3;
+  AddMappedPosition(
+    anchor_close_records,
+    anchor_close_sequence,
+    "REQ-CLOSE-ANCHOR",
+    "ANCHOR",
+    -1,
+    9501);
+  AddRecord(
+    anchor_close_records,
+    anchor_close_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009501|WAIT_ACTIVATION");
+
+  CTGKGridEntryMappingReducer anchor_close_reducer;
+  Tests.AssertTrue(
+    "initialize Anchor close Reducer",
+    anchor_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay reason-free Anchor close",
+    anchor_close_reducer.Replay(
+      anchor_close_records,
+      ArraySize(anchor_close_records)));
+  Tests.AssertEqualInt("C11 Anchor mapping removed", anchor_close_reducer.PositionCount(), 0);
+  Tests.AssertTrue(
+    "C11 Anchor State remains queryable",
+    anchor_close_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "C11 Anchor State updated to WAIT_ACTIVATION",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  STGKGridMappingJournalRecord level_close_records[];
+  AddBaseConfiguration(level_close_records);
+  AddFilledLevelRequest(level_close_records);
+  AddRecord(
+    level_close_records,
+    ArraySize(level_close_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|18446744073709551613|WAIT_ACTIVATION");
+  CTGKGridEntryMappingReducer level_close_reducer;
+  Tests.AssertTrue(
+    "initialize Level close Reducer",
+    level_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay reason-free Level close",
+    level_close_reducer.Replay(
+      level_close_records,
+      ArraySize(level_close_records)));
+  Tests.AssertEqualInt("C12 Level mapping removed", level_close_reducer.PositionCount(), 0);
+  Tests.AssertEqualInt(
+    "C12 Level State updated to WAIT_ACTIVATION",
+    level_close_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  STGKGridMappingJournalRecord two_close_records[];
+  AddBaseConfiguration(two_close_records);
+  int two_close_sequence = 3;
+  AddMappedPosition(
+    two_close_records,
+    two_close_sequence,
+    "REQ-TWO-CLOSE-1",
+    "LEVEL",
+    1,
+    9551);
+  AddMappedPosition(
+    two_close_records,
+    two_close_sequence,
+    "REQ-TWO-CLOSE-2",
+    "LEVEL",
+    2,
+    9552);
+  int first_close_count = ArraySize(two_close_records);
+  AddRecord(
+    two_close_records,
+    two_close_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009551|READY");
+  AddRecord(
+    two_close_records,
+    two_close_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009552|WAIT_ACTIVATION");
+
+  STGKGridMappingJournalRecord interrupted_close_records[];
+  ArrayResize(interrupted_close_records, first_close_count + 1);
+  for(int i = 0; i <= first_close_count; i++)
+    interrupted_close_records[i] = two_close_records[i];
+
+  CTGKGridEntryMappingReducer interrupted_close_reducer;
+  Tests.AssertTrue(
+    "initialize interrupted close Reducer",
+    interrupted_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay only the first committed close record",
+    interrupted_close_reducer.Replay(
+      interrupted_close_records,
+      ArraySize(interrupted_close_records)));
+  Tests.AssertEqualInt(
+    "C16 first close removes one mapping",
+    interrupted_close_reducer.PositionCount(),
+    1);
+  Tests.AssertEqualInt(
+    "C16 second Level remains ACTIVE until its record",
+    interrupted_close_reducer.LevelStateAt(2),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  CTGKGridEntryMappingReducer two_close_reducer;
+  Tests.AssertTrue(
+    "initialize two-close Reducer",
+    two_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay both ordered close records",
+    two_close_reducer.Replay(
+      two_close_records,
+      ArraySize(two_close_records)));
+  Tests.AssertEqualInt("C16 both mappings removed", two_close_reducer.PositionCount(), 0);
+  Tests.AssertEqualInt(
+    "C16 first Level closed",
+    two_close_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "C16 second Level closed",
+    two_close_reducer.LevelStateAt(2),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.EndTest();
+
+  Tests.BeginTest("Invalid Full Close evidence is rejected without mutation");
+  STGKGridMappingJournalRecord close_fixture[];
+  AddBaseConfiguration(close_fixture);
+  int close_fixture_sequence = 3;
+  AddMappedPosition(
+    close_fixture,
+    close_fixture_sequence,
+    "REQ-CLOSE-ERROR",
+    "ANCHOR",
+    -1,
+    9601);
+
+  STGKGridMappingJournalRecord close_active_records[];
+  ArrayResize(close_active_records, ArraySize(close_fixture));
+  for(int i = 0; i < ArraySize(close_fixture); i++)
+    close_active_records[i] = close_fixture[i];
+  AddRecord(
+    close_active_records,
+    ArraySize(close_active_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009601|ACTIVE");
+  CTGKGridEntryMappingReducer close_active_reducer;
+  Tests.AssertTrue(
+    "initialize ACTIVE close Reducer",
+    close_active_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "C15 Full Close cannot set ACTIVE",
+    close_active_reducer.Replay(
+      close_active_records,
+      ArraySize(close_active_records)));
+  Tests.AssertEqualInt(
+    "C15 rejected close leaves the mapping intact",
+    close_active_reducer.PositionCount(),
+    1);
+
+  CTGKGridEntryMappingReducer close_prefix_reducer;
+  Tests.AssertTrue(
+    "initialize valid close-prefix Reducer",
+    close_prefix_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay valid close-prefix fixture",
+    close_prefix_reducer.Replay(
+      close_fixture,
+      ArraySize(close_fixture)));
+  Tests.AssertTrue(
+    "C15 pre-close Anchor State is queryable",
+    close_prefix_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "C15 pre-close Anchor State is ACTIVE",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  STGKGridMappingJournalRecord unknown_close_records[];
+  ArrayResize(unknown_close_records, ArraySize(close_fixture));
+  for(int i = 0; i < ArraySize(close_fixture); i++)
+    unknown_close_records[i] = close_fixture[i];
+  AddRecord(
+    unknown_close_records,
+    ArraySize(unknown_close_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009999|READY");
+  CTGKGridEntryMappingReducer unknown_close_reducer;
+  Tests.AssertTrue(
+    "initialize unknown close Reducer",
+    unknown_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "C13 Full Close with unknown Identifier is rejected",
+    unknown_close_reducer.Replay(
+      unknown_close_records,
+      ArraySize(unknown_close_records)));
+  Tests.AssertEqualInt(
+    "C13 unknown close enters RECOVERY_ERROR",
+    (int)unknown_close_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.EndTest();
+
+  Tests.BeginTest("Legacy close payloads replay and normalize without a reason branch");
+  STGKGridMappingJournalRecord legacy_tp_records[];
+  AddBaseConfiguration(legacy_tp_records);
+  AddFilledLevelRequest(legacy_tp_records);
+  AddRecord(
+    legacy_tp_records,
+    ArraySize(legacy_tp_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|18446744073709551613|TP|WAIT_RETURN");
+  CTGKGridEntryMappingReducer legacy_tp_reducer;
+  Tests.AssertTrue(
+    "initialize legacy TP Reducer",
+    legacy_tp_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L01 replay legacy TP close",
+    legacy_tp_reducer.Replay(
+      legacy_tp_records,
+      ArraySize(legacy_tp_records)));
+  Tests.AssertEqualInt("L01 legacy mapping removed", legacy_tp_reducer.PositionCount(), 0);
+  Tests.AssertEqualInt(
+    "L01 legacy WAIT_RETURN normalized to READY",
+    legacy_tp_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+
+  string legacy_tp_snapshot_payload;
+  Tests.AssertTrue(
+    "R07 export Snapshot after legacy normalization",
+    legacy_tp_reducer.ExportSnapshot(legacy_tp_snapshot_payload));
+  CTGKGridEntryMappingReducer legacy_tp_snapshot_reducer;
+  Tests.AssertTrue(
+    "initialize legacy-normalized Snapshot Reducer",
+    legacy_tp_snapshot_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "R07 restore normalized Snapshot",
+    legacy_tp_snapshot_reducer.RestoreSnapshot(
+      legacy_tp_snapshot_payload,
+      legacy_tp_reducer.LastSequence()));
+  Tests.AssertEqualInt(
+    "R07 Snapshot writes READY, never WAIT_RETURN",
+    legacy_tp_snapshot_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+
+  STGKGridMappingJournalRecord legacy_ready_records[];
+  AddBaseConfiguration(legacy_ready_records);
+  AddFilledLevelRequest(legacy_ready_records);
+  AddRecord(
+    legacy_ready_records,
+    ArraySize(legacy_ready_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|18446744073709551613|NON_TP|READY");
+  CTGKGridEntryMappingReducer legacy_ready_reducer;
+  Tests.AssertTrue(
+    "initialize legacy NON_TP Reducer",
+    legacy_ready_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L02 replay legacy NON_TP close",
+    legacy_ready_reducer.Replay(
+      legacy_ready_records,
+      ArraySize(legacy_ready_records)));
+  Tests.AssertEqualInt(
+    "L02 legacy close results in READY",
+    legacy_ready_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+
+  STGKGridMappingJournalRecord legacy_activation_records[];
+  AddBaseConfiguration(legacy_activation_records);
+  AddFilledLevelRequest(legacy_activation_records);
+  AddRecord(
+    legacy_activation_records,
+    ArraySize(legacy_activation_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|18446744073709551613|NON_TP|WAIT_ACTIVATION");
+  CTGKGridEntryMappingReducer legacy_activation_reducer;
+  Tests.AssertTrue(
+    "initialize legacy WAIT_ACTIVATION Reducer",
+    legacy_activation_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L03 replay legacy WAIT_ACTIVATION close",
+    legacy_activation_reducer.Replay(
+      legacy_activation_records,
+      ArraySize(legacy_activation_records)));
+  Tests.AssertEqualInt(
+    "L03 WAIT_ACTIVATION is preserved",
+    legacy_activation_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  STGKGridMappingJournalRecord legacy_anchor_records[];
+  AddBaseConfiguration(legacy_anchor_records);
+  int legacy_anchor_sequence = 3;
+  AddMappedPosition(
+    legacy_anchor_records,
+    legacy_anchor_sequence,
+    "REQ-LEGACY-ANCHOR",
+    "ANCHOR",
+    -1,
+    9701);
+  AddRecord(
+    legacy_anchor_records,
+    legacy_anchor_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009701|TP|NONE");
+  CTGKGridEntryMappingReducer legacy_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize legacy Anchor close Reducer",
+    legacy_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L04 replay legacy Anchor close",
+    legacy_anchor_reducer.Replay(
+      legacy_anchor_records,
+      ArraySize(legacy_anchor_records)));
+  Tests.AssertEqualInt("L04 Anchor mapping removed", legacy_anchor_reducer.PositionCount(), 0);
+  Tests.AssertTrue(
+    "L04 Anchor State query succeeds",
+    legacy_anchor_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "L04 legacy Anchor NONE normalized to READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("State-based idempotency rejects duplicate and stale close records");
+  STGKGridMappingJournalRecord idempotent_records[];
+  AddBaseConfiguration(idempotent_records);
+  int idempotent_sequence = 3;
+  AddMappedPosition(
+    idempotent_records,
+    idempotent_sequence,
+    "REQ-CLOSE-ONCE",
+    "ANCHOR",
+    -1,
+    9801);
+  AddRecord(
+    idempotent_records,
+    idempotent_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009801|READY");
+
+  CTGKGridEntryMappingReducer idempotent_reducer;
+  Tests.AssertTrue(
+    "initialize idempotent Reducer",
+    idempotent_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "first close is applied exactly once",
+    idempotent_reducer.Replay(
+      idempotent_records,
+      ArraySize(idempotent_records)));
+  Tests.AssertEqualInt("I01 mapping is absent after close", idempotent_reducer.PositionCount(), 0);
+
+  AddRecord(
+    idempotent_records,
+    ArraySize(idempotent_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009801|READY");
+  CTGKGridEntryMappingReducer duplicate_close_reducer;
+  Tests.AssertTrue(
+    "initialize duplicate close Reducer",
+    duplicate_close_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "I06 repeated close record with a new Sequence is rejected",
+    duplicate_close_reducer.Replay(
+      idempotent_records,
+      ArraySize(idempotent_records)));
+  Tests.AssertEqualInt(
+    "I06 rejected duplicate close enters RECOVERY_ERROR",
+    (int)duplicate_close_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+
+  STGKGridMappingJournalRecord remapped_records[];
+  AddBaseConfiguration(remapped_records);
+  int remapped_sequence = 3;
+  AddMappedPosition(
+    remapped_records,
+    remapped_sequence,
+    "REQ-OLD-POSITION",
+    "LEVEL",
+    1,
+    9901);
+  AddRecord(
+    remapped_records,
+    remapped_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009901|READY");
+  AddRecord(
+    remapped_records,
+    remapped_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|LEVEL_STATE|1|1|READY");
+  AddMappedPosition(
+    remapped_records,
+    remapped_sequence,
+    "REQ-NEW-POSITION",
+    "LEVEL",
+    1,
+    9902);
+  AddRecord(
+    remapped_records,
+    remapped_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009901|READY");
+
+  CTGKGridEntryMappingReducer remapped_reducer;
+  Tests.AssertTrue(
+    "initialize remapped Level Reducer",
+    remapped_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "I07 stale close for the old Identifier is rejected",
+    remapped_reducer.Replay(
+      remapped_records,
+      ArraySize(remapped_records)));
+  Tests.AssertEqualInt(
+    "I07 rejected stale close leaves the new mapping intact",
+    remapped_reducer.PositionCount(),
+    1);
+  Tests.AssertEqualString(
+    "I07 new Position Identifier is unchanged",
+    remapped_reducer.PositionIdentifierAt(0),
+    "3009902");
+  Tests.AssertEqualInt(
+    "I07 new mapping remains ACTIVE",
+    remapped_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.EndTest();
+
+  Tests.BeginTest("Snapshot persists Anchor State and rejects a missing Anchor State field");
+  STGKGridMappingJournalRecord snapshot_anchor_records[];
+  AddBaseConfiguration(snapshot_anchor_records);
+  int snapshot_anchor_sequence = 3;
+  AddMappedPosition(
+    snapshot_anchor_records,
+    snapshot_anchor_sequence,
+    "REQ-SNAPSHOT-ANCHOR",
+    "ANCHOR",
+    -1,
+    9951);
+
+  CTGKGridEntryMappingReducer snapshot_anchor_source;
+  Tests.AssertTrue(
+    "initialize Anchor Snapshot source",
+    snapshot_anchor_source.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Anchor Snapshot fixture",
+    snapshot_anchor_source.Replay(
+      snapshot_anchor_records,
+      ArraySize(snapshot_anchor_records)));
+  string anchor_snapshot_payload;
+  Tests.AssertTrue(
+    "export Snapshot with ACTIVE Anchor",
+    snapshot_anchor_source.ExportSnapshot(anchor_snapshot_payload));
+
+  CTGKGridEntryMappingReducer snapshot_anchor_restored;
+  Tests.AssertTrue(
+    "initialize Anchor Snapshot target",
+    snapshot_anchor_restored.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "restore Snapshot with ACTIVE Anchor",
+    snapshot_anchor_restored.RestoreSnapshot(
+      anchor_snapshot_payload,
+      snapshot_anchor_source.LastSequence()));
+  Tests.AssertEqualInt(
+    "F07 Anchor mapping survives Snapshot",
+    snapshot_anchor_restored.PositionCount(),
+    1);
+  Tests.AssertTrue(
+    "F07 restored Anchor State is queryable",
+    snapshot_anchor_restored.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "F07 restored Anchor State is ACTIVE",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  STGKGridMappingJournalRecord snapshot_base_records[];
+  AddBaseConfiguration(snapshot_base_records);
+  CTGKGridEntryMappingReducer snapshot_base_reducer;
+  Tests.AssertTrue(
+    "initialize base Snapshot Reducer",
+    snapshot_base_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay base configuration",
+    snapshot_base_reducer.Replay(
+      snapshot_base_records,
+      ArraySize(snapshot_base_records)));
+  string base_snapshot_payload;
+  Tests.AssertTrue(
+    "export base Snapshot",
+    snapshot_base_reducer.ExportSnapshot(base_snapshot_payload));
+
+  string missing_anchor_payload = base_snapshot_payload;
+  int missing_anchor_replacements = StringReplace(
+    missing_anchor_payload,
+    "|201|0|0|0|200|0|",
+    "|201|0|0|0|200|");
+  Tests.AssertEqualInt(
+    "remove the required Anchor State field",
+    missing_anchor_replacements,
+    1);
+  CTGKGridEntryMappingReducer missing_anchor_reducer;
+  Tests.AssertTrue(
+    "initialize missing-Anchor Snapshot Reducer",
+    missing_anchor_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "L07 Snapshot without Anchor State fails closed",
+    missing_anchor_reducer.RestoreSnapshot(
+      missing_anchor_payload,
+      snapshot_base_reducer.LastSequence()));
+  Tests.AssertEqualInt(
+    "L07 missing Anchor State enters RECOVERY_ERROR",
+    (int)missing_anchor_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+
+  string legacy_anchor_state_payload = base_snapshot_payload;
+  Tests.AssertEqualInt(
+    "set legacy numeric WAIT_RETURN Anchor State",
+    StringReplace(
+      legacy_anchor_state_payload,
+      "|201|0|0|0|200|0|",
+      "|201|0|0|0|200|2|"),
+    1);
+  CTGKGridEntryMappingReducer legacy_anchor_state_reducer;
+  Tests.AssertTrue(
+    "initialize legacy Anchor State Snapshot Reducer",
+    legacy_anchor_state_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L05 load legacy numeric WAIT_RETURN Anchor State",
+    legacy_anchor_state_reducer.RestoreSnapshot(
+      legacy_anchor_state_payload,
+      snapshot_base_reducer.LastSequence()));
+  Tests.AssertTrue(
+    "L05 normalized Anchor State is queryable",
+    legacy_anchor_state_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "L05 legacy Anchor WAIT_RETURN normalized to READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  string activation_anchor_state_payload = base_snapshot_payload;
+  Tests.AssertEqualInt(
+    "set WAIT_ACTIVATION Anchor State",
+    StringReplace(
+      activation_anchor_state_payload,
+      "|201|0|0|0|200|0|",
+      "|201|0|0|0|200|3|"),
+    1);
+  CTGKGridEntryMappingReducer activation_anchor_state_reducer;
+  Tests.AssertTrue(
+    "initialize WAIT_ACTIVATION Snapshot Reducer",
+    activation_anchor_state_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "L06 load WAIT_ACTIVATION Anchor State",
+    activation_anchor_state_reducer.RestoreSnapshot(
+      activation_anchor_state_payload,
+      snapshot_base_reducer.LastSequence()));
+  Tests.AssertTrue(
+    "L06 Anchor State remains queryable",
+    activation_anchor_state_reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "L06 WAIT_ACTIVATION numeric ordinal is preserved",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  STGKGridMappingJournalRecord post_snapshot_records[];
+  int post_snapshot_sequence = 3;
+  AddMappedPosition(
+    post_snapshot_records,
+    post_snapshot_sequence,
+    "REQ-POST-SNAPSHOT",
+    "LEVEL",
+    1,
+    9961);
+  CTGKGridEntryMappingReducer post_snapshot_reducer;
+  Tests.AssertTrue(
+    "initialize post-Snapshot Reducer",
+    post_snapshot_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "restore base Snapshot checkpoint",
+    post_snapshot_reducer.RestoreSnapshot(
+      base_snapshot_payload,
+      snapshot_base_reducer.LastSequence()));
+  Tests.AssertTrue(
+    "F08 replay later Journal records",
+    post_snapshot_reducer.Replay(
+      post_snapshot_records,
+      ArraySize(post_snapshot_records)));
+  Tests.AssertEqualInt(
+    "F08 later mapping is ACTIVE after replay",
+    post_snapshot_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_ACTIVE);
   Tests.EndTest();
 
   Tests.EndSuite();

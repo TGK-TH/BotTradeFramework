@@ -167,7 +167,7 @@ int OnInit()
     "save ACTIVE level",
     Persistence.SaveLevelState(1, TGK_GRID_LEVEL_ACTIVE));
   Tests.AssertTrue(
-    "save WAIT_RETURN level",
+    "save legacy WAIT_RETURN level",
     Persistence.SaveLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
   Tests.AssertTrue(
     "save WAIT_ACTIVATION level",
@@ -189,12 +189,12 @@ int OnInit()
     (int)level_state,
     (int)TGK_GRID_LEVEL_ACTIVE);
   Tests.AssertTrue(
-    "restore WAIT_RETURN level",
+    "restore normalized legacy level",
     Persistence.RestoreLevelState(2, level_state));
   Tests.AssertEqualInt(
-    "WAIT_RETURN value",
+    "legacy WAIT_RETURN restores as READY",
     (int)level_state,
-    (int)TGK_GRID_LEVEL_WAIT_RETURN);
+    (int)TGK_GRID_LEVEL_READY);
   Tests.AssertTrue(
     "restore WAIT_ACTIVATION level",
     Persistence.RestoreLevelState(3, level_state));

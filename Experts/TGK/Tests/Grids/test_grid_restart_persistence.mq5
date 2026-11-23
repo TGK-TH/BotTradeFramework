@@ -266,9 +266,9 @@ int OnInit()
       "level 2 restores",
       Persistence.RestoreLevelState(2, level_state));
     Tests.AssertEqualInt(
-      "level 2 state",
+      "legacy WAIT_RETURN level state restores as READY",
       (int)level_state,
-      (int)TGK_GRID_LEVEL_WAIT_RETURN);
+      (int)TGK_GRID_LEVEL_READY);
   }
   Tests.EndTest();
 

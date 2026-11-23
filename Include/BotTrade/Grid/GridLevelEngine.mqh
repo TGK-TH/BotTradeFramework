@@ -24,6 +24,8 @@ private:
     return mode == TGK_GRID_MODE_BUY || mode == TGK_GRID_MODE_SELL;
   }
 
+  // WAIT_RETURN is accepted only as a legacy input value; it is normalized
+  // to READY before it is stored.
   bool IsValidLevelState(ENUM_TGK_GRID_LEVEL_STATE state)
   {
     return state == TGK_GRID_LEVEL_READY ||
@@ -48,8 +50,7 @@ private:
 
   bool IsEntryEligible(ENUM_TGK_GRID_LEVEL_STATE state)
   {
-    return state == TGK_GRID_LEVEL_READY ||
-           state == TGK_GRID_LEVEL_WAIT_RETURN;
+    return TGKGridNormalizeLevelState(state) == TGK_GRID_LEVEL_READY;
   }
 
   bool BuildLevels(int expected_level_count)
@@ -155,17 +156,15 @@ private:
     return level_price <= current_price;
   }
 
+  // Full Close is reason-free: the close reason, close price and Deal History
+  // never influence the next state. Equality is the wrong-side case.
   ENUM_TGK_GRID_LEVEL_STATE StateAfterPositionClose(
     double level_price,
-    bool closed_by_tp,
     double current_price
   )
   {
     if(IsWrongSideAfterEntryMove(level_price, current_price))
       return TGK_GRID_LEVEL_WAIT_ACTIVATION;
-
-    if(closed_by_tp)
-      return TGK_GRID_LEVEL_WAIT_RETURN;
 
     return TGK_GRID_LEVEL_READY;
   }
@@ -354,7 +353,8 @@ public:
        !IsValidLevelState(level_state))
       return false;
 
-    m_level_states[level_index] = level_state;
+    m_level_states[level_index] =
+      TGKGridNormalizeLevelState(level_state);
     return true;
   }
 
@@ -368,7 +368,7 @@ public:
     if(!m_initialized || !IsValidLevelState(level_state))
       return false;
 
-    m_anchor_state = level_state;
+    m_anchor_state = TGKGridNormalizeLevelState(level_state);
     return true;
   }
 
@@ -520,7 +520,6 @@ public:
   bool RecordPositionClosed(
     bool is_anchor,
     int level_index,
-    bool closed_by_tp,
     double current_bid,
     double current_ask
   )
@@ -535,7 +534,6 @@ public:
     {
       m_anchor_state = StateAfterPositionClose(
         m_anchor_price,
-        closed_by_tp,
         current_price);
       return true;
     }
@@ -545,7 +543,6 @@ public:
 
     m_level_states[level_index] = StateAfterPositionClose(
       m_level_prices[level_index],
-      closed_by_tp,
       current_price);
     return true;
   }

@@ -189,7 +189,7 @@ int OnInit()
   Tests.AssertEqualInt("unselected crossed SELL level becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
   Tests.EndTest();
 
-  Tests.BeginTest("WAIT_RETURN can be selected and ACTIVE cannot");
+  Tests.BeginTest("Legacy WAIT_RETURN normalizes to READY and ACTIVE is never selected");
   CTGKGridLevelEngine reentry;
   reentry.Initialize(
     TGK_GRID_MODE_BUY,
@@ -200,9 +200,11 @@ int OnInit()
     4,
     4010.0,
     4011.0);
-  Tests.AssertTrue("set level WAIT_RETURN", reentry.SetLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
+  Tests.AssertTrue("legacy WAIT_RETURN input is accepted", reentry.SetLevelState(2, TGK_GRID_LEVEL_WAIT_RETURN));
+  Tests.AssertTrue("state readable after legacy input", reentry.GetLevelState(2, state));
+  Tests.AssertEqualInt("legacy WAIT_RETURN is stored as READY", (int)state, (int)TGK_GRID_LEVEL_READY);
   Tests.AssertTrue(
-    "WAIT_RETURN is eligible for re-entry",
+    "normalized READY is eligible for re-entry",
     reentry.UpdatePrice(
       4005.0,
       4006.0,
@@ -211,7 +213,7 @@ int OnInit()
       is_anchor,
       selected,
       selected_price));
-  Tests.AssertEqualInt("WAIT_RETURN level selected", selected, 2);
+  Tests.AssertEqualInt("normalized level selected", selected, 2);
   Tests.AssertTrue("set another level ACTIVE", reentry.SetLevelState(0, TGK_GRID_LEVEL_ACTIVE));
   Tests.AssertTrue("disable lower READY level", reentry.SetLevelState(1, TGK_GRID_LEVEL_WAIT_ACTIVATION));
   Tests.AssertTrue("disable upper READY level", reentry.SetLevelState(3, TGK_GRID_LEVEL_WAIT_ACTIVATION));
@@ -239,17 +241,16 @@ int OnInit()
     4005.0,
     4006.0);
   Tests.AssertTrue(
-    "close Anchor with TP",
+    "close Anchor",
     anchor.RecordPositionClosed(
       true,
       -1,
-      true,
       4004.0,
       4005.0));
   Tests.AssertEqualInt(
-    "Anchor becomes WAIT_RETURN",
+    "Anchor below current Ask becomes READY",
     (int)anchor.GetAnchorState(),
-    (int)TGK_GRID_LEVEL_WAIT_RETURN);
+    (int)TGK_GRID_LEVEL_READY);
   Tests.AssertTrue(
     "Anchor return creates candidate",
     anchor.UpdatePrice(
@@ -269,7 +270,7 @@ int OnInit()
     (int)TGK_GRID_LEVEL_ACTIVE);
   Tests.EndTest();
 
-  Tests.BeginTest("TP and non-TP close outcomes use Current Price");
+  Tests.BeginTest("Full Close next state is reason-free and equality is wrong-side");
   CTGKGridLevelEngine close_states;
   close_states.Initialize(
     TGK_GRID_MODE_BUY,
@@ -281,37 +282,56 @@ int OnInit()
     3999.0,
     4000.0);
   Tests.AssertTrue(
-    "close lower level by TP above Entry",
+    "close lower level below current Ask",
     close_states.RecordPositionClosed(
       false,
       0,
-      true,
       4000.0,
       4001.0));
-  Tests.AssertTrue("read lower level after TP", close_states.GetLevelState(0, state));
-  Tests.AssertEqualInt("TP below current BUY price becomes WAIT_RETURN", (int)state, (int)TGK_GRID_LEVEL_WAIT_RETURN);
+  Tests.AssertTrue("read lower level after close", close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("BUY level below current Ask becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
 
   Tests.AssertTrue(
-    "close lower level by SL below Entry",
+    "close lower level at current entry price",
     close_states.RecordPositionClosed(
       false,
       0,
-      false,
       3989.0,
       3990.0));
-  Tests.AssertTrue("read lower level after SL", close_states.GetLevelState(0, state));
-  Tests.AssertEqualInt("non-TP below current BUY price becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertTrue("read lower level after equality close", close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("BUY level equal to Ask becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
 
+  CTGKGridLevelEngine sell_close_states;
   Tests.AssertTrue(
-    "close lower level by manual close above Entry",
-    close_states.RecordPositionClosed(
+    "SELL close-state grid initializes",
+    sell_close_states.Initialize(
+      TGK_GRID_MODE_SELL,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      4000.0,
+      4001.0));
+  Tests.AssertTrue(
+    "close Level above current Bid",
+    sell_close_states.RecordPositionClosed(
       false,
       0,
+      3989.0,
+      3990.0));
+  Tests.AssertTrue("read SELL level after close", sell_close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("SELL level above Bid becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+
+  Tests.AssertTrue(
+    "close SELL level at current Bid",
+    sell_close_states.RecordPositionClosed(
       false,
-      3995.0,
-      3996.0));
-  Tests.AssertTrue("read lower level after manual close", close_states.GetLevelState(0, state));
-  Tests.AssertEqualInt("non-TP above current BUY price becomes READY", (int)state, (int)TGK_GRID_LEVEL_READY);
+      0,
+      3990.0,
+      3991.0));
+  Tests.AssertTrue("read SELL level after equality close", sell_close_states.GetLevelState(0, state));
+  Tests.AssertEqualInt("SELL level equal to Bid becomes WAIT_ACTIVATION", (int)state, (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
   Tests.EndTest();
 
   Tests.BeginTest("Failed candidate is re-armed from Current Price");

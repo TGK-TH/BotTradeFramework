@@ -4,12 +4,14 @@ Last updated: 2026-11-23
 
 ## Current focus
 
-**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 is Done (user Compile/Test PASS, CTO Review APPROVED, user confirmed 2026-11-21). WP-05A.2 SPEC/TEST_PLAN approved and pre-change Grid Regression Baseline accepted on 2026-11-23; Freebuff is authorized to implement the approved scope.**
+**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 is Done (user Compile/Test PASS, CTO Review APPROVED, user confirmed 2026-11-21). WP-05A.2 was implemented by Freebuff on 2026-11-23; the user reported MetaEditor Compile PASS and Test PASS on 2026-11-23. CTO Code Review on 2026-11-23 returned CHANGES REQUESTED due to CR-01 (Anchor WAIT_ACTIVATION has no durable transition back to READY). See `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/CODE_REVIEW.md`. No commit/push.**
 
 - Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
 - WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
 - Current review candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — user Compile/Test PASS; CTO Code Review APPROVED; user confirmed Done on 2026-11-21.
-- Approved implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions).
+- Implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions).
+- WP-05A.2 implementation report: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md`; CTO review: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/CODE_REVIEW.md` (CHANGES REQUESTED 2026-11-23).
+- WP-05A.2 user verification (user-reported 2026-11-23): every changed file compiled PASS in MetaEditor. The first full test run had 3 failing assertions in `test_grid_entry_mapping_reducer` (C16 interrupted replay) caused by a test-fixture defect: `Replay()` requires `record_count == ArraySize(records)`, but the case passed a truncated count with the full array. Freebuff fixed the fixture only (no reducer change) and the user then reported the tests PASS. Trello moved to `Code Review`; CTO review is the remaining gate before `Done`.
 - WP-05A.2 handoff: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_TASK.md`.
 - WP-05A.2 SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`.
 - WP-05A.2 TEST_PLAN: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`.

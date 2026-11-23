@@ -579,7 +579,7 @@ private:
       m_levels[index].config_epoch = m_config_epoch;
       m_levels[index].level_index = level_index;
     }
-    m_levels[index].state = state;
+    m_levels[index].state = TGKGridNormalizeLevelState(state);
     return true;
   }
 
@@ -607,7 +607,7 @@ private:
     else if(value == "ACTIVE")
       state = TGK_GRID_LEVEL_ACTIVE;
     else if(value == "WAIT_RETURN")
-      state = TGK_GRID_LEVEL_WAIT_RETURN;
+      state = TGK_GRID_LEVEL_READY; // Legacy value normalized on replay.
     else if(value == "WAIT_ACTIVATION")
       state = TGK_GRID_LEVEL_WAIT_ACTIVATION;
     else
@@ -656,7 +656,8 @@ private:
     if(fields[5] == "ANCHOR")
     {
       if(level_index != -1 ||
-         FindPositionByTarget("ANCHOR", -1) >= 0)
+         FindPositionByTarget("ANCHOR", -1) >= 0 ||
+         TGKGridNormalizeLevelState(m_anchor_state) != TGK_GRID_LEVEL_READY)
         return false;
     }
     else
@@ -664,8 +665,8 @@ private:
       int level_state_index = FindLevel(level_index);
       if(!IsValidGridLevelIndex(level_index) ||
          level_state_index < 0 ||
-         (m_levels[level_state_index].state != TGK_GRID_LEVEL_READY &&
-          m_levels[level_state_index].state != TGK_GRID_LEVEL_WAIT_RETURN) ||
+         TGKGridNormalizeLevelState(
+           m_levels[level_state_index].state) != TGK_GRID_LEVEL_READY ||
          FindPositionByTarget("LEVEL", level_index) >= 0)
         return false;
     }
@@ -821,7 +822,9 @@ private:
        m_requests[request_index].level_index != level_index)
       return false;
 
-    if(fields[4] == "ANCHOR" && level_index != -1)
+    if(fields[4] == "ANCHOR" &&
+       (level_index != -1 ||
+        TGKGridNormalizeLevelState(m_anchor_state) != TGK_GRID_LEVEL_READY))
       return false;
     if(fields[4] == "LEVEL" && !IsValidGridLevelIndex(level_index))
       return false;
@@ -857,8 +860,8 @@ private:
     {
       int level_index_in_state = FindLevel(level_index);
       if(level_index_in_state < 0 ||
-         (m_levels[level_index_in_state].state != TGK_GRID_LEVEL_READY &&
-          m_levels[level_index_in_state].state != TGK_GRID_LEVEL_WAIT_RETURN))
+         TGKGridNormalizeLevelState(
+           m_levels[level_index_in_state].state) != TGK_GRID_LEVEL_READY)
         return false;
     }
 
@@ -880,6 +883,11 @@ private:
        !SetLevelState(level_index, TGK_GRID_LEVEL_ACTIVE))
       return false;
 
+    // One mapping confirmation drives the durable ACTIVE state for both the
+    // normal Level and the Anchor.
+    if(fields[4] == "ANCHOR")
+      m_anchor_state = TGK_GRID_LEVEL_ACTIVE;
+
     m_requests[request_index].unresolved = false;
     RemoveDealsForRequest(fields[1]);
     return true;
@@ -899,6 +907,8 @@ private:
        !IsValidGridLevelIndex(level_index) ||
        !ParseLevelState(fields[4], state))
       return false;
+
+    state = TGKGridNormalizeLevelState(state);
 
     int position_index = FindPositionByTarget("LEVEL", level_index);
     if(state == TGK_GRID_LEVEL_ACTIVE && position_index < 0)
@@ -942,47 +952,102 @@ private:
     return true;
   }
 
+  // One metadata record carries the Ticket and Volume of one observation, so
+  // they can never describe different snapshots. Volume is never allowed to
+  // grow for the same position, and zero volume is a Full Close, not metadata.
+  bool ApplyPositionMetadata(string &fields[])
+  {
+    if(ArraySize(fields) != 5 || fields[1] != "POSITION_METADATA")
+      return false;
+
+    int position_index = FindPositionByIdentifier(fields[2]);
+    double volume = 0.0;
+    if(position_index < 0 ||
+       !ParsePositiveDouble(fields[3], volume) ||
+       !IsDecimalString(fields[4]))
+      return false;
+
+    int existing_ticket_index = FindPositionByTicket(fields[4]);
+    if(existing_ticket_index >= 0 && existing_ticket_index != position_index)
+      return false;
+
+    if(volume > m_positions[position_index].volume + 0.00000001)
+      return false;
+
+    bool same_volume =
+      MathAbs(volume - m_positions[position_index].volume) <= 0.00000001;
+    bool same_ticket = fields[4] == m_positions[position_index].position_ticket;
+    if(same_volume && same_ticket)
+      return false;
+
+    m_positions[position_index].volume = volume;
+    m_positions[position_index].position_ticket = fields[4];
+    return true;
+  }
+
+  // Full Close is reason-free and keyed by the mapped Position Identifier.
+  // The next state is supplied by the Caller's current executable-side quote
+  // rule. Every precondition is validated before any state is mutated.
+  // Legacy 5-field payloads (TP/NON_TP + state) remain replay-compatible.
   bool ApplyPositionClosed(string &fields[])
   {
-    if(ArraySize(fields) != 5 || fields[1] != "POSITION_CLOSED")
+    int field_count = ArraySize(fields);
+    if((field_count != 4 && field_count != 5) ||
+       fields[1] != "POSITION_CLOSED")
       return false;
 
     int position_index = FindPositionByIdentifier(fields[2]);
     if(position_index < 0)
       return false;
 
+    bool is_legacy_payload = field_count == 5;
+    string state_token = fields[3];
+    if(is_legacy_payload)
+      state_token = fields[4];
+    ENUM_TGK_GRID_LEVEL_STATE next_state = TGK_GRID_LEVEL_READY;
+
+    if(is_legacy_payload &&
+       fields[3] != "TP" &&
+       fields[3] != "NON_TP")
+      return false;
+
+    if(state_token == "NONE")
+    {
+      // Legacy Anchor close records did not persist a post-close state.
+      if(!is_legacy_payload ||
+         m_positions[position_index].target_kind != "ANCHOR")
+        return false;
+      next_state = TGK_GRID_LEVEL_READY;
+    }
+    else if(!ParseLevelState(state_token, next_state))
+      return false;
+
+    next_state = TGKGridNormalizeLevelState(next_state);
+    if(next_state == TGK_GRID_LEVEL_ACTIVE)
+      return false;
+
     string request_id = m_positions[position_index].request_id;
     string target_kind = m_positions[position_index].target_kind;
     int level_index = m_positions[position_index].level_index;
-    ENUM_TGK_GRID_LEVEL_STATE next_state;
 
-    if(fields[3] != "TP" && fields[3] != "NON_TP")
+    if(target_kind == "LEVEL" && FindLevel(level_index) < 0)
       return false;
+
+    // Apply the state before releasing the mapping. The Level state row was
+    // proven to exist above, so no mutation can fail halfway through.
     if(target_kind == "LEVEL")
     {
-      if(!ParseLevelState(fields[4], next_state) ||
-         next_state == TGK_GRID_LEVEL_ACTIVE)
-        return false;
-      if(fields[3] == "TP" && next_state != TGK_GRID_LEVEL_WAIT_RETURN)
-        return false;
-      if(fields[3] == "NON_TP" &&
-         next_state != TGK_GRID_LEVEL_READY &&
-         next_state != TGK_GRID_LEVEL_WAIT_ACTIVATION)
+      if(!SetLevelState(level_index, next_state))
         return false;
     }
-    else if(fields[4] != "NONE")
-    {
-      return false;
-    }
+    else
+      m_anchor_state = next_state;
 
     RemovePositionAt(position_index);
     RemoveDealsForRequest(request_id);
     int request_index = FindRequest(request_id);
     if(request_index >= 0)
       RemoveRequestAt(request_index);
-
-    if(target_kind == "LEVEL")
-      return SetLevelState(level_index, next_state);
     return true;
   }
 
@@ -1071,6 +1136,8 @@ private:
       return ApplyPositionVolume(fields);
     if(fields[1] == "POSITION_TICKET")
       return ApplyPositionTicket(fields);
+    if(fields[1] == "POSITION_METADATA")
+      return ApplyPositionMetadata(fields);
     if(fields[1] == "POSITION_CLOSED")
       return ApplyPositionClosed(fields);
     if(fields[1] == "RESET_COMMITTED")
@@ -1214,7 +1281,7 @@ public:
 
     string mode = m_mode == "" ? "-" : m_mode;
     payload = StringFormat(
-      "%s|STATE|%s|%I64d|%s|%I64d|%I64d|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d",
+      "%s|STATE|%s|%I64d|%s|%I64d|%I64d|%s|%s|%s|%s|%s|%d|%d|%d|%d|%d|%d",
       TGK_GRID_MAPPING_PAYLOAD_VERSION,
       m_symbol,
       m_magic_number,
@@ -1230,7 +1297,8 @@ public:
       request_count,
       deal_count,
       position_count,
-      level_state_count);
+      level_state_count,
+      (int)TGKGridNormalizeLevelState(m_anchor_state));
 
     for(int i = 0; i < request_count; i++)
     {
@@ -1301,7 +1369,7 @@ public:
         "%I64d|%d|%d",
         m_levels[i].config_epoch,
         m_levels[i].level_index,
-        (int)m_levels[i].state);
+        (int)TGKGridNormalizeLevelState(m_levels[i].state));
       string encoded = EncodeSnapshotRecord(record);
       if(encoded == "")
         return false;
@@ -1346,7 +1414,7 @@ public:
 
     string fields[];
     int field_count = StringSplit(payload, '|', fields);
-    if(field_count < 17 ||
+    if(field_count < 18 ||
        fields[0] != TGK_GRID_MAPPING_PAYLOAD_VERSION ||
        fields[1] != "STATE" ||
        fields[2] != m_symbol ||
@@ -1363,6 +1431,7 @@ public:
     long deal_count_long = 0;
     long position_count_long = 0;
     long level_state_count_long = 0;
+    long anchor_state_long = 0;
     if(!ParseMagic(fields[3], snapshot_magic) ||
        snapshot_magic != m_magic_number ||
        fields[4] != m_instance_id ||
@@ -1372,7 +1441,8 @@ public:
        !IsDecimalString(fields[13], true) ||
        !IsDecimalString(fields[14], true) ||
        !IsDecimalString(fields[15], true) ||
-       !IsDecimalString(fields[16], true))
+       !IsDecimalString(fields[16], true) ||
+       !IsDecimalString(fields[17], true))
       return false;
 
     last_sequence = StringToInteger(fields[5]);
@@ -1382,6 +1452,7 @@ public:
     deal_count_long = StringToInteger(fields[14]);
     position_count_long = StringToInteger(fields[15]);
     level_state_count_long = StringToInteger(fields[16]);
+    anchor_state_long = StringToInteger(fields[17]);
 
     if(StringFormat("%I64d", last_sequence) != fields[5] ||
        StringFormat("%I64d", config_epoch) != fields[6] ||
@@ -1390,13 +1461,16 @@ public:
        StringFormat("%I64d", deal_count_long) != fields[14] ||
        StringFormat("%I64d", position_count_long) != fields[15] ||
        StringFormat("%I64d", level_state_count_long) != fields[16] ||
+       StringFormat("%I64d", anchor_state_long) != fields[17] ||
+       anchor_state_long < (long)TGK_GRID_LEVEL_READY ||
+       anchor_state_long > (long)TGK_GRID_LEVEL_WAIT_ACTIVATION ||
        last_sequence != checkpoint_sequence ||
        level_count_long > TGK_GRID_MAPPING_MAX_LEVELS ||
        request_count_long > TGK_GRID_MAPPING_MAX_POSITIONS + 1 ||
        deal_count_long > TGK_GRID_MAPPING_MAX_DEALS_PER_REQUEST ||
        position_count_long > TGK_GRID_MAPPING_MAX_POSITIONS ||
        level_state_count_long > TGK_GRID_MAPPING_MAX_LEVELS - 1 ||
-       field_count != 17 + request_count_long + deal_count_long +
+       field_count != 18 + request_count_long + deal_count_long +
                       position_count_long + level_state_count_long)
       return false;
 
@@ -1469,7 +1543,7 @@ public:
     int level_state_index = 0;
     int unresolved_count = 0;
 
-    for(int i = 17; i < field_count; i++)
+    for(int i = 18; i < field_count; i++)
     {
       if(StringLen(fields[i]) < 2)
         return false;
@@ -1677,8 +1751,8 @@ public:
 
         snapshot_levels[level_state_index].config_epoch = level_epoch;
         snapshot_levels[level_state_index].level_index = level_index;
-        snapshot_levels[level_state_index].state =
-          (ENUM_TGK_GRID_LEVEL_STATE)state_value;
+        snapshot_levels[level_state_index].state = TGKGridNormalizeLevelState(
+          (ENUM_TGK_GRID_LEVEL_STATE)state_value);
         level_state_index++;
       }
       else
@@ -1746,6 +1820,17 @@ public:
         return false;
     }
 
+    ENUM_TGK_GRID_LEVEL_STATE snapshot_anchor_state = TGKGridNormalizeLevelState(
+      (ENUM_TGK_GRID_LEVEL_STATE)anchor_state_long);
+    bool has_anchor_mapping =
+      FindPositionByTargetInSnapshot(
+        snapshot_positions,
+        "ANCHOR",
+        -1) >= 0;
+    if((snapshot_anchor_state == TGK_GRID_LEVEL_ACTIVE) !=
+       has_anchor_mapping)
+      return false;
+
     if(ArrayResize(m_requests, request_index) != request_index ||
        ArrayResize(m_deals, deal_index) != deal_index ||
        ArrayResize(m_positions, position_index) != position_index ||
@@ -1771,6 +1856,7 @@ public:
     m_level_count = (int)level_count_long;
     m_lower_level_count = snapshot_lower_level_count;
     m_upper_level_count = snapshot_upper_level_count;
+    m_anchor_state = snapshot_anchor_state;
     m_failed = false;
     m_recovery_status = TGK_GRID_MAPPING_STATUS_NORMAL;
     return true;
@@ -1880,7 +1966,7 @@ public:
        !IsValidGridLevelStateValue(m_anchor_state))
       return false;
 
-    state = m_anchor_state;
+    state = TGKGridNormalizeLevelState(m_anchor_state);
     return true;
   }
 

@@ -29,13 +29,25 @@ enum ENUM_TGK_GRID_RESET_REASON
 };
 
 // State for one price level in the Grid.
+// WAIT_RETURN is a legacy persisted value only: its numeric slot is reserved
+// and must not be reused, but it is never written by new state transitions.
 enum ENUM_TGK_GRID_LEVEL_STATE
 {
   TGK_GRID_LEVEL_READY = 0,
-  TGK_GRID_LEVEL_ACTIVE,
-  TGK_GRID_LEVEL_WAIT_RETURN,
-  TGK_GRID_LEVEL_WAIT_ACTIVATION
+  TGK_GRID_LEVEL_ACTIVE = 1,
+  TGK_GRID_LEVEL_WAIT_RETURN = 2,
+  TGK_GRID_LEVEL_WAIT_ACTIVATION = 3
 };
+
+// Normalizes legacy persisted states into the operational state model.
+// WAIT_RETURN is consolidated into READY; every other value is unchanged.
+ENUM_TGK_GRID_LEVEL_STATE TGKGridNormalizeLevelState(
+  ENUM_TGK_GRID_LEVEL_STATE state)
+{
+  return (state == TGK_GRID_LEVEL_WAIT_RETURN)
+         ? TGK_GRID_LEVEL_READY
+         : state;
+}
 
 // Persisted state for one Grid Instance.
 // Keep this structure strategy-neutral so V1 and V2 can share the Grid Engine.

@@ -17,7 +17,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 | Card | ผลลัพธ์ | สถานะ | Dependency |
 |---|---|---|---|
 | [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | Done — User Verification PASS, CTO Code Review APPROVED และผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21 | ไม่มี |
-| [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | SPEC/TEST_PLAN approved; pre-change no-trade regression baseline accepted 2026-11-23; Freebuff authorized for approved implementation | WP-05A.1 |
+| [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | Implemented 2026-11-23; user-reported Compile/Test PASS; CTO Review CHANGES REQUESTED (CR-01) — ดู [CODE_REVIEW.md](Phase-1.2/CODE_REVIEW.md) และ [IMPLEMENTATION_REPORT.md](Phase-1.2/IMPLEMENTATION_REPORT.md) | WP-05A.1 |
 
 WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Replay และ Snapshot compatibility ที่จำเป็นต่อ Atomic State ตาม SPEC; Cards ถัดไปจะจัดการ Persistence/Recovery Hardening ที่เหลือและ Integration โดยแต่ละ Card ต้องมี Scope, SPEC, TEST_PLAN และ User Approval แยกต่างหากก่อนเริ่ม Implementation
 
@@ -34,6 +34,8 @@ WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Repla
 - Specification: [SPEC.md](Phase-1.2/SPEC.md)
 - Test Plan: [TEST_PLAN.md](Phase-1.2/TEST_PLAN.md)
 - Freebuff Task: [IMPLEMENTATION_TASK.md](Phase-1.2/IMPLEMENTATION_TASK.md)
+- Implementation Report: [IMPLEMENTATION_REPORT.md](Phase-1.2/IMPLEMENTATION_REPORT.md) — user-reported Compile/Test PASS 2026-11-23
+- CTO Code Review: [CODE_REVIEW.md](Phase-1.2/CODE_REVIEW.md) — CHANGES REQUESTED 2026-11-23 (CR-01)
 - Trello: https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions
 - Approved scope: reason-free Full Close transition; Position Identifier as canonical Position identity; Partial Close retains ACTIVE; WAIT_RETURN normalized to READY; state-based idempotency; no Closing Deal History integration.
 - Baseline gate: PASSED 2026-11-23. User ran all current Grid Regression test files and reported PASS; all tests that open orders on the Demo account were excluded. No fresh compile was run because source had not changed. Trello moved to In Progress; Freebuff is authorized to implement the approved WP-05A.2 scope.
@@ -46,6 +48,6 @@ WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Repla
 4. ผู้ใช้รายงานเมื่อ 2026-11-21 ว่า MetaEditor Compile และ Run Tests ผ่านทั้งหมด
 5. CTO ตรวจ Diff เทียบ SPEC/TEST_PLAN/Architecture แล้วบันทึก `CODE_REVIEW.md` เป็น APPROVED
 6. เอกสารและสถานะโครงการได้รับการอัปเดต; WP-05A.1 ปิดแล้วใน Trello `Done` และ Mark Complete หลัง User Confirmation เมื่อ 2026-11-21
-7. WP-05A.2 SPEC/TEST_PLAN ได้รับอนุมัติจากผู้ใช้เมื่อ 2026-11-23 และเตรียม Freebuff handoff แล้ว; ยังห้ามเริ่ม Source Implementation จนกว่าผู้ใช้จะรายงาน Pre-change Grid Regression Baseline
+7. WP-05A.2 SPEC/TEST_PLAN ได้รับอนุมัติจากผู้ใช้เมื่อ 2026-11-23; ผู้ใช้รายงาน Pre-change no-trade Grid Regression Baseline PASS; Freebuff Implement เสร็จและบันทึก `IMPLEMENTATION_REPORT.md` แล้ว (2026-11-23). ผู้ใช้รายงาน Compile PASS และ Test PASS เมื่อ 2026-11-23 หลัง Freebuff แก้ Test Fixture ของ C16 (Reducer ไม่เปลี่ยน); ขั้นถัดไปคือ CTO Code Review
 
 ไม่มี Demo หรือ Live Trade Request ได้รับอนุญาต

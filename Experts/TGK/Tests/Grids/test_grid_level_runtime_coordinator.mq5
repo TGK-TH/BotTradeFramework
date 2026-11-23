@@ -699,9 +699,8 @@ int OnInit()
   ArrayResize(close_events, 1);
   close_events[0].is_anchor = false;
   close_events[0].level_index = 0;
-  close_events[0].reason = TGK_GRID_LEVEL_CLOSE_REASON_TP;
   Tests.AssertEqualInt(
-    "full close applies explicit TP event",
+    "full close applies reason-free event",
     (int)closing.Reconcile(
       positions,
       close_events,
@@ -712,7 +711,7 @@ int OnInit()
       candidate),
     (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
   Tests.AssertTrue("closed level state readable", closing.GetLevelState(0, state));
-  Tests.AssertEqualInt("TP close transitions to WAIT_RETURN", (int)state, (int)TGK_GRID_LEVEL_WAIT_RETURN);
+  Tests.AssertEqualInt("full close below current Ask transitions to READY", (int)state, (int)TGK_GRID_LEVEL_READY);
   Tests.AssertTrue("unrelated Level state remains readable", closing.GetLevelState(1, state));
   Tests.AssertEqualInt(
     "closing one Level does not alter another Level",
@@ -720,7 +719,7 @@ int OnInit()
     (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
   Tests.EndTest();
 
-  Tests.BeginTest("Unknown close reason and unexpected unmapped position enter ERROR");
+  Tests.BeginTest("Invalid close event and unexpected unmapped position enter ERROR");
   CTGKGridLevelRuntimeCoordinator unknown_close;
   unknown_close.Initialize(
     TGK_GRID_MODE_BUY,
@@ -754,10 +753,9 @@ int OnInit()
   ArrayResize(positions, 0);
   ArrayResize(close_events, 1);
   close_events[0].is_anchor = false;
-  close_events[0].level_index = 0;
-  close_events[0].reason = TGK_GRID_LEVEL_CLOSE_REASON_UNKNOWN;
+  close_events[0].level_index = 3;
   Tests.AssertEqualInt(
-    "unknown close reason is not guessed",
+    "close event with invalid mapping is rejected",
     (int)unknown_close.Reconcile(
       positions,
       close_events,
@@ -767,9 +765,9 @@ int OnInit()
       result,
       candidate),
     (int)TGK_GRID_COORDINATOR_ERROR);
-  Tests.AssertTrue("unknown close leaves Level state readable", unknown_close.GetLevelState(0, state));
+  Tests.AssertTrue("invalid close leaves Level state readable", unknown_close.GetLevelState(0, state));
   Tests.AssertEqualInt(
-    "unknown close reason does not change ACTIVE state",
+    "invalid close event does not change ACTIVE state",
     (int)state,
     (int)TGK_GRID_LEVEL_ACTIVE);
   Tests.EndTest();
@@ -958,9 +956,8 @@ int OnInit()
   ArrayResize(close_events, 1);
   close_events[0].is_anchor = true;
   close_events[0].level_index = -1;
-  close_events[0].reason = TGK_GRID_LEVEL_CLOSE_REASON_TP;
   Tests.AssertEqualInt(
-    "Anchor full close applies explicit TP event",
+    "Anchor full close applies reason-free event",
     (int)anchor_validation.Reconcile(
       positions,
       close_events,
@@ -971,9 +968,9 @@ int OnInit()
       candidate),
     (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
   Tests.AssertEqualInt(
-    "Anchor TP above Entry becomes WAIT_RETURN",
+    "Anchor below current Ask becomes READY",
     (int)anchor_validation.GetAnchorState(),
-    (int)TGK_GRID_LEVEL_WAIT_RETURN);
+    (int)TGK_GRID_LEVEL_READY);
   Tests.AssertEqualInt(
     "Anchor re-entry crossing produces a Candidate",
     (int)anchor_validation.UpdatePrice(
@@ -987,7 +984,7 @@ int OnInit()
   Tests.AssertEqualDouble("Anchor Candidate uses Anchor price", candidate.level_price, 4000.0, 0.000001);
   Tests.EndTest();
 
-  Tests.BeginTest("Non-TP full close returns Level to READY when price is above BUY Entry");
+  Tests.BeginTest("Full close returns Level to READY when price is above BUY Entry");
   CTGKGridLevelRuntimeCoordinator non_tp;
   non_tp.Initialize(
     TGK_GRID_MODE_BUY,
@@ -1022,9 +1019,8 @@ int OnInit()
   ArrayResize(close_events, 1);
   close_events[0].is_anchor = false;
   close_events[0].level_index = 0;
-  close_events[0].reason = TGK_GRID_LEVEL_CLOSE_REASON_NON_TP;
   Tests.AssertEqualInt(
-    "explicit non-TP close reconciles",
+    "reason-free close reconciles",
     (int)non_tp.Reconcile(
       positions,
       close_events,
@@ -1034,9 +1030,9 @@ int OnInit()
       result,
       candidate),
     (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
-  Tests.AssertTrue("non-TP closed state readable", non_tp.GetLevelState(0, state));
+  Tests.AssertTrue("closed state readable", non_tp.GetLevelState(0, state));
   Tests.AssertEqualInt(
-    "non-TP above BUY Entry returns READY",
+    "close above BUY Entry returns READY",
     (int)state,
     (int)TGK_GRID_LEVEL_READY);
   Tests.EndTest();

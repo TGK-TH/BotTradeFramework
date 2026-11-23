@@ -6,7 +6,7 @@
 
 เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component เสร็จแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
 
-**สถานะ Anchor State ใน Persistence (2026-11-23):** `CTGKGridEntryMappingReducer` มี Typed In-memory Anchor State จาก WP-05A.1 แล้ว (ผู้ใช้รายงาน Compile/Test PASS และ CTO Review APPROVED) แต่ยังไม่ Durable ข้าม Restart จนกว่าจะ Serialize ลง Journal/Snapshot ใน Cards ที่เกี่ยวข้อง. WP-05A.2 ได้รับอนุมัติ SPEC/TEST_PLAN แล้ว โดยกำหนด Anchor Mapping/Partial/Full Close Transitions, reason-free Full Close, state-based idempotency และการ Normalize `WAIT_RETURN` เป็น `READY`; ยังไม่ Implement และรอ Pre-change Regression Baseline. ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
+**สถานะ Anchor State ใน Persistence (2026-11-23):** `CTGKGridEntryMappingReducer` มี Typed Anchor State จาก WP-05A.1 (ผู้ใช้รายงาน Compile/Test PASS และ CTO Review APPROVED). WP-05A.2 Implement แล้วโดย Freebuff เมื่อ 2026-11-23: Anchor State ถูก Serialize ใน Snapshot (Required Field), Anchor Mapping เปลี่ยน State เป็น ACTIVE, Partial Close คง ACTIVE, Full Close เป็น reason-free atomic transition, `WAIT_RETURN` normalize เป็น `READY` และ Idempotency อ้างอิง Mapping State. **ผู้ใช้รายงาน Compile/Test PASS ของ WP-05A.2 เมื่อ 2026-11-23; CTO Code Review CHANGES REQUESTED (CR-01: ไม่มี Durable Anchor WAIT_ACTIVATION -> READY transition).** ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
 
 ## ส่วนประกอบปัจจุบัน
 
@@ -86,7 +86,7 @@ MQL5 Test EAs
 | `Include/BotTrade/Grid/GridIdentity.mqh` | สร้าง/กู้คืน Instance ID จากวัตถุที่ซ่อนบนกราฟ และจัดสรร Magic Number |
 | `Include/BotTrade/Grid/GridPersistence.mqh` | บันทึกและกู้คืน Snapshot และสถานะราย Level ด้วย Terminal Global Variables |
 | `Include/BotTrade/Grid/GridEntryMappingStorage.mqh` | Append-only Journal แยก Account/Server/Symbol/Instance ใน Terminal `MQL5/Files`; ตรวจ Schema/Sequence/Checksum และ Replay |
-| `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping, Normal Level State และ Typed In-memory Anchor State; WP-05A.2 approved target extends atomic Anchor/Level close transitions and replay normalization (not yet implemented) |
+| `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | Typed Payload validation และ deterministic Current-State reduction; เป็น Authority สำหรับ Position Mapping, Normal Level State และ Typed Anchor State; WP-05A.2 implemented atomic Anchor/Level close transitions, Partial Close metadata, Snapshot Anchor State และ replay normalization (user Compile/Test PASS 2026-11-23; awaiting CTO Code Review) |
 | `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` | Snapshot + Journal generation/Manifest rotation, validation, recovery และ cleanup |
 | `Include/BotTrade/Grid/GridEntryExecutionPolicy.mqh` | Pure decision policy สำหรับ Candidate/Level/Execution Context; ไม่มี Trade API, I/O หรือ persistent state; ผู้ใช้รายงาน WP-01 Compile/Runtime PASS |
 | `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | Entry Adapter ที่ Persist Intent ก่อนเรียก Port; Production `CTGKGridEntryCTradePort` เชื่อม Snapshot Storage กับ `CTrade`; accepted outcomes รอ Position Reconciliation |
@@ -129,8 +129,8 @@ Design Specification: [Grid Level Engine](Phases/phase-grid-level-engine-design.
 - Anchor เป็น Special/Re-entry Level แยกจาก Grid Levels ปกติ ไม่รวมใน `level_count`
 - Initial State และ State transitions ใช้ Current Price (BUY=Ask, SELL=Bid) ไม่ใช้ตำแหน่งเทียบ Anchor เป็นเงื่อนไขเข้าเทรด
 - BUY เลือก Candidate ราคาต่ำที่สุด; SELL เลือก Candidate ราคาสูงที่สุด; หนึ่ง Price Check เลือกได้ไม่เกินหนึ่ง Candidate
-- Current source still has legacy `WAIT_RETURN` and TP/Non-TP close handling; this describes the implemented Round 1 behavior only.
-- **Approved WP-05A.2 target (not yet implemented):** operational states are `READY`, `ACTIVE`, `WAIT_ACTIVATION`; legacy `WAIT_RETURN` normalizes to `READY` and is never emitted by new writes.
+- Round 1 previously had legacy `WAIT_RETURN` and TP/Non-TP close handling; that behavior is superseded by the WP-05A.2 implementation below.
+- **WP-05A.2 implemented 2026-11-23 (user Compile/Test PASS 2026-11-23; awaiting CTO Code Review):** operational states are `READY`, `ACTIVE`, `WAIT_ACTIVATION`; legacy `WAIT_RETURN` normalizes to `READY` and is never emitted by new writes. Close handling is reason-free. Source/tests changed; user-reported Compile/Runtime PASS, no CTO review outcome yet.
 - Level ที่ไม่ได้รับเลือกและถูกข้ามไปอยู่ผิดด้านของ Current Price เปลี่ยนเป็น `WAIT_ACTIVATION`; `ACTIVE` คงเดิม
 - Full Close ทุกเหตุผลใช้ Current executable-side quote เดียวกันเพื่อเลือก `WAIT_ACTIVATION` หรือ `READY`; Partial Close คง `ACTIVE`
 - Runtime/Execution รับผิดชอบ Order request และ Position Reconciliation; Pure Engine ไม่เรียก Trade API

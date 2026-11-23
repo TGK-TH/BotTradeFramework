@@ -37,8 +37,8 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - SELL ใช้กฎกลับด้าน
 - หนึ่ง Price Check เลือก Candidate ได้ไม่เกินหนึ่ง Level; BUY เลือกราคาต่ำที่สุด, SELL เลือกราคาสูงที่สุด
 - Level ที่ไม่ได้รับเลือกและถูกข้ามไปอยู่ผิดด้านต้องกลับเป็น WAIT_ACTIVATION; ACTIVE ต้องไม่ถูกเปลี่ยนเพียงเพราะราคาผ่าน
-- **Approved target behavior (WP-05A.2, not yet implemented):** `WAIT_RETURN` is consolidated into `READY`; all Full Close reasons use the same current executable-side quote rule to choose `READY` or `WAIT_ACTIVATION`; Partial Close retains `ACTIVE` while Position Volume remains positive.
-- Current source still contains legacy TP/Non-TP behavior until WP-05A.2 implementation and user verification are complete.
+- **WP-05A.2 target behavior (implemented 2026-11-23; user Compile/Test PASS reported 2026-11-23):** `WAIT_RETURN` is consolidated into `READY`; all Full Close reasons use the same current executable-side quote rule to choose `READY` or `WAIT_ACTIVATION`; Partial Close retains `ACTIVE` while Position Volume remains positive.
+- Legacy TP/Non-TP close classification was removed by WP-05A.2; the user reported Compile/Test PASS on 2026-11-23. CTO Code Review found CR-01 (Anchor WAIT_ACTIVATION cannot durably transition back to READY); see WP-05A.2 CODE_REVIEW.md.
 - Anchor ใช้กฎ Re-entry เดียวกับ Normal Level แต่ไม่มี Normal Level ซ้ำที่ราคา Anchor
 
 รายละเอียดที่มีผลบังคับใช้ต้องอ่านจาก [Grid Level Engine Design](Phases/phase-grid-level-engine-design.md) และ [Runtime Coordinator Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md) หากพบข้อความเก่าขัดกัน ให้ใช้ Design/Implementation ที่ใหม่กว่าและบันทึกความขัดแย้งก่อนแก้ Source

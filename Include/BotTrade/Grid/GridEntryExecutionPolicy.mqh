@@ -166,8 +166,8 @@ public:
       return;
     }
 
-    if(level_context.level_state != TGK_GRID_LEVEL_READY &&
-       level_context.level_state != TGK_GRID_LEVEL_WAIT_RETURN)
+    if(TGKGridNormalizeLevelState(level_context.level_state) !=
+       TGK_GRID_LEVEL_READY)
     {
       SetResult(
         candidate,
