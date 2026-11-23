@@ -1,7 +1,7 @@
 # WP-05A.2 — Anchor State Transitions
 
-**Status: DRAFT — CTO design prepared; Product Owner approval required**  
-**Implementation authorization: NOT GRANTED**  
+**Status: APPROVED — Product Owner approval received 2026-11-23**
+**Implementation gate: Authorized scope is fixed; source changes remain blocked until the user reports the pre-change Grid Regression Baseline.**
 **Parent:** WP-05A — Persistence Foundation  
 **Depends on:** WP-05A.1 — Anchor State Model
 
@@ -200,4 +200,4 @@ An Open Positions snapshot cannot reconstruct a position that opened and closed 
 
 ## 11. Implementation Gate
 
-This document is a design draft only. Implementation may begin only after Product Owner approval of this SPEC and its TEST_PLAN, followed by a user-reported pre-change Grid Regression Baseline.
+Product Owner approval of this SPEC and TEST_PLAN was received on 2026-11-23. Freebuff is authorized to implement the exact scope in `IMPLEMENTATION_TASK.md` only after the user reports the pre-change Grid Regression Baseline. Until that baseline is reported, no source changes are authorized.

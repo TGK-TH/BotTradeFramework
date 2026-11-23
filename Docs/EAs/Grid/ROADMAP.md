@@ -1,6 +1,6 @@
 # TGK Grid V1 — Master Roadmap และ Completion Contract
 
-อัปเดตล่าสุด: 2026-11-21
+อัปเดตล่าสุด: 2026-11-23
 
 > เอกสารนี้เป็นแผนงานหลักของ Grid V1 สำหรับทั้งผู้พัฒนาและ Codex ใช้ร่วมกับ Source Code, Test EAs และ Phase Notes ที่อ้างอิงไว้ ห้ามถือว่า Roadmap หรือ Design ที่อนุมัติแล้วเป็นหลักฐานว่า Implementation เสร็จ
 
@@ -33,12 +33,12 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - สร้าง Two-sided Levels จาก Anchor ± Grid Step; ใช้ Bounds เป็น Hard Filter และไม่ Shift Level
 - Anchor เป็น Special/Re-entry Level แยกจาก Normal Levels
 - BUY ใช้ Ask; SELL ใช้ Bid ในการประเมิน Activation/Entry
-- BUY: WAIT_ACTIVATION กลับเป็น READY เมื่อราคาเคลื่อนขึ้นผ่าน Level; Entry เมื่อราคาลงแตะ/ผ่าน READY หรือ WAIT_RETURN
+- BUY: WAIT_ACTIVATION กลับเป็น READY เมื่อราคาเคลื่อนขึ้นผ่าน Level; Entry เมื่อราคาลงแตะ/ผ่าน READY
 - SELL ใช้กฎกลับด้าน
 - หนึ่ง Price Check เลือก Candidate ได้ไม่เกินหนึ่ง Level; BUY เลือกราคาต่ำที่สุด, SELL เลือกราคาสูงที่สุด
 - Level ที่ไม่ได้รับเลือกและถูกข้ามไปอยู่ผิดด้านต้องกลับเป็น WAIT_ACTIVATION; ACTIVE ต้องไม่ถูกเปลี่ยนเพียงเพราะราคาผ่าน
-- หลัง Position ปิด TP ให้ Level รอราคากลับมาที่ Entry Level เดิม (`WAIT_RETURN`); การปิดแบบอื่นใช้ Current Price และ Close Reason ตัดสิน State ตาม Engine Contract
-- Partial Close ต้องคง Level เป็น ACTIVE จน Position ของ Level นั้นปิดหมดจริง
+- **Approved target behavior (WP-05A.2, not yet implemented):** `WAIT_RETURN` is consolidated into `READY`; all Full Close reasons use the same current executable-side quote rule to choose `READY` or `WAIT_ACTIVATION`; Partial Close retains `ACTIVE` while Position Volume remains positive.
+- Current source still contains legacy TP/Non-TP behavior until WP-05A.2 implementation and user verification are complete.
 - Anchor ใช้กฎ Re-entry เดียวกับ Normal Level แต่ไม่มี Normal Level ซ้ำที่ราคา Anchor
 
 รายละเอียดที่มีผลบังคับใช้ต้องอ่านจาก [Grid Level Engine Design](Phases/phase-grid-level-engine-design.md) และ [Runtime Coordinator Round 1](Phases/phase-grid-level-runtime-coordinator-round-1.md) หากพบข้อความเก่าขัดกัน ให้ใช้ Design/Implementation ที่ใหม่กว่าและบันทึกความขัดแย้งก่อนแก้ Source
@@ -94,7 +94,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-05A.1 SPEC: `WorkPackages/WP-05A/Phase-1.1/SPEC.md`
 - WP-05A.1 TEST_PLAN: `WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`
 - WP-05A.1 จำกัดเฉพาะ Reducer In-memory Anchor State Model, Initialize/RESET_COMMITTED, validation, typed getter และ Unit Tests; Anchor Mapping/Partial/Full Close Transitions เป็น WP-05A.2; Journal และ Snapshot Serialization อยู่ใน Cards ภายหลัง
-- ผู้ใช้รายงาน WP-05A.1 Compile/Test PASS เมื่อ 2026-11-21; CTO Review APPROVED. WP-05A.2 ยังเป็น Product Backlog placeholder และยังไม่ได้รับอนุญาตให้เริ่ม
+- ผู้ใช้รายงาน WP-05A.1 Compile/Test PASS เมื่อ 2026-11-21; CTO Review APPROVED. WP-05A.2 SPEC/TEST_PLAN ได้รับอนุมัติเมื่อ 2026-11-23; Freebuff handoff เตรียมแล้ว แต่รอ Pre-change Regression Baseline ก่อน Implementation
 - Workflow V2: ChatGPT เป็น CTO (ไม่ Implement Source), Freebuff เป็น Developer (อ่าน Repository โดยตรง ไม่ต้องใช้ Serena MCP), ผู้ใช้เป็น Product Owner/QA และเป็นผู้ Compile/Run MetaEditor/MT5
 - Trello mapping: `MT5 Testing` ใช้เป็น User Verification; `Code Review` ใช้เป็น CTO Review; `In Progress` ใช้สำหรับ Implement และ Review Fixes โดยต้องระบุวัตถุประสงค์ใน Comment
 - WP-04 ยังคง Complete ตามผล Compile/Run ที่ผู้ใช้รายงานเมื่อ 2026-11-20; Card อยู่ Done: https://trello.com/c/pk6abEBf/6-wp-04-grid-entry-pipeline-integration

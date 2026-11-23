@@ -1,7 +1,7 @@
 # WP-05A.2 — Anchor State Transitions Test Plan
 
-**Status: DRAFT — CTO design prepared; Product Owner approval required**  
-**Implementation authorization: NOT GRANTED**  
+**Status: APPROVED — Product Owner approval received 2026-11-23**
+**Implementation gate: Source changes remain blocked until the user reports the pre-change Grid Regression Baseline.**
 **Related:** [SPEC.md](SPEC.md)
 
 ## 1. Test Safety

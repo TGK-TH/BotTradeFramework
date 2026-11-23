@@ -108,6 +108,24 @@ Test cases ที่เขียนไว้:
 
 สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-14**
 
+## WP-05A.2 — Anchor State Transitions (Approved 2026-11-23; Not Yet Implemented)
+
+SPEC: [WP-05A.2 SPEC](../WorkPackages/WP-05A/Phase-1.2/SPEC.md)
+TEST_PLAN: [WP-05A.2 TEST_PLAN](../WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md)
+Freebuff Task: [IMPLEMENTATION_TASK](../WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_TASK.md)
+
+Approved target test coverage:
+- Anchor mapping confirmation activates Anchor State; Accepted execution result or Deal Association alone does not.
+- Partial close updates remaining Volume / refreshed Ticket and retains ACTIVE.
+- Full close uses Position Identifier and one reason-free atomic lifecycle transition; TP/SL/manual close distinctions are not part of Grid state.
+- BUY/SELL quote-side equality, wrong-side and activation-crossing boundaries.
+- `WAIT_RETURN` legacy replay/load normalization to `READY`; preserve `WAIT_ACTIVATION` numeric ordinal and reserve the legacy enum slot.
+- State-based idempotency, duplicate snapshots, new Position at the same logical Level, restart/replay and crash boundaries.
+- Append/flush/apply failures, invalid payloads, conflicting evidence and snapshot round-trip.
+- No Closing Deal History integration and no test Trade Requests.
+
+**Gate:** User approved SPEC/TEST_PLAN on 2026-11-23. Freebuff source implementation is blocked until the user reports the pre-change no-trade Grid Regression Baseline. The existing reducer tests still assert legacy TP/WAIT_RETURN behavior until implementation replaces those expectations; do not treat this approved plan as evidence that the code has changed or passed.
+
 ## Snapshot Serialization + Journal Rotation — Design Contract (ตกลง 2026-11-14; ยังไม่ Implement)
 
 Retention หลัง Rotation/Cleanup สำเร็จ:

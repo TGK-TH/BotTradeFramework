@@ -1,21 +1,24 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-21
+Last updated: 2026-11-23
 
 ## Current focus
 
-**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 Anchor State Model is complete. User reported Compile/Test PASS, CTO Code Review is APPROVED, and the user confirmed closure on 2026-11-21. WP-05A.1 is in Trello Done. WP-05A.2 remains unauthorized.**
+**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 is Done (user Compile/Test PASS, CTO Review APPROVED, user confirmed 2026-11-21). WP-05A.2 SPEC/TEST_PLAN were approved by the user on 2026-11-23; Freebuff handoff is prepared. Implementation is waiting for the user-reported pre-change Grid Regression Baseline.**
 
 - Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
 - WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
 - Current review candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — user Compile/Test PASS; CTO Code Review APPROVED; user confirmed Done on 2026-11-21.
-- Next dependent implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) — **Product Backlog planning placeholder**; detailed SPEC/TEST_PLAN and separate approval required after WP-05A.1.
-- Developer Specification: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/SPEC.md`.
-- Test Plan: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.1/TEST_PLAN.md`.
-- Approved scope: Reducer in-memory Anchor State model, initialization/reset semantics, validation, typed getter, and focused Unit Tests. Anchor mapping/close transitions are deferred to WP-05A.2; Journal and Snapshot serialization are later WP-05A cards.
+- Approved implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions).
+- WP-05A.2 handoff: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_TASK.md`.
+- WP-05A.2 SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`.
+- WP-05A.2 TEST_PLAN: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`.
+- Approved WP-05A.2 behavior: no Closing Deal History for Full Close detection; Position Identifier is canonical; Partial Close retains ACTIVE; Full Close is reason-free and atomic; WAIT_RETURN normalizes to READY; state-based idempotency.
+- Current gate: user must report the latest pre-change no-trade Grid Regression Baseline before Freebuff changes source. Do not move the Trello card to In Progress before this gate.
 - Workflow V2: ChatGPT = CTO/Technical Lead (no source implementation); Freebuff = Developer Agent (direct repository access; no Serena MCP required); user = Product Owner/QA. Formal CTO Code Review begins only after the user reports MetaEditor Compile/Test PASS.
 - Trello workflow mapping: `MT5 Testing` is User Verification; `Code Review` is CTO review; `Done` requires user verification, CTO APPROVED, documentation gate, and user confirmation.
-- **Pre-change Grid Regression Baseline:** recorded from the user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). WP-05A.1 source/test changes are now present and user-reported Compile/Test PASS was received on 2026-11-21; CTO review is APPROVED. The current test inventory remains 20 Grid Test EAs (19 no-trade + 1 separately safety-gated Demo Trade Request test).
+- **Historical WP-05A.1 Pre-change Baseline:** user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). This is historical and is NOT the WP-05A.2 baseline because source changed during WP-05A.1.
+- **WP-05A.2 Pre-change Baseline:** OUTSTANDING. User must run the latest current no-trade Grid Regression inventory (exclude Demo Trade Request tests) and report exact results before Freebuff may change source.
 - No Demo or Live Trade Request is authorized. No commit/push is authorized.
 - Current branch: `feature/grid-trading`. WP-05A.1 implementation changes are staged from Freebuff; CTO review/documentation changes are unstaged. User-reported MetaEditor/MT5 Compile and Tests PASS on 2026-11-21. No Commit/Push has been made.
 
