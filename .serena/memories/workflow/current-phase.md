@@ -12,7 +12,7 @@
 ## WP-05A status
 - WP-05A parent remains In Progress.
 - WP-05A.1 — Anchor State Model: Done. User reported MetaEditor Compile/Test PASS 2026-11-21; CTO Code Review APPROVED; user confirmed closure; Trello Done.
-- WP-05A.2 — Anchor State Transitions: Product Owner approved SPEC and TEST_PLAN on 2026-11-23. Freebuff handoff prepared. Trello description/comment updated but card intentionally remains Product Backlog until the pre-change baseline is reported.
+- WP-05A.2 — Anchor State Transitions: Product Owner approved SPEC and TEST_PLAN on 2026-11-23. User reported all current Grid Regression test files passed, excluding tests that open orders on Demo; no fresh compile was run because source had not changed. Pre-change baseline accepted. Trello card moved to In Progress and baseline/implementation authorization recorded. Freebuff is cleared to implement approved scope only.
 - Handoff files:
   - `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`
   - `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`

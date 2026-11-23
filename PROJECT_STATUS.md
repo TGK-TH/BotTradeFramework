@@ -4,7 +4,7 @@ Last updated: 2026-11-23
 
 ## Current focus
 
-**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 is Done (user Compile/Test PASS, CTO Review APPROVED, user confirmed 2026-11-21). WP-05A.2 SPEC/TEST_PLAN were approved by the user on 2026-11-23; Freebuff handoff is prepared. Implementation is waiting for the user-reported pre-change Grid Regression Baseline.**
+**Grid V1 — WP-05A Persistence Foundation: WP-05A.1 is Done (user Compile/Test PASS, CTO Review APPROVED, user confirmed 2026-11-21). WP-05A.2 SPEC/TEST_PLAN approved and pre-change Grid Regression Baseline accepted on 2026-11-23; Freebuff is authorized to implement the approved scope.**
 
 - Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
 - WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
@@ -14,11 +14,11 @@ Last updated: 2026-11-23
 - WP-05A.2 SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`.
 - WP-05A.2 TEST_PLAN: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`.
 - Approved WP-05A.2 behavior: no Closing Deal History for Full Close detection; Position Identifier is canonical; Partial Close retains ACTIVE; Full Close is reason-free and atomic; WAIT_RETURN normalizes to READY; state-based idempotency.
-- Current gate: user must report the latest pre-change no-trade Grid Regression Baseline before Freebuff changes source. Do not move the Trello card to In Progress before this gate.
+- Pre-change baseline accepted (user-reported 2026-11-23): all current Grid Regression test files were run and passed, excluding every test that opens orders on the Demo account. No fresh MetaEditor compile was run because source code had not changed since the previous compile. Trello WP-05A.2 moved to In Progress and baseline/authorization recorded in a card comment. Freebuff is cleared to implement only the approved handoff scope.
 - Workflow V2: ChatGPT = CTO/Technical Lead (no source implementation); Freebuff = Developer Agent (direct repository access; no Serena MCP required); user = Product Owner/QA. Formal CTO Code Review begins only after the user reports MetaEditor Compile/Test PASS.
 - Trello workflow mapping: `MT5 Testing` is User Verification; `Code Review` is CTO review; `Done` requires user verification, CTO APPROVED, documentation gate, and user confirmation.
 - **Historical WP-05A.1 Pre-change Baseline:** user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). This is historical and is NOT the WP-05A.2 baseline because source changed during WP-05A.1.
-- **WP-05A.2 Pre-change Baseline:** OUTSTANDING. User must run the latest current no-trade Grid Regression inventory (exclude Demo Trade Request tests) and report exact results before Freebuff may change source.
+- **WP-05A.2 Pre-change Baseline:** ACCEPTED (user-reported 2026-11-23): all current test files passed except Demo order-opening tests, which were intentionally excluded. No fresh compile was needed/performed because no source changes had occurred.
 - No Demo or Live Trade Request is authorized. No commit/push is authorized.
 - Current branch: `feature/grid-trading`. WP-05A.1 implementation changes are staged from Freebuff; CTO review/documentation changes are unstaged. User-reported MetaEditor/MT5 Compile and Tests PASS on 2026-11-21. No Commit/Push has been made.
 

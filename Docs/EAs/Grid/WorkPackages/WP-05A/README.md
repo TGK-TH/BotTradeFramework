@@ -17,7 +17,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 | Card | ผลลัพธ์ | สถานะ | Dependency |
 |---|---|---|---|
 | [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | Done — User Verification PASS, CTO Code Review APPROVED และผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21 | ไม่มี |
-| [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | SPEC/TEST_PLAN approved 2026-11-23; implementation handoff prepared; waiting for user-reported pre-change regression baseline | WP-05A.1 |
+| [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | SPEC/TEST_PLAN approved; pre-change no-trade regression baseline accepted 2026-11-23; Freebuff authorized for approved implementation | WP-05A.1 |
 
 WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Replay และ Snapshot compatibility ที่จำเป็นต่อ Atomic State ตาม SPEC; Cards ถัดไปจะจัดการ Persistence/Recovery Hardening ที่เหลือและ Integration โดยแต่ละ Card ต้องมี Scope, SPEC, TEST_PLAN และ User Approval แยกต่างหากก่อนเริ่ม Implementation
 
@@ -36,7 +36,7 @@ WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Repla
 - Freebuff Task: [IMPLEMENTATION_TASK.md](Phase-1.2/IMPLEMENTATION_TASK.md)
 - Trello: https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions
 - Approved scope: reason-free Full Close transition; Position Identifier as canonical Position identity; Partial Close retains ACTIVE; WAIT_RETURN normalized to READY; state-based idempotency; no Closing Deal History integration.
-- Current gate: user must run the latest no-trade Grid Regression suite and report the pre-change baseline before Freebuff changes source. Do not move Trello to In Progress or begin implementation before that report.
+- Baseline gate: PASSED 2026-11-23. User ran all current Grid Regression test files and reported PASS; all tests that open orders on the Demo account were excluded. No fresh compile was run because source had not changed. Trello moved to In Progress; Freebuff is authorized to implement the approved WP-05A.2 scope.
 
 ## Workflow Gates
 
