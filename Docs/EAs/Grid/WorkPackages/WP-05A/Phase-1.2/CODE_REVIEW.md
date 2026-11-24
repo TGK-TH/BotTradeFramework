@@ -1,83 +1,68 @@
 # WP-05A.2 — CTO Code Review
 
-**Review date:** 2026-11-23  
-**Review outcome:** CHANGES REQUESTED  
-**Reviewed against:** `SPEC.md`, `TEST_PLAN.md`, `IMPLEMENTATION_TASK.md`, `IMPLEMENTATION_REPORT.md`  
-**User verification:** MetaEditor Compile PASS and Grid no-trade Test PASS, user-reported 2026-11-23
+**Review date:** 2026-11-24
+**Review outcome:** APPROVED
+**Reviewed against:** `SPEC.md`, `TEST_PLAN.md`, `IMPLEMENTATION_TASK.md`, `IMPLEMENTATION_REPORT.md`, CR-01/02/03 review-fix handoffs and the complete staged diff.
+**User verification:** User confirmed on 2026-11-24 that the complete no-trade Grid Regression test set passed, including CR02-01…04 and CR03-01. Freebuff's implementation report records MetaEditor Compile PASS (0 errors, 0 warnings) for both Adapter consumers.
 
-## 1. Scope reviewed
+## 1. Scope and repository state
 
-Reviewed the complete staged WP-05A.2 diff across the Reducer, Engine, Runtime Coordinator, Execution Policy, persistence normalization, affected tests, and project documentation.
+Reviewed WP-05A.2 source, tests and documentation, including the CR-01 implementation commit and the current uncommitted CR-02/CR-03 review-fix changes.
 
-Repository state at review:
-- Branch: `feature/grid-trading`
-- Freebuff changes are staged but not committed.
-- No unstaged changes were present at review time.
-- `git diff --cached --check`: PASS.
-- Scan of changed Grid test files found no `CTrade`, `OrderSend`, `PositionClose`, `Buy()` or `Sell()` calls.
-- No source files were changed by the CTO review.
+- Branch: `feature/grid-trading`.
+- CR-02/CR-03 changes remain staged and uncommitted; no commit or push was performed by CTO.
+- The user-reported no-trade Grid Regression run is accepted as runtime verification evidence.
+- Freebuff's report records MetaEditor compilation of `test_grid_entry_execution.mq5` and `test_grid_entry_execution_pipeline.mq5`: 0 errors, 0 warnings.
+- `git diff --check` and `git diff --cached --check`: PASS at review.
+- No Trade Request was introduced; the added CR-02/CR-03 tests use fake ports.
 
-## 2. Findings
+## 2. Historical findings and resolution
 
-### CR-01 — Anchor WAIT_ACTIVATION has no durable transition back to READY
+### CR-01 — Anchor WAIT_ACTIVATION had no durable transition back to READY
 
-**Severity:** P1 — Blocking  
-**Files / locations:**
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh:656-661` — Anchor Entry Intent is accepted only while the Reducer's Anchor State is READY.
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh:825-828` — Anchor Position Mapping confirmation is also restricted to READY.
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh:1025-1044` — Full Close can persist Anchor State as WAIT_ACTIVATION.
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh:896-919` — the only state-transition lifecycle handler is `LEVEL_STATE`, and it updates normal Levels only.
-- `Include/BotTrade/Grid/GridEntryMappingReducer.mqh:1126-1145` — `ApplyLifecycleUpdate()` has no Anchor State update event.
-- `Include/BotTrade/Grid/GridLevelEngine.mqh:208-213` — the Engine can independently move its Anchor from WAIT_ACTIVATION to READY after the activation crossing.
+**Severity:** P1 — Blocking. **Status: RESOLVED.**
 
-**Problem:**
+The initial implementation could leave the Reducer's canonical Anchor state at `WAIT_ACTIVATION` after the Engine had crossed the activation threshold, permanently blocking subsequent Anchor entry and mapping confirmation, including after restart.
 
-When an Anchor Full Close is recorded with next state WAIT_ACTIVATION, the Reducer stores that state. The Engine has logic to transition its own Anchor State back to READY after the required BUY/SELL activation crossing, but there is no corresponding durable Reducer event/API to record that transition. Unlike normal Levels, which have the `LEVEL_STATE` lifecycle record, the Anchor has no `ANCHOR_STATE` equivalent.
+Freebuff's review fix introduced a validated, durable `ANCHOR_STATE` lifecycle transition for `WAIT_ACTIVATION -> READY`, with Engine activation signaling, Coordinator durability gating, Adapter append API, Reducer validation, and replay/snapshot support. BUY and SELL activation direction and mapping invariants are preserved. The user recompiled and reran the full Grid test set after the CR-01 fixture corrections and reported every test file PASS on 2026-11-24.
 
-This creates a permanent gate: the Reducer rejects the next Anchor Entry Intent and Position Mapping while its state remains WAIT_ACTIVATION. A restart restores the same blocked state. The Engine becoming READY does not repair the Reducer's canonical durable state.
+### CR-02 — Invalid Anchor activation could be appended before Reducer validation
 
-**Required resolution:**
+**Severity:** P1 — Blocking. **Status: RESOLVED.**
 
-Add a validated, durable Anchor-state transition contract (or another explicitly approved mechanism) that allows WAIT_ACTIVATION -> READY after the Engine's activation crossing, while preserving the invariants:
-- ACTIVE requires exactly one Anchor Position Mapping.
-- READY / WAIT_ACTIVATION require no Anchor Position Mapping.
-- The transition must be journaled and replayable.
-- Invalid transitions must fail closed.
-- The Anchor state and normal Level state semantics must remain consistent.
+`RecordAnchorActivation()` now validates the healthy Reducer context, exact canonical Anchor state `WAIT_ACTIVATION`, absence of Anchor Position Mapping, and matching pending Coordinator activation before calling `AppendAndApply()`. Invalid or conflicting preconditions return false without appending a Journal record or mutating Reducer/Coordinator state. Append-before-apply durability ordering remains intact; Coordinator confirmation occurs only after durable success.
 
-Add tests covering at least:
-1. Anchor Full Close -> WAIT_ACTIVATION.
-2. Valid activation crossing -> durable Anchor READY.
-3. Snapshot/restart preserves the resulting READY state.
-4. A subsequent Anchor Entry Intent and confirmed Mapping can proceed.
-5. Invalid activation/state transition while an Anchor mapping exists is rejected without mutation.
+Focused fake-port tests cover canonical READY disagreement, existing Anchor mapping disagreement, valid transition, duplicate/repeated activation, and the existing append-failure behavior. The reachable duplicate API path is tested.
 
-This finding is within the approved Anchor State Transition purpose; do not work around it by bypassing the Reducer's Anchor READY checks.
+### CR-03 — No SELL durable activation test
 
-## 3. Documentation consistency
+**Severity:** P2 — Coverage gap. **Status: RESOLVED.**
 
-The implementation report has a stale sentence near its top:
+`test_grid_entry_execution.mq5` now exercises SELL downward activation through Coordinator → Adapter → Journal → Reducer. It asserts one `ANCHOR_STATE|READY` append, Reducer READY, pending activation cleared after durable success, and no duplicate append on repetition.
 
-> “No MetaEditor/MT5 compilation or runtime result is claimed in this report. The user must compile and run the tests before CTO Code Review begins.”
+## 3. Review observations
 
-That conflicts with the report header and §8, which correctly record the user's Compile/Test PASS. Update this sentence to state that Freebuff did not run MetaEditor, and that the user subsequently reported Compile/Test PASS.
+- Reducer remains the final authority for lifecycle validation and replay.
+- Pre-append validation uses read-only Reducer queries and does not bypass reducer invariants.
+- `WAIT_ACTIVATION` activation direction is unchanged: BUY upward, SELL downward.
+- CR-02 invalid-precondition and duplicate paths do not create durable Journal mutations.
+- CR-03 complements the existing BUY durable activation coverage.
+- No Open Positions account scan / WP-05C adapter, production `OnTradeTransaction` / WP-05D integration, MT5 Deal History lookup, close-reason classification, or trading-policy change was introduced.
+- No Trade Request is issued by the unit tests.
 
-Also update the implementation handoff's execution status: `IMPLEMENTATION_TASK.md` still says not to start until the pre-change baseline is reported, although that gate was subsequently passed and implementation is complete. This is documentation cleanup, not a source blocker.
+## 4. Verification and acceptance
 
-## 4. Positive review observations
+| Evidence | Result |
+|---|---|
+| Freebuff MetaEditor compile: `test_grid_entry_execution.mq5` | 0 errors, 0 warnings |
+| Freebuff MetaEditor compile: `test_grid_entry_execution_pipeline.mq5` | 0 errors, 0 warnings |
+| User no-trade Grid Regression suite, including CR02-01…04 and CR03-01 | PASS (user-reported 2026-11-24) |
+| `git diff --check` | PASS |
+| `git diff --cached --check` | PASS |
+| Trade-request scan / fake-port test boundary | PASS; no trade requests introduced |
 
-- Position Identifier is used as the Full Close lookup identity; Position Ticket is updated as metadata.
-- New Full Close payload is reason-free; legacy TP/NON_TP payloads are retained for replay and WAIT_RETURN is normalized to READY.
-- Partial-close metadata carries Volume and Ticket together and rejects unknown identifiers, zero Volume, volume growth, and conflicting Ticket ownership.
-- Full Close validates the mapped identifier and next state before changing the target state and removing the mapping.
-- Snapshot now persists Anchor State and validates the ACTIVE/mapping invariant.
-- No Closing Deal History lookup, live account scan, production OnTradeTransaction adapter, or trade request was introduced in the reviewed diff.
-- The user-reported MetaEditor Compile/Test PASS is accepted as verification evidence; it does not override the P1 design gap above.
+**CTO decision: APPROVED.** CR-01, CR-02 and CR-03 are resolved. The implementation and user verification satisfy the WP-05A.2 acceptance criteria. Documentation consistency is updated with this approval. WP-05A.2 may be formally closed.
 
-## 5. Decision
+## 5. Scope boundary after closure
 
-**CHANGES REQUESTED — do not mark WP-05A.2 Done and do not proceed to WP-05C.**
-
-The staged implementation is preserved as-is. No commit, push, source edit, reset, checkout, clean, stash, or destructive operation was performed during this review.
-
-A separate, explicit implementation handoff is required before Freebuff makes review fixes.
+WP-05A.2 closure does not authorize WP-05C or WP-05D. Any subsequent work requires its own scope, SPEC, TEST_PLAN and explicit Product Owner authorization. Before starting another Grid feature/refactor, run the latest relevant no-trade Grid Regression tests and report the pre-change baseline.
