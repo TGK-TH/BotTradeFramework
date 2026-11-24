@@ -118,12 +118,205 @@ void AddConfiguration(STGKGridMappingJournalRecord &records[])
   records[0].payload = "v1|RESET_COMMITTED|1|BUY|5.0|3960.0|4040.0|4000.0|17";
 }
 
+// A committed configuration, a mapped Anchor, and its close record. The close
+// leaves the canonical Anchor at WAIT_ACTIVATION with no Position Mapping.
+void AddAnchorActivationRecords(STGKGridMappingJournalRecord &records[])
+{
+  ArrayResize(records, 6);
+
+  records[0].sequence = 1;
+  records[0].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[0].payload = "v1|RESET_COMMITTED|1|BUY|5.0|3960.0|4040.0|4000.0|17";
+
+  records[1].sequence = 2;
+  records[1].record_type = TGK_GRID_MAPPING_RECORD_ENTRY_INTENT;
+  records[1].payload =
+    "v1|REQ-CR01-ANCHOR|XAUUSD|710001|BUY|ANCHOR|-1|0.01|1|UT_INSTANCE";
+
+  records[2].sequence = 3;
+  records[2].record_type = TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT;
+  records[2].payload = "v1|REQ-CR01-ANCHOR|DONE|1009981|0";
+
+  records[3].sequence = 4;
+  records[3].record_type = TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION;
+  records[3].payload = "v1|REQ-CR01-ANCHOR|2009981|3009981|0.01";
+
+  records[4].sequence = 5;
+  records[4].record_type = TGK_GRID_MAPPING_RECORD_POSITION_MAPPING;
+  records[4].payload =
+    "v1|REQ-CR01-ANCHOR|XAUUSD|710001|ANCHOR|-1|3009981|4009981|0.01|1|UT_INSTANCE";
+
+  records[5].sequence = 6;
+  records[5].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[5].payload = "v1|POSITION_CLOSED|3009981|WAIT_ACTIVATION";
+}
+
 bool InitializeReducer(CTGKGridEntryMappingReducer &reducer)
 {
   STGKGridMappingJournalRecord records[];
   AddConfiguration(records);
   bool initialized = reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE");
   return initialized && reducer.Replay(records, ArraySize(records));
+}
+
+// Drives a BUY Anchor from ACTIVE to a pending WAIT_ACTIVATION -> READY
+// activation crossing, so the durable transition can be exercised.
+bool PrepareAnchorActivation(
+  CTGKGridEntryMappingReducer &reducer,
+  CTGKGridLevelRuntimeCoordinator &coordinator)
+{
+  if(!reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE"))
+    return false;
+
+  STGKGridMappingJournalRecord records[];
+  AddAnchorActivationRecords(records);
+  if(!reducer.Replay(records, ArraySize(records)))
+    return false;
+
+  if(!coordinator.Initialize(
+    TGK_GRID_MODE_BUY,
+    4000.0,
+    5.0,
+    3960.0,
+    4040.0,
+    16,
+    "XAUUSD",
+    710001,
+    3999.0,
+    4000.0) ||
+     !coordinator.BindConfigEpoch(1))
+    return false;
+
+  STGKGridLevelPositionRecord anchor_position;
+  anchor_position.ticket = 6001;
+  anchor_position.symbol = "XAUUSD";
+  anchor_position.magic_number = 710001;
+  anchor_position.is_anchor = true;
+  anchor_position.level_index = -1;
+  anchor_position.volume = 0.01;
+  if(!coordinator.RegisterInitialAnchorPosition(anchor_position))
+    return false;
+
+  STGKGridLevelPositionRecord positions[];
+  STGKGridLevelCloseEvent close_events[];
+  STGKGridLevelCandidate candidate;
+  ENUM_TGK_GRID_COORDINATOR_RESULT result;
+  ArrayResize(close_events, 1);
+  close_events[0].is_anchor = true;
+  close_events[0].level_index = -1;
+  if(coordinator.Reconcile(
+    positions,
+    close_events,
+    TGK_GRID_ENTRY_RESOLUTION_PENDING,
+    3999.0,
+    4000.0,
+    result,
+    candidate) != TGK_GRID_COORDINATOR_NO_CANDIDATE)
+    return false;
+
+  if(coordinator.GetAnchorState() != TGK_GRID_LEVEL_WAIT_ACTIVATION)
+    return false;
+
+  // Ask moves below the Anchor, then crosses it upward, which is the BUY
+  // activation direction.
+  coordinator.UpdatePrice(3998.0, 3999.0, result, candidate);
+  coordinator.UpdatePrice(3999.0, 4000.0, result, candidate);
+  return coordinator.HasPendingAnchorActivation();
+}
+
+void RunAnchorActivationPersistence()
+{
+  Tests.BeginTest("CR01-02 Anchor activation is journaled before READY is accepted");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_ACTIVE;
+
+  bool ready = PrepareAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+  port.next_sequence = reducer.LastSequence() + 1;
+  Tests.AssertTrue("activation fixture is ready", ready);
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable before append",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State waits activation",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  bool recorded = ready && adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertTrue("activation transition is recorded", recorded);
+  Tests.AssertEqualString(
+    "canonical activation payload",
+    port.result_payload,
+    "v1|ANCHOR_STATE|1|READY");
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable after append",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State becomes READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertFalse(
+    "activation is no longer pending",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt(
+    "activation creates no Position Mapping",
+    reducer.PositionCount(),
+    0);
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAnchorActivationPersistenceFailure()
+{
+  Tests.BeginTest("CR01-12 activation append failure leaves WAIT_ACTIVATION canonical");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_READY;
+
+  bool ready = PrepareAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+  port.next_sequence = reducer.LastSequence() + 1;
+  Tests.AssertTrue("activation fixture is ready", ready);
+  port.fail_result = true;
+
+  bool recorded = ready && adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertFalse("append failure reports failure", recorded);
+  Tests.AssertTrue(
+    "append failure requires recovery",
+    adapter.IsRecoveryRequired());
+  Tests.AssertTrue(
+    "canonical Anchor State remains queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State remains WAIT_ACTIVATION",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertTrue(
+    "activation remains pending",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
 }
 
 void SetCandidate(STGKGridEntryExecutionCandidate &candidate)
@@ -604,6 +797,8 @@ int OnInit()
   RunAcceptedPartialAndPlaced();
   RunIdentityMismatch();
   RunJournalReducerSequenceMismatch();
+  RunAnchorActivationPersistence();
+  RunAnchorActivationPersistenceFailure();
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }

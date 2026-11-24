@@ -919,6 +919,33 @@ private:
     return SetLevelState(level_index, state);
   }
 
+  // The only Anchor lifecycle transition is a validated
+  // WAIT_ACTIVATION -> READY activation after the Engine's crossing.
+  // Duplicate, conflicting or mapping-backed transitions fail closed, and
+  // every precondition is checked before the state changes.
+  bool ApplyAnchorState(string &fields[])
+  {
+    if(ArraySize(fields) != 4 || fields[1] != "ANCHOR_STATE")
+      return false;
+
+    long config_epoch = 0;
+    ENUM_TGK_GRID_LEVEL_STATE state;
+    if(!ParsePositiveLong(fields[2], config_epoch) ||
+       config_epoch != m_config_epoch ||
+       !ParseLevelState(fields[3], state))
+      return false;
+
+    state = TGKGridNormalizeLevelState(state);
+    if(state != TGK_GRID_LEVEL_READY ||
+       TGKGridNormalizeLevelState(m_anchor_state) !=
+         TGK_GRID_LEVEL_WAIT_ACTIVATION ||
+       FindPositionByTarget("ANCHOR", -1) >= 0)
+      return false;
+
+    m_anchor_state = state;
+    return true;
+  }
+
   bool ApplyPositionVolume(string &fields[])
   {
     if(ArraySize(fields) != 4 || fields[1] != "POSITION_VOLUME")
@@ -1132,6 +1159,8 @@ private:
 
     if(fields[1] == "LEVEL_STATE")
       return ApplyLevelState(fields);
+    if(fields[1] == "ANCHOR_STATE")
+      return ApplyAnchorState(fields);
     if(fields[1] == "POSITION_VOLUME")
       return ApplyPositionVolume(fields);
     if(fields[1] == "POSITION_TICKET")

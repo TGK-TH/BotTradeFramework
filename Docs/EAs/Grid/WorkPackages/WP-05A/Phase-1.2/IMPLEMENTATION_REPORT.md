@@ -1,6 +1,6 @@
 # WP-05A.2 — Anchor State Transitions Implementation Report
 
-**Status: IMPLEMENTED — user-reported MetaEditor Compile/Test PASS 2026-11-23; awaiting CTO Code Review**
+**Status: CR-01 REVIEW FIX IMPLEMENTED 2026-11-23 — user Compile/Test re-verification PASS reported 2026-11-24 — awaiting CTO re-review**
 **Developer:** Freebuff
 **Date:** 2026-11-23
 **Specification:** [SPEC.md](SPEC.md)
@@ -109,8 +109,13 @@ and `test_grid_level_runtime_coordinator.mq5`:
   reviewed against the new signatures; no other test EA calls
   `RecordPositionClosed()` or sets a close reason.
 
-**Exact results:** not executed by Freebuff. No MetaEditor/MT5 compiler is
-available in this environment. The user must report Compile and Run results.
+**Exact results:** Freebuff did not run MetaEditor/MT5; no compiler is available
+in this environment. The user reported Compile PASS and Test PASS on 2026-11-23
+for the pre-CR-01 implementation (see §8). The CR-01 fix changed source and
+tests; after the compile and fixture corrections in §10.6/§10.6.1 the user
+re-ran MetaEditor Compile and the full Grid test set and reported every test
+file PASS on 2026-11-24. This report claims no independent compile or run
+result.
 Static checks performed: parenthesis/bracket/brace balance on all changed MQL5
 files, `git diff --check` (clean), and a scan confirming no `CTrade`,
 `OrderSend`, `PositionClose` or close-reason usage remains in the changed test
@@ -175,6 +180,151 @@ changed for this fix.
 
 ## 9. Next step
 
-Formal CTO Code Review against SPEC.md, TEST_PLAN.md and this report. Trello is
-in `Code Review`; `Done` still requires an APPROVED review, documentation gate
-and user confirmation.
+Formal CTO Code Review against SPEC.md, TEST_PLAN.md and this report. The user
+reported Compile and full-test PASS on 2026-11-24 after the corrections in
+§10.6 and §10.6.1. Trello is in `Code Review`; `Done` still requires an
+APPROVED review, documentation gate and user confirmation.
+
+## 10. CR-01 Review Fix (2026-11-23)
+
+Response to CR-01 in [CODE_REVIEW.md](CODE_REVIEW.md) and the handoff in
+[CR-01_REVIEW_FIX_HANDOFF.md](CR-01_REVIEW_FIX_HANDOFF.md). The original
+implementation history above is preserved unchanged.
+
+### 10.1 Root cause
+
+The Engine moved its own Anchor from `WAIT_ACTIVATION` to `READY` after the
+activation crossing, but the durable Entry Mapping Reducer had no equivalent
+lifecycle event. `LEVEL_STATE` exists only for normal Levels, so the Reducer
+stayed at `WAIT_ACTIVATION`, kept rejecting the next Anchor Entry Intent and
+Position Mapping, and a restart restored the same blocked state.
+
+### 10.2 Event, API and runtime flow
+
+- **Reducer:** new `ANCHOR_STATE` lifecycle payload
+  `v1|ANCHOR_STATE|<config_epoch>|<state>`, applied by `ApplyAnchorState()`.
+- **Engine:** `HasPendingAnchorActivation()` reports the observed
+  `WAIT_ACTIVATION -> READY` crossing; `ConfirmAnchorActivation()` clears the
+  report only after the durable record is committed. Entry confirmation/failure
+  and a new close also clear any stale report.
+- **Runtime Coordinator:** records the Engine's pending activation,
+  `HasPendingAnchorActivation()`, `ConfirmAnchorActivation()`, and withholds or
+  defers an Anchor entry candidate until the transition is durable.
+- **Adapter:** `RecordAnchorActivation()` builds the payload and uses the
+  existing `NextSequence` / `AppendRecord` / `Replay` contract, then confirms the
+  Coordinator. The Journal append happens before the in-memory apply.
+
+### 10.3 Validation and invariants
+
+`ApplyAnchorState()` rejects an unknown payload shape, a non-token state, a
+state other than `READY`, an invalid or mismatched Config Epoch, an origin other
+than `WAIT_ACTIVATION` (so duplicate or conflicting transitions fail), and any
+transition attempted while an Anchor Position Mapping exists. All preconditions
+are checked before `m_anchor_state` changes; rejects follow the existing
+`RECOVERY_ERROR` policy. `ACTIVE` still means exactly one Anchor mapping, and
+`READY` / `WAIT_ACTIVATION` still mean none. The existing Anchor Entry Intent and
+Position Mapping `READY` guards were not weakened. Entry Request Accepted and
+Deal Association are not activation evidence.
+
+### 10.4 Files changed by this fix
+
+| File | Change |
+|---|---|
+| `Include/BotTrade/Grid/GridEntryMappingReducer.mqh` | `ApplyAnchorState()` validation plus `ANCHOR_STATE` dispatch. |
+| `Include/BotTrade/Grid/GridLevelEngine.mqh` | Pending activation report and durable confirmation. |
+| `Include/BotTrade/Grid/GridLevelRuntimeCoordinator.mqh` | Pending-activation tracking, entry gating/deferral and confirmation. |
+| `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | `RecordAnchorActivation()` durable append + apply + confirm. |
+| `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | CR01-01, 06, 07, 08, 09, 10, 11, 13. |
+| `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | CR01-02, 03, 04, 05. |
+| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Activation gating, deferral and confirmation. |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | CR01-02 persistence success and CR01-12 append failure. |
+
+### 10.5 Tests added and results
+
+| ID | Case | Where |
+|---|---|---|
+| CR01-01 | Anchor Full Close commits `WAIT_ACTIVATION`, no mapping | reducer, engine, coordinator |
+| CR01-02 | BUY upward crossing becomes durable `READY` | engine, adapter |
+| CR01-03 | SELL downward crossing becomes durable `READY` | engine |
+| CR01-04 | BUY non-qualifying movement keeps `WAIT_ACTIVATION` | engine |
+| CR01-05 | SELL non-qualifying movement keeps `WAIT_ACTIVATION` | engine |
+| CR01-06 | Replay restores Anchor `READY` | reducer |
+| CR01-07 | Snapshot restore keeps `READY`, no Anchor mapping | reducer |
+| CR01-08 | Anchor Entry Intent accepted after activation | reducer |
+| CR01-09 | Anchor Position Mapping stored, Anchor `ACTIVE` | reducer |
+| CR01-10 | Transition rejected while an Anchor mapping exists | reducer |
+| CR01-11 | Invalid origin/target/state/epoch and duplicate rejected | reducer |
+| CR01-12 | Append failure leaves canonical `WAIT_ACTIVATION` | adapter |
+| CR01-13 | Replay after durable append converges to `READY` once | reducer |
+
+**Results:** not executed by Freebuff (no MetaEditor/MT5 here). Static checks
+only: brace/paren/bracket balance on the changed MQL5 files and
+`git diff --check`. The user must report exact Compile and Test results (done:
+the 2026-11-24 report of all-files PASS, see §10.6.1).
+
+### 10.6 Compile fix after user report (2026-11-24)
+
+ผู้ใช้รายงานผล Compile หลังแก้ CR-01 ว่ามี 2 ไฟล์ทดสอบไม่ผ่าน:
+
+| File | Reported error | Location |
+|---|---|---|
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | `wrong parameters count, 6 passed, but 4 requires` | บรรทัด 187 |
+| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | `wrong parameters count, 6 passed, but 4 requires` | บรรทัด 1088, 1105, 1128 |
+
+**Root cause:** test เรียก `CTGKGridLevelRuntimeCoordinator::UpdatePrice()` ด้วย signature ของ Engine
+(`previous_bid, previous_ask, current_bid, current_ask, ...`) ทั้งที่ Coordinator รับ
+`current_bid, current_ask, result, candidate` และติดตาม previous quote ภายในเอง
+(`m_previous_bid`/`m_previous_ask` ถูกตั้งจาก `Initialize()` และ `Reconcile()`)
+
+**Fix:**
+
+- เปลี่ยนทุกจุดที่ผิดให้เป็น 4 พารามิเตอร์ และสร้าง upward crossing จริงสำหรับ BUY
+  (Ask 4000 → 3999 ก่อน แล้ว 3999 → 4000) แทนการส่ง previous/current ที่ไม่ขยับ
+- `test_grid_level_runtime_coordinator.mq5`: การเคลื่อนลงใช้ 3999/3998 (3998.0/3999.0)
+  สำหรับกรณีที่ต้องรอ confirmation (ดู §10.6.1 สำหรับการแก้ fixture รอบถัดไป)
+- `test_grid_entry_execution.mq5`: fixture ของ CR01-02/CR01-12 เปลี่ยนจาก configuration
+  เดี่ยว ๆ เป็น `AddAnchorActivationRecords()` (committed config → ANCHOR Entry Intent →
+  Execution Result → Deal Association → Position Mapping → `POSITION_CLOSED|WAIT_ACTIVATION`)
+  เพื่อให้ canonical Anchor State เป็น `WAIT_ACTIVATION` จริงตาม preconditions ของ
+  `ApplyAnchorState()` และ Position Mapping ว่าง
+- ตั้ง `port.next_sequence = reducer.LastSequence() + 1` ตามที่ `RecordAnchorActivation()`
+  กำหนด (`port.NextSequence()` ต้องเท่ากับ `reducer.LastSequence() + 1`)
+
+**Results:** แก้แล้ว, ตรวจ brace/paren/bracket balance ผ่านทั้ง 2 ไฟล์ และ
+`git diff --check` clean. ผู้ใช้ Compile ผ่านหลังแก้ แต่การรัน test พบ assertion fail
+ใน `test_grid_level_runtime_coordinator` — แก้ต่อใน §10.6.1
+
+#### 10.6.1 Coordinator fixture correction after the test run (2026-11-24)
+
+หลังแก้ compile error ผู้ใช้รัน test ทุกไฟล์: ผ่านทั้งหมด ยกเว้น
+`test_grid_level_runtime_coordinator` ที่ fail 3 assertions ใน block
+“Anchor activation is withheld until its durable confirmation”:
+
+- `deferred Anchor candidate is offered after confirmation | expected=2, actual=1`
+- `offered candidate is the Anchor | actual=false`
+- `offered Anchor price | expected=4000.0, actual=0.0`
+
+**Root cause (test fixture only, ไม่ใช่ production code):** fixture สร้าง downward move
+เป็น 4000 → 3999 (Ask) แต่ `IsCrossedForEntry()` ของ BUY ต้องมี previous > level และ
+current <= level ดังนั้น 4000 → 3999 ไม่ cross Anchor 4000 (ค่าหยุดที่ equality) —
+จึงไม่เคยมี Anchor candidate ถูก defer เลย. หลัง `ConfirmAnchorActivation()` การเรียก
+3999 → 4000 เป็นทิศทาง activation ไม่ใช่ทิศทาง entry จึงคืน `NO_CANDIDATE`
+
+**Fix:** เพิ่ม upward move ไปที่ Ask 4002 ก่อน แล้วสร้าง downward crossing จริง
+4002 → 4000 ขณะ pending (assert ว่าไม่ได้ offer และ `candidate.is_anchor == false`)
+หลัง confirmation การเรียกที่ราคาเดิม 3999/4000 จะคืน deferred Anchor candidate
+(`CANDIDATE_READY`, price 4000) ตามที่คาดไว้
+
+**Results (user-reported 2026-11-24):** หลังแก้ fixture นี้ ผู้ใช้ Compile และรัน test
+ทั้งชุดใหม่แล้วรายงานว่าผ่านครบทุกไฟล์. หลักฐาน Compile/Run มาจากผู้ใช้; Freebuff
+ตรวจได้เฉพาะ static checks (brace/paren/bracket balance ผ่าน และ `git diff --check` clean)
+
+### 10.7 Safety and limitations
+
+No trade request was sent; no `CTrade`, `OrderSend`, `PositionClose`, account
+scan, Deal History lookup, `OnTradeTransaction` integration, entry-selection,
+Bounds or lot-sizing change was added. No new Snapshot field was introduced; the
+existing Anchor State field carries the resulting `READY`. Limitation: the
+runtime caller that performs the append is the future reconciliation/execution
+integration (WP-05C/WP-05D); this work package implements and tests the durable
+contract, the Engine signal, the Coordinator gate and the adapter API.

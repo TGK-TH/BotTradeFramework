@@ -63,6 +63,7 @@ private:
   double m_previous_ask;
   double m_current_bid;
   double m_current_ask;
+  bool m_anchor_activation_pending;
   bool m_initialized;
 
   bool m_candidate_offered;
@@ -146,6 +147,10 @@ private:
   // READY is the only operational entry-eligible state.
   bool IsCandidateEligible(STGKGridLevelCandidate &candidate)
   {
+    // An Anchor activation is not entry evidence until it is durable.
+    if(candidate.is_anchor && m_anchor_activation_pending)
+      return false;
+
     ENUM_TGK_GRID_LEVEL_STATE state;
 
     if(candidate.is_anchor)
@@ -424,7 +429,9 @@ private:
 
     if(!IsCandidateEligible(m_deferred_candidate))
     {
-      ClearDeferredCandidate();
+      // Keep a crossed Anchor candidate until its activation is durable.
+      if(!(m_deferred_candidate.is_anchor && m_anchor_activation_pending))
+        ClearDeferredCandidate();
       return TGK_GRID_COORDINATOR_NO_CANDIDATE;
     }
 
@@ -534,6 +541,7 @@ public:
     m_previous_ask = 0.0;
     m_current_bid = 0.0;
     m_current_ask = 0.0;
+    m_anchor_activation_pending = false;
     m_initialized = false;
     m_candidate_offered = false;
     m_request_unresolved = false;
@@ -591,6 +599,7 @@ public:
     m_candidate_offered = false;
     m_request_unresolved = false;
     m_has_deferred_candidate = false;
+    m_anchor_activation_pending = false;
     ArrayResize(m_positions, 0);
     m_initialized = true;
     return true;
@@ -625,6 +634,20 @@ public:
       is_anchor,
       level_index,
       level_price);
+
+    if(m_engine.HasPendingAnchorActivation())
+      m_anchor_activation_pending = true;
+
+    // Do not offer an Anchor entry while its activation record is uncommitted.
+    if(has_candidate && is_anchor && m_anchor_activation_pending)
+    {
+      STGKGridLevelCandidate deferred_anchor;
+      deferred_anchor.is_anchor = true;
+      deferred_anchor.level_index = -1;
+      deferred_anchor.level_price = level_price;
+      RetainDeferredCandidate(deferred_anchor);
+      has_candidate = false;
+    }
 
     m_previous_bid = current_bid;
     m_previous_ask = current_ask;
@@ -846,6 +869,25 @@ public:
   ENUM_TGK_GRID_LEVEL_STATE GetAnchorState()
   {
     return m_engine.GetAnchorState();
+  }
+
+  // True while an observed Anchor activation still needs its durable record.
+  bool HasPendingAnchorActivation()
+  {
+    return m_initialized && m_anchor_activation_pending;
+  }
+
+  // Called only after the activation transition is durably appended/applied.
+  bool ConfirmAnchorActivation()
+  {
+    if(!m_initialized || !m_anchor_activation_pending)
+      return false;
+
+    if(!m_engine.ConfirmAnchorActivation())
+      return false;
+
+    m_anchor_activation_pending = false;
+    return true;
   }
 
   bool IsRequestUnresolved()

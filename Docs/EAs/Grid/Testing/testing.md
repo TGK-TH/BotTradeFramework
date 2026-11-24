@@ -108,7 +108,7 @@ Test cases ที่เขียนไว้:
 
 สถานะ: **PASS ตามผลผู้ใช้รายงาน 2026-11-14**
 
-## WP-05A.2 — Anchor State Transitions (Implemented 2026-11-23; User Verification PASS 2026-11-23; CTO Code Review CHANGES REQUESTED (CR-01))
+## WP-05A.2 — Anchor State Transitions (Implemented 2026-11-23; User Verification PASS 2026-11-23; CTO Code Review CHANGES REQUESTED (CR-01); CR-01 fix implemented 2026-11-23, re-verification pending)
 
 SPEC: [WP-05A.2 SPEC](../WorkPackages/WP-05A/Phase-1.2/SPEC.md)
 TEST_PLAN: [WP-05A.2 TEST_PLAN](../WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md)
@@ -124,7 +124,7 @@ Approved target test coverage:
 - Append/flush/apply failures, invalid payloads, conflicting evidence and snapshot round-trip.
 - No Closing Deal History integration and no test Trade Requests.
 
-**Implementation state (2026-11-23):** Source and tests were implemented by Freebuff after the user-reported pre-change no-trade Grid Regression Baseline passed. The reducer/engine tests now assert the reason-free transition contract and `WAIT_RETURN` normalization. Evidence and any limitations are recorded in [IMPLEMENTATION_REPORT.md](../WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md). The user reported (2026-11-23) that every changed file compiled PASS in MetaEditor. The first full run had 3 failing assertions in `test_grid_entry_mapping_reducer` (C16 interrupted replay) because the fixture passed a truncated `record_count` while `Replay()` requires `record_count == ArraySize(records)`; Freebuff fixed only the fixture, and the user then reported the tests PASS. Formal CTO Code Review is still pending.
+**Implementation state (2026-11-23):** Source and tests were implemented by Freebuff after the user-reported pre-change no-trade Grid Regression Baseline passed. The reducer/engine tests now assert the reason-free transition contract and `WAIT_RETURN` normalization. Evidence and any limitations are recorded in [IMPLEMENTATION_REPORT.md](../WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md). The user reported (2026-11-23) that every changed file compiled PASS in MetaEditor. The first full run had 3 failing assertions in `test_grid_entry_mapping_reducer` (C16 interrupted replay) because the fixture passed a truncated `record_count` while `Replay()` requires `record_count == ArraySize(records)`; Freebuff fixed only the fixture, and the user then reported the tests PASS. CTO review then returned CR-01 (no durable Anchor `WAIT_ACTIVATION -> READY` transition). The CR-01 fix adds a validated `ANCHOR_STATE` lifecycle record with Engine signal, Coordinator durability gate and adapter append, plus CR01-01 to CR01-13 tests. After the CR-01 compile and fixture corrections the user re-ran Compile and the full Grid no-trade suites on 2026-11-24 and reported every test file PASS; formal CTO re-review has not started.
 
 ## Snapshot Serialization + Journal Rotation — Design Contract (ตกลง 2026-11-14; ยังไม่ Implement)
 

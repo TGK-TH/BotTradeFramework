@@ -5,6 +5,7 @@
 
 #include <BotTrade/Grid/GridEntryExecutionPolicy.mqh>
 #include <BotTrade/Grid/GridEntryMappingReducer.mqh>
+#include <BotTrade/Grid/GridLevelRuntimeCoordinator.mqh>
 #include <BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh>
 
 enum ENUM_TGK_GRID_ENTRY_EXECUTION_STATUS
@@ -410,6 +411,70 @@ public:
     }
 
     outcome.status = TGK_GRID_ENTRY_EXECUTION_STATUS_RECORDED;
+    return true;
+  }
+
+  // Persist the one observed Anchor activation. The Journal append happens
+  // before the Reducer applies the record, so an append/flush failure reports
+  // failure and leaves the canonical Anchor State at WAIT_ACTIVATION.
+  bool RecordAnchorActivation(
+    const string instance_id,
+    const string symbol,
+    long magic_number,
+    ENUM_TGK_GRID_MODE mode,
+    long config_epoch,
+    CTGKGridLevelRuntimeCoordinator &coordinator,
+    CTGKGridEntryMappingReducer &reducer,
+    ITGKGridEntryExecutionPort &port
+  )
+  {
+    if(!m_initialized ||
+       m_recovery_required ||
+       !IsToken(instance_id) ||
+       !IsToken(symbol) ||
+       magic_number <= 0 ||
+       config_epoch <= 0 ||
+       ModeToken(mode) == "" ||
+       !coordinator.HasPendingAnchorActivation() ||
+       !coordinator.MatchesGridContext(
+         symbol,
+         magic_number,
+         mode,
+         config_epoch) ||
+       !reducer.MatchesContext(
+         instance_id,
+         symbol,
+         magic_number,
+         mode,
+         config_epoch))
+      return false;
+
+    long next_sequence = reducer.LastSequence() + 1;
+    long port_sequence = 0;
+    string payload = StringFormat(
+      "v1|ANCHOR_STATE|%I64d|READY",
+      config_epoch);
+
+    if(next_sequence <= 0 ||
+       !port.NextSequence(port_sequence) ||
+       port_sequence != next_sequence ||
+       !AppendAndApply(
+         port,
+         reducer,
+         next_sequence,
+         TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+         payload))
+    {
+      m_recovery_required = true;
+      return false;
+    }
+
+    if(!coordinator.ConfirmAnchorActivation())
+    {
+      m_recovery_required = true;
+      return false;
+    }
+
     return true;
   }
 

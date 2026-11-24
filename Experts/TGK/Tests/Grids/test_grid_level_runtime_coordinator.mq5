@@ -1037,6 +1037,119 @@ int OnInit()
     (int)TGK_GRID_LEVEL_READY);
   Tests.EndTest();
 
+  Tests.BeginTest("Anchor activation is withheld until its durable confirmation");
+  CTGKGridLevelRuntimeCoordinator anchor_activation;
+  Tests.AssertTrue(
+    "Anchor activation Coordinator initializes",
+    anchor_activation.Initialize(
+      TGK_GRID_MODE_BUY,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      "XAUUSD",
+      710017,
+      3999.0,
+      4000.0));
+  Tests.AssertTrue(
+    "Anchor activation binds Config Epoch",
+    anchor_activation.BindConfigEpoch(1));
+
+  STGKGridLevelPositionRecord anchor_position;
+  SetPosition(anchor_position, 6801, "XAUUSD", 710017, true, -1, 0.01);
+  Tests.AssertTrue(
+    "initial Anchor is registered",
+    anchor_activation.RegisterInitialAnchorPosition(anchor_position));
+
+  ArrayResize(positions, 0);
+  ArrayResize(close_events, 1);
+  close_events[0].is_anchor = true;
+  close_events[0].level_index = -1;
+  Tests.AssertEqualInt(
+    "CR01-01 Anchor close is applied",
+    (int)anchor_activation.Reconcile(
+      positions,
+      close_events,
+      TGK_GRID_ENTRY_RESOLUTION_PENDING,
+      3999.0,
+      4000.0,
+      result,
+      candidate),
+    (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
+  Tests.AssertEqualInt(
+    "CR01-01 Anchor waits activation",
+    (int)anchor_activation.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertFalse(
+    "closed Anchor has no pending activation",
+    anchor_activation.HasPendingAnchorActivation());
+
+  // Ask moves below the Anchor, then crosses it upward, which is the BUY
+  // activation direction.
+  anchor_activation.UpdatePrice(
+    3998.0,
+    3999.0,
+    result,
+    candidate);
+  anchor_activation.UpdatePrice(
+    3999.0,
+    4000.0,
+    result,
+    candidate);
+  Tests.AssertEqualInt(
+    "CR01-02 activation crossing becomes READY",
+    (int)anchor_activation.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertTrue(
+    "activation awaits durable confirmation",
+    anchor_activation.HasPendingAnchorActivation());
+
+  // After activation the market rises above the Anchor and then crosses it
+  // downward, which is the BUY entry direction. That crossed Anchor candidate
+  // must still be withheld while the durable record is missing.
+  anchor_activation.UpdatePrice(
+    4001.0,
+    4002.0,
+    result,
+    candidate);
+  Tests.AssertEqualInt(
+    "crossed Anchor is not offered before persistence",
+    (int)anchor_activation.UpdatePrice(
+      3999.0,
+      4000.0,
+      result,
+      candidate),
+    (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
+  Tests.AssertFalse(
+    "withheld candidate is not an Anchor offer",
+    candidate.is_anchor);
+
+  Tests.AssertTrue(
+    "durable confirmation is accepted",
+    anchor_activation.ConfirmAnchorActivation());
+  Tests.AssertFalse(
+    "confirmed activation is no longer pending",
+    anchor_activation.HasPendingAnchorActivation());
+  Tests.AssertFalse(
+    "activation cannot be confirmed twice",
+    anchor_activation.ConfirmAnchorActivation());
+  Tests.AssertEqualInt(
+    "deferred Anchor candidate is offered after confirmation",
+    (int)anchor_activation.UpdatePrice(
+      3999.0,
+      4000.0,
+      result,
+      candidate),
+    (int)TGK_GRID_COORDINATOR_CANDIDATE_READY);
+  Tests.AssertTrue("offered candidate is the Anchor", candidate.is_anchor);
+  Tests.AssertEqualDouble(
+    "offered Anchor price",
+    candidate.level_price,
+    4000.0,
+    0.000001);
+  Tests.EndTest();
+
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }

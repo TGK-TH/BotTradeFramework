@@ -389,6 +389,129 @@ int OnInit()
       selected_price));
   Tests.EndTest();
 
+  Tests.BeginTest("Anchor activation is crossing-driven and reported for durable persistence");
+  CTGKGridLevelEngine anchor_activation_buy;
+  Tests.AssertTrue(
+    "BUY Anchor activation grid initializes",
+    anchor_activation_buy.Initialize(
+      TGK_GRID_MODE_BUY,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      3999.0,
+      4000.0));
+  Tests.AssertTrue(
+    "BUY Anchor close at current Ask waits activation",
+    anchor_activation_buy.RecordPositionClosed(
+      true,
+      -1,
+      3999.0,
+      4000.0));
+  Tests.AssertEqualInt(
+    "CR01-01 BUY Anchor close leaves WAIT_ACTIVATION",
+    (int)anchor_activation_buy.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertFalse(
+    "close alone reports no activation",
+    anchor_activation_buy.HasPendingAnchorActivation());
+
+  anchor_activation_buy.UpdatePrice(
+    4000.0,
+    4001.0,
+    3999.0,
+    4000.0,
+    is_anchor,
+    selected,
+    selected_price);
+  Tests.AssertEqualInt(
+    "CR01-04 non-qualifying BUY movement keeps WAIT_ACTIVATION",
+    (int)anchor_activation_buy.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertFalse(
+    "CR01-04 no activation is reported",
+    anchor_activation_buy.HasPendingAnchorActivation());
+
+  anchor_activation_buy.UpdatePrice(
+    3998.0,
+    3999.0,
+    3999.0,
+    4000.0,
+    is_anchor,
+    selected,
+    selected_price);
+  Tests.AssertEqualInt(
+    "CR01-02 BUY upward crossing becomes READY",
+    (int)anchor_activation_buy.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertTrue(
+    "CR01-02 activation is reported once for persistence",
+    anchor_activation_buy.HasPendingAnchorActivation());
+  Tests.AssertTrue(
+    "durable confirmation clears the report",
+    anchor_activation_buy.ConfirmAnchorActivation());
+  Tests.AssertFalse(
+    "confirmation cannot repeat",
+    anchor_activation_buy.ConfirmAnchorActivation());
+
+  CTGKGridLevelEngine anchor_activation_sell;
+  Tests.AssertTrue(
+    "SELL Anchor activation grid initializes",
+    anchor_activation_sell.Initialize(
+      TGK_GRID_MODE_SELL,
+      4000.0,
+      5.0,
+      3990.0,
+      4010.0,
+      4,
+      3999.0,
+      4000.0));
+  Tests.AssertTrue(
+    "SELL Anchor close at current Bid waits activation",
+    anchor_activation_sell.RecordPositionClosed(
+      true,
+      -1,
+      4000.0,
+      4001.0));
+  Tests.AssertEqualInt(
+    "SELL Anchor close leaves WAIT_ACTIVATION",
+    (int)anchor_activation_sell.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  anchor_activation_sell.UpdatePrice(
+    3999.0,
+    4000.0,
+    4000.0,
+    4001.0,
+    is_anchor,
+    selected,
+    selected_price);
+  Tests.AssertEqualInt(
+    "CR01-05 non-qualifying SELL movement keeps WAIT_ACTIVATION",
+    (int)anchor_activation_sell.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+  Tests.AssertFalse(
+    "CR01-05 no activation is reported",
+    anchor_activation_sell.HasPendingAnchorActivation());
+
+  anchor_activation_sell.UpdatePrice(
+    4001.0,
+    4002.0,
+    4000.0,
+    4001.0,
+    is_anchor,
+    selected,
+    selected_price);
+  Tests.AssertEqualInt(
+    "CR01-03 SELL downward crossing becomes READY",
+    (int)anchor_activation_sell.GetAnchorState(),
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertTrue(
+    "CR01-03 activation is reported for persistence",
+    anchor_activation_sell.HasPendingAnchorActivation());
+  Tests.EndTest();
+
   Tests.BeginTest("Invalid configuration and invalid level indexes are rejected");
   CTGKGridLevelEngine invalid;
   Tests.AssertFalse(

@@ -17,6 +17,7 @@ private:
   double m_level_prices[];
   ENUM_TGK_GRID_LEVEL_STATE m_level_states[];
   ENUM_TGK_GRID_LEVEL_STATE m_anchor_state;
+  bool m_anchor_activation_pending;
   bool m_initialized;
 
   bool IsValidMode(ENUM_TGK_GRID_MODE mode)
@@ -205,12 +206,17 @@ private:
         m_level_states[index] = TGK_GRID_LEVEL_READY;
     }
 
+    // The Anchor activation is reported to the Caller so it can be journaled
+    // before the durable Reducer accepts the next Anchor Entry Intent.
     if(m_anchor_state == TGK_GRID_LEVEL_WAIT_ACTIVATION &&
        IsCrossedForActivation(
          previous_price,
          current_price,
          m_anchor_price))
+    {
       m_anchor_state = TGK_GRID_LEVEL_READY;
+      m_anchor_activation_pending = true;
+    }
   }
 
   void UpdateUnselectedCrossedLevels(
@@ -254,6 +260,7 @@ public:
     m_lower_bound = 0.0;
     m_upper_bound = 0.0;
     m_anchor_state = TGK_GRID_LEVEL_ACTIVE;
+    m_anchor_activation_pending = false;
     m_initialized = false;
   }
 
@@ -269,6 +276,7 @@ public:
   )
   {
     m_initialized = false;
+    m_anchor_activation_pending = false;
     ArrayResize(m_level_prices, 0);
     ArrayResize(m_level_states, 0);
 
@@ -369,6 +377,27 @@ public:
       return false;
 
     m_anchor_state = TGKGridNormalizeLevelState(level_state);
+    m_anchor_activation_pending = false;
+    return true;
+  }
+
+  // True only while a valid activation crossing has moved the Anchor to READY
+  // and the Caller has not yet confirmed its durable Journal record.
+  bool HasPendingAnchorActivation()
+  {
+    return m_initialized && m_anchor_activation_pending;
+  }
+
+  // Called after the activation transition is durably appended and applied.
+  bool ConfirmAnchorActivation()
+  {
+    if(!m_initialized || !m_anchor_activation_pending)
+      return false;
+
+    if(TGKGridNormalizeLevelState(m_anchor_state) != TGK_GRID_LEVEL_READY)
+      return false;
+
+    m_anchor_activation_pending = false;
     return true;
   }
 
@@ -475,6 +504,7 @@ public:
     if(is_anchor)
     {
       m_anchor_state = TGK_GRID_LEVEL_ACTIVE;
+      m_anchor_activation_pending = false;
       return true;
     }
 
@@ -503,6 +533,7 @@ public:
       m_anchor_state = StateAfterEntryFailure(
         m_anchor_price,
         current_price);
+      m_anchor_activation_pending = false;
       return true;
     }
 
@@ -535,6 +566,7 @@ public:
       m_anchor_state = StateAfterPositionClose(
         m_anchor_price,
         current_price);
+      m_anchor_activation_pending = false;
       return true;
     }
 

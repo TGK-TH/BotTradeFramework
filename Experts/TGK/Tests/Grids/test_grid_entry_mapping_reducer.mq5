@@ -117,6 +117,49 @@ void AddFilledLevelRequest(STGKGridMappingJournalRecord &records[])
     "v1|REQ-001|XAUUSD|710001|LEVEL|1|18446744073709551613|18446744073709551614|0.10|1|UT-INSTANCE");
 }
 
+// Fixture kinds: 0 = mapped Anchor ACTIVE, 1 = closed Anchor WAIT_ACTIVATION,
+// 2 = committed configuration with a READY Anchor and no mapping.
+int BuildAnchorStateFixture(
+  STGKGridMappingJournalRecord &records[],
+  int fixture_kind)
+{
+  AddBaseConfiguration(records);
+  if(fixture_kind == 2)
+    return ArraySize(records);
+
+  int sequence = ArraySize(records) + 1;
+  AddMappedPosition(
+    records,
+    sequence,
+    "REQ-CR01-GUARD",
+    "ANCHOR",
+    -1,
+    9981);
+  if(fixture_kind == 1)
+    AddRecord(
+      records,
+      sequence,
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      "v1|POSITION_CLOSED|3009981|WAIT_ACTIVATION");
+  return ArraySize(records);
+}
+
+bool ReplayAnchorStateAttempt(string payload, int fixture_kind)
+{
+  STGKGridMappingJournalRecord records[];
+  int count = BuildAnchorStateFixture(records, fixture_kind);
+  AddRecord(
+    records,
+    count + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    payload);
+
+  CTGKGridEntryMappingReducer reducer;
+  if(!reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"))
+    return false;
+  return reducer.Replay(records, ArraySize(records));
+}
+
 int OnInit()
 {
   Tests.BeginSuite("TGK Grid Entry Mapping Reducer");
@@ -2037,6 +2080,252 @@ int OnInit()
     "F08 later mapping is ACTIVE after replay",
     post_snapshot_reducer.LevelStateAt(1),
     (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.EndTest();
+
+  Tests.BeginTest("CR-01 Anchor WAIT_ACTIVATION becomes durably READY and is replayable");
+  STGKGridMappingJournalRecord activation_records[];
+  AddBaseConfiguration(activation_records);
+  int activation_sequence = 3;
+  AddMappedPosition(
+    activation_records,
+    activation_sequence,
+    "REQ-ACTIVATION",
+    "ANCHOR",
+    -1,
+    9971);
+  AddRecord(
+    activation_records,
+    activation_sequence++,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|POSITION_CLOSED|3009971|WAIT_ACTIVATION");
+
+  CTGKGridEntryMappingReducer activation_source;
+  Tests.AssertTrue(
+    "initialize activation source Reducer",
+    activation_source.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Anchor Full Close before activation",
+    activation_source.Replay(
+      activation_records,
+      ArraySize(activation_records)));
+  Tests.AssertEqualInt(
+    "CR01-01 Anchor mapping is removed",
+    activation_source.PositionCount(),
+    0);
+  Tests.AssertTrue(
+    "CR01-01 Anchor State is queryable",
+    activation_source.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "CR01-01 Anchor State is WAIT_ACTIVATION",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  string waiting_snapshot_payload;
+  Tests.AssertTrue(
+    "export WAIT_ACTIVATION Snapshot",
+    activation_source.ExportSnapshot(waiting_snapshot_payload));
+
+  AddRecord(
+    activation_records,
+    activation_sequence,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|ANCHOR_STATE|1|READY");
+
+  CTGKGridEntryMappingReducer activation_committed;
+  Tests.AssertTrue(
+    "initialize activation Reducer",
+    activation_committed.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "CR01-06 replay committed activation event",
+    activation_committed.Replay(
+      activation_records,
+      ArraySize(activation_records)));
+  Tests.AssertTrue(
+    "CR01-06 Anchor State is queryable",
+    activation_committed.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "CR01-06 Anchor State restored to READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertEqualInt(
+    "CR01-06 activation creates no mapping",
+    activation_committed.PositionCount(),
+    0);
+
+  string ready_snapshot_payload;
+  Tests.AssertTrue(
+    "export READY Snapshot",
+    activation_committed.ExportSnapshot(ready_snapshot_payload));
+  CTGKGridEntryMappingReducer activation_restored;
+  Tests.AssertTrue(
+    "initialize restored Reducer",
+    activation_restored.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "CR01-07 restore Snapshot after activation",
+    activation_restored.RestoreSnapshot(
+      ready_snapshot_payload,
+      activation_committed.LastSequence()));
+  Tests.AssertTrue(
+    "CR01-07 restored Anchor State is queryable",
+    activation_restored.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "CR01-07 restored Anchor State is READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  bool activation_has_mapping = true;
+  Tests.AssertTrue(
+    "CR01-07 Anchor mapping query succeeds",
+    activation_restored.TryGetPositionMapping(
+      true,
+      -1,
+      activation_has_mapping));
+  Tests.AssertFalse(
+    "CR01-07 no Anchor mapping exists",
+    activation_has_mapping);
+
+  CTGKGridEntryMappingReducer activation_restart;
+  Tests.AssertTrue(
+    "initialize restart Reducer",
+    activation_restart.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "restore pre-activation Snapshot checkpoint",
+    activation_restart.RestoreSnapshot(
+      waiting_snapshot_payload,
+      activation_source.LastSequence()));
+  STGKGridMappingJournalRecord activation_event[];
+  ArrayResize(activation_event, 1);
+  activation_event[0] = activation_records[ArraySize(activation_records) - 1];
+  Tests.AssertTrue(
+    "CR01-13 durable append replays after restart",
+    activation_restart.Replay(activation_event, ArraySize(activation_event)));
+  Tests.AssertTrue(
+    "CR01-13 replayed Anchor State is queryable",
+    activation_restart.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "CR01-13 replay converges to READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+
+  STGKGridMappingJournalRecord duplicate_activation_event[];
+  ArrayResize(duplicate_activation_event, 1);
+  duplicate_activation_event[0] = activation_event[0];
+  duplicate_activation_event[0].sequence = activation_event[0].sequence + 1;
+  Tests.AssertFalse(
+    "CR01-11 duplicate READY transition is rejected",
+    activation_restart.Replay(
+      duplicate_activation_event,
+      ArraySize(duplicate_activation_event)));
+  Tests.EndTest();
+
+  Tests.BeginTest("CR-01 durable Anchor activation permits the next Anchor mapping");
+  AddRecord(
+    activation_records,
+    ArraySize(activation_records) + 1,
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    "v1|REQ-REANCHOR|XAUUSD|710001|BUY|ANCHOR|-1|0.01|1|UT-INSTANCE");
+  AddRecord(
+    activation_records,
+    ArraySize(activation_records) + 1,
+    TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT,
+    "v1|REQ-REANCHOR|DONE|1009981|0");
+  AddRecord(
+    activation_records,
+    ArraySize(activation_records) + 1,
+    TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION,
+    "v1|REQ-REANCHOR|2009981|3009981|0.01");
+  AddRecord(
+    activation_records,
+    ArraySize(activation_records) + 1,
+    TGK_GRID_MAPPING_RECORD_POSITION_MAPPING,
+    "v1|REQ-REANCHOR|XAUUSD|710001|ANCHOR|-1|3009981|4009981|0.01|1|UT-INSTANCE");
+
+  CTGKGridEntryMappingReducer activation_reentry;
+  Tests.AssertTrue(
+    "initialize Anchor re-entry Reducer",
+    activation_reentry.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "CR01-08/09 Anchor Entry Intent and Mapping are accepted",
+    activation_reentry.Replay(
+      activation_records,
+      ArraySize(activation_records)));
+  Tests.AssertEqualInt(
+    "CR01-09 Anchor mapping is stored",
+    activation_reentry.PositionCount(),
+    1);
+  Tests.AssertEqualString(
+    "CR01-09 stored Anchor Identifier",
+    activation_reentry.PositionIdentifierAt(0),
+    "3009981");
+  Tests.AssertTrue(
+    "CR01-09 Anchor State is queryable",
+    activation_reentry.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "CR01-09 Anchor State is ACTIVE",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.EndTest();
+
+  Tests.BeginTest("CR-01 invalid Anchor state transitions fail closed");
+  STGKGridMappingJournalRecord mapped_guard_records[];
+  BuildAnchorStateFixture(mapped_guard_records, 0);
+  CTGKGridEntryMappingReducer mapped_guard_prefix;
+  Tests.AssertTrue(
+    "initialize mapped Anchor guard Reducer",
+    mapped_guard_prefix.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay mapped Anchor prefix",
+    mapped_guard_prefix.Replay(
+      mapped_guard_records,
+      ArraySize(mapped_guard_records)));
+  Tests.AssertTrue(
+    "mapped Anchor prefix is ACTIVE",
+    mapped_guard_prefix.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "mapped Anchor prefix state value",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  AddRecord(
+    mapped_guard_records,
+    ArraySize(mapped_guard_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|ANCHOR_STATE|1|READY");
+  CTGKGridEntryMappingReducer mapped_guard_reducer;
+  Tests.AssertTrue(
+    "initialize rejected Anchor transition Reducer",
+    mapped_guard_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "CR01-10 transition with an Anchor mapping is rejected",
+    mapped_guard_reducer.Replay(
+      mapped_guard_records,
+      ArraySize(mapped_guard_records)));
+  Tests.AssertEqualInt(
+    "CR01-10 rejection enters RECOVERY_ERROR",
+    (int)mapped_guard_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.AssertEqualInt(
+    "CR01-10 mapping is not removed",
+    mapped_guard_reducer.PositionCount(),
+    1);
+
+  Tests.AssertFalse(
+    "CR01-11 READY origin is rejected",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|READY", 2));
+  Tests.AssertFalse(
+    "CR01-11 ACTIVE target is rejected",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|ACTIVE", 1));
+  Tests.AssertFalse(
+    "CR01-11 WAIT_ACTIVATION target is rejected",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|WAIT_ACTIVATION", 1));
+  Tests.AssertFalse(
+    "CR01-11 unknown state is rejected",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|BOGUS", 1));
+  Tests.AssertFalse(
+    "CR01-11 mismatched Config Epoch is rejected",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|2|READY", 1));
+  Tests.AssertTrue(
+    "CR01-11 valid WAIT_ACTIVATION to READY is accepted",
+    ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|READY", 1));
   Tests.EndTest();
 
   Tests.EndSuite();
