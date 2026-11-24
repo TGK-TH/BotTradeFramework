@@ -17,12 +17,12 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 ## Workflow and authorization
 - Work in small, testable Work Packages/Phases and implementation Cards with explicit scope and Acceptance Criteria.
 - Do not silently expand product scope or change approved contracts. If implementation reveals a material design/contract issue, stop and request a decision.
-- **Roles:** ChatGPT acts as CTO/Technical Lead: owns architecture/design, contracts, task breakdown, developer specifications, final code review, and technical documentation. Freebuff acts as Developer Agent: implements code and tests strictly within the approved specification. The user acts as Product Owner/QA: approves scope/design, runs MetaEditor/MT5 compile and tests, reports actual results, and authorizes the next task.
+- **Roles:** ChatGPT acts as CTO/Technical Lead: owns architecture/design, contracts, task breakdown, developer specifications, final code review, and technical documentation. Freebuff acts as Developer Agent: implements code and tests strictly within the approved specification and compiles them until clean (see **Developer compile gate**). The user acts as Product Owner/QA: approves scope/design, runs the MetaEditor/MT5 test suites, reports actual results, and authorizes the next task.
 - ChatGPT must not implement or patch source code on Freebuff's behalf. Code changes are assigned to Freebuff unless the user explicitly changes this role agreement.
 - Freebuff must be able to work by reading repository files directly. **Do not require Freebuff to install, connect to, or use Serena MCP.** `AGENTS.md`, task `SPEC.md`, `TEST_PLAN.md`, and relevant repository documentation are its durable instructions and context. Serena/MCP availability is optional for Freebuff and must never be a blocker.
 - Before implementation, ChatGPT prepares and the user approves the Design/Contract, then creates or updates the Trello implementation Card and prepares separate `SPEC.md` and `TEST_PLAN.md` files. Do not start implementation until the Card is in the active implementation state and the user explicitly authorizes the task.
 - Freebuff implements only the active Card's scope. It must report changed files, behavior, tests added/run, exact results, and anything not verified in `IMPLEMENTATION_REPORT.md` (or the agreed Card-linked report). It must not silently change Design/Contract or expand scope.
-- After Freebuff reports implementation complete, the user performs MetaEditor/MT5 Compile and the specified tests first. **ChatGPT's formal Code Review starts only after the user reports Compile and Test PASS.** If user verification fails, return the Card to implementation and have Freebuff fix it; do not start formal review yet.
+- After Freebuff reports implementation complete together with its own MetaEditor compile evidence, the user runs the specified MetaEditor/MT5 test suites first. **ChatGPT's formal Code Review starts only after the user reports Test PASS.** If user verification fails, return the Card to implementation and have Freebuff fix it (including recompiling to `0 errors, 0 warnings`); do not start formal review yet.
 - After user verification passes, ChatGPT reviews the actual source diff against `SPEC.md`, `TEST_PLAN.md`, Acceptance Criteria, architecture, and reported test evidence. Record findings in a Card-linked `CODE_REVIEW.md` (or the agreed durable review file). Each finding must include an ID, severity, file/location, problem, required fix, and acceptance condition.
 - Review outcomes are `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`. For `CHANGES_REQUESTED`, Freebuff fixes only the recorded findings; the user must compile/test the revised code again before ChatGPT reviews it again. Repeat until approved.
 - Mark a Card Done only after user-reported Compile/Test PASS, ChatGPT Code Review APPROVED, required documentation updates, and user confirmation. A written implementation report or static review alone is insufficient.
@@ -64,8 +64,34 @@ Do not assume a prior chat transcript or model memory is visible to Codex. Durab
 - Unit tests must not send Trade Requests. Demo integration tests are separate, require a dedicated safety plan and explicit user approval, and must be restricted to designated test positions.
 - After source changes, run relevant tests and full Grid Regression Tests again.
 - Static source checks, diff checks, and reading code are not MetaEditor/MT5 Compile/Runtime evidence.
-- The user runs MetaEditor/MT5 compile/runtime tests and reports actual results unless an explicitly configured and verified compiler/test environment is available. Never claim tests were run if they were not.
+- Freebuff compiles changed code itself (see **Developer compile gate** below), but does not run the MT5 test suites. The user runs MetaEditor/MT5 runtime tests and reports actual results. Never claim tests were run if they were not.
 - If a test fails, stop forward progression, diagnose/fix the failure, and repeat the relevant regression suite.
+
+## Developer compile gate (Freebuff)
+
+Freebuff has a verified MetaEditor compile environment on the user's machine and must use it. Running the test suites stays with the user.
+
+- After finishing any code change (source or test `.mq5` / `.mqh`), compile every affected MQL5 program before reporting the task as implemented.
+- Fix every error **and** every warning, then recompile, until each affected program reports `0 errors, 0 warnings`. Do not report implementation complete on a failing or warning-carrying compile, and do not hand warnings to the user to triage.
+- An `.mqh` include has no standalone build: compile every program that includes it (find them with `grep -rl "<Include>.mqh" --include=*.mq5 --include=*.mqh`).
+- Do not run the test suites; the user runs MetaEditor/MT5 tests and reports actual results. Record compile evidence separately from test evidence, and never present compile success as test success.
+- If the compile environment is unavailable or the compile cannot be made to pass, report that plainly instead of inferring compile status from static checks.
+
+### Verified compile environment (2026-11-24)
+
+- `WINEPREFIX="$HOME/wine-python-mt5"` (the MT5 installation the user actively uses); `Z:` maps to `/` in this prefix.
+- Compiler: `/usr/local/bin/wine` (wine-11.0) with `"C:\Program Files\MetaTrader 5\MetaEditor64.exe"`.
+- `/inc:` must point at the repository root, not at `<repo>/Include`, because MetaEditor appends `Include` itself; otherwise includes fail with `error 106: file ... not found`.
+- `metaeditor64.exe` returns exit code `1` even when the compile succeeds; judge the result from the log's `Result:` line.
+
+```bash
+export WINEPREFIX="$HOME/wine-python-mt5"
+PFX="Z:\\Users\\tachagon\\Documents\\13_Trade\\1_Bot\\BotTradeFramework"
+/usr/local/bin/wine "C:\\Program Files\\MetaTrader 5\\MetaEditor64.exe" \
+  /compile:"$PFX\\Experts\\TGK\\Tests\\Grids\\test_grid_entry_execution.mq5" \
+  /inc:"$PFX" /log:"$PFX\\compile.log"
+iconv -f UTF-16LE -t UTF-8 compile.log
+```
 
 ## Documentation and status
 - Technical docs under `Docs/` must be written in Thai; retain actual code identifiers in English.
