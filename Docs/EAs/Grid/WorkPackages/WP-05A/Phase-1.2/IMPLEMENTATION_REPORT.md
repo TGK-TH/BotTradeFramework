@@ -1,6 +1,6 @@
 # WP-05A.2 — Anchor State Transitions Implementation Report
 
-**Status: CR-01 REVIEW FIX IMPLEMENTED 2026-11-23 — user Compile/Test re-verification PASS reported 2026-11-24 — awaiting CTO re-review**
+**Status: CR-01 REVIEW FIX IMPLEMENTED 2026-11-23 (user Compile/Test re-verification PASS reported 2026-11-24) — CR-02 / CR-03 REVIEW FIX IMPLEMENTED 2026-11-24, MetaEditor Compile PASS 2026-11-24 (run by Freebuff via Wine on the user's machine), user-reported runtime Grid Regression Test PASS 2026-11-24, CTO re-review pending**
 **Developer:** Freebuff
 **Date:** 2026-11-23
 **Specification:** [SPEC.md](SPEC.md)
@@ -9,7 +9,12 @@
 
 Freebuff did not run MetaEditor/MT5 compilation or runtime tests in its
 implementation environment. The user subsequently reported MetaEditor Compile
-PASS and Grid Regression Test PASS on 2026-11-23; see §8.
+PASS and Grid Regression Test PASS on 2026-11-23; see §8. For the CR-02 / CR-03
+fix, Freebuff ran MetaEditor64 compilation itself through Wine on the user's
+machine (2026-11-24, 0 errors / 0 warnings for both affected programs); see
+§11.6. The user ran the no-trade Grid Regression suite on 2026-11-24 and reported
+every test file PASS; runtime execution is therefore user-reported evidence, not
+a Freebuff run.
 
 ## 1. Files changed
 
@@ -182,8 +187,12 @@ changed for this fix.
 
 Formal CTO Code Review against SPEC.md, TEST_PLAN.md and this report. The user
 reported Compile and full-test PASS on 2026-11-24 after the corrections in
-§10.6 and §10.6.1. Trello is in `Code Review`; `Done` still requires an
-APPROVED review, documentation gate and user confirmation.
+§10.6 and §10.6.1. The CTO review of that commit returned CR-02 (P1) and CR-03
+(P2); both are implemented in §11, compiled by Freebuff (0 errors, 0 warnings),
+and the user reported every file of the no-trade Grid Regression suite PASS on
+2026-11-24. Only the formal CTO re-review remains. Trello is in
+`Code Review`; `Done` still requires an APPROVED review, documentation gate and
+user confirmation.
 
 ## 10. CR-01 Review Fix (2026-11-23)
 
@@ -321,6 +330,9 @@ current <= level ดังนั้น 4000 → 3999 ไม่ cross Anchor 4000
 
 ### 10.7 Safety and limitations
 
+(ดู §11.6 สำหรับ safety ของรอบ CR-02/CR-03 — ไม่มีการส่ง Trade Request เพิ่ม)
+
+
 No trade request was sent; no `CTrade`, `OrderSend`, `PositionClose`, account
 scan, Deal History lookup, `OnTradeTransaction` integration, entry-selection,
 Bounds or lot-sizing change was added. No new Snapshot field was introduced; the
@@ -328,3 +340,141 @@ existing Anchor State field carries the resulting `READY`. Limitation: the
 runtime caller that performs the append is the future reconciliation/execution
 integration (WP-05C/WP-05D); this work package implements and tests the durable
 contract, the Engine signal, the Coordinator gate and the adapter API.
+
+## 11. CR-02 / CR-03 Review Fix (2026-11-24)
+
+ตอบ finding จาก CODE_REVIEW รอบ CR-02 (P1) และ CR-03 (P2) บน commit
+`5206d1f9b8296162daa7b935e8398e6103f50466` โดยแก้เฉพาะสอง finding นี้เท่านั้น;
+implementation history ของ CR-01 ใน §10 ยังคงเดิมทั้งหมด.
+
+### 11.1 CR-02 — root cause
+
+`CTGKGridEntryExecutionAdapter::RecordAnchorActivation()` ตรวจเฉพาะ Adapter state,
+Coordinator pending activation และ context matching แล้วเรียก `AppendAndApply()`
+ซึ่งเรียก `port.AppendRecord()` **ก่อน** `reducer.Replay()`. ดังนั้น transition ที่
+Reducer จะปฏิเสธ (canonical Anchor เป็น `READY` อยู่แล้ว, ยังมี Anchor Position
+Mapping, หรือเป็น transition ซ้ำ/ขัดแย้ง) ยังถูก append ลง Journal เป็น durable
+mutation ก่อนถูกปฏิเสธ — ขัดสัญญา "invalid event ต้องถูกปฏิเสธโดยไม่เกิด Durable
+State mutation".
+
+### 11.2 CR-02 — solution: validation before append
+
+ก่อนคำนวณ sequence และก่อนเรียก `port.NextSequence()` / `port.AppendRecord()`
+เพิ่ม pre-validation ด้วย read-only API ที่มีอยู่แล้ว:
+
+1. `reducer.MatchesContext(instance_id, symbol, magic_number, mode, config_epoch)`
+   (เดิม) — initialized, healthy (`RecoveryStatus() == NORMAL`), identity/mode/epoch
+   ตรงกับ Grid configuration เดียวกัน.
+2. `reducer.TryGetAnchorState(state)` ต้องคืน true และ normalized state ต้องเป็น
+   `TGK_GRID_LEVEL_WAIT_ACTIVATION` เท่านั้น.
+3. `reducer.TryGetPositionMapping(true, -1, has_anchor_mapping)` ต้องคืน true และ
+   `has_anchor_mapping == false` (ไม่มี Anchor Position Mapping).
+4. Coordinator ยังคงต้อง `HasPendingAnchorActivation()` และ
+   `MatchesGridContext(symbol, magic_number, mode, config_epoch)` (เดิม).
+5. Requested transition คือ `WAIT_ACTIVATION -> READY` เท่านั้น เพราะ payload ถูก
+   สร้างเป็น `v1|ANCHOR_STATE|<config_epoch>|READY` แบบ fixed และต้นทางถูกบังคับ
+   ด้วยข้อ 2 แล้ว.
+
+ถ้า pre-validation fail: `return false` ทันที — ไม่เรียก `NextSequence()`/`AppendRecord()`,
+ไม่แตะ Reducer state, ไม่แตะ Coordinator confirmation state, ไม่เลื่อน Journal
+sequence และไม่รายงานสำเร็จ. Adapter ไม่ตั้ง `m_recovery_required` ในกรณีนี้ เพราะเป็น
+state conflict ที่ตรวจพบก่อนมีการ write ใด ๆ (ไม่ใช่ uncertain write) — จึงไม่ล็อก Adapter
+ทั้งก้อนจากความขัดแย้งชั่วคราว. กรณี Coordinator/Reducer ไม่ตรงกันจะถูกปฏิเสธแบบ
+fail-closed: ไม่เดา ไม่เลือกข้างใด และไม่ sync state ให้กันและกัน.
+
+หลัง pre-validation ผ่าน ลำดับ durability เดิมคงไว้ทุกประการ:
+`NextSequence -> AppendRecord -> Replay`. Append/flush failure ยังตั้ง
+`m_recovery_required = true`, canonical Anchor ยังเป็น `WAIT_ACTIVATION` และ
+activation ยัง pending เพื่อ recovery; `ConfirmAnchorActivation()` ถูกเรียกครั้งเดียว
+หลัง durable append + apply สำเร็จเท่านั้น. `ApplyAnchorState()` ของ Reducer ไม่ได้ถูก
+ทำให้อ่อนลง — Reducer ยังเป็น authority สุดท้ายตอน apply/replay. ไม่มี read-only API
+เพิ่มใน Reducer, ไม่มี Snapshot field ใหม่, ไม่มี event registry/idempotency mechanism
+ใหม่.
+
+### 11.3 CR-03 — SELL durable activation test
+
+เดิม Adapter durable path ถูกทดสอบเฉพาะ BUY (engine-only test ครอบ SELL crossing).
+เพิ่ม fixture แบบ SELL ใน `test_grid_entry_execution.mq5`:
+`AddSellAnchorActivationRecords()` (RESET_COMMITTED โหมด SELL, Anchor Entry Intent /
+Execution Result / Deal Association / Anchor Position Mapping / `POSITION_CLOSED`
+`WAIT_ACTIVATION`) และ `PrepareSellAnchorActivation()` ที่เดิน Coordinator โหมด SELL,
+register Anchor position, Reconcile ที่ 4001/4002 แล้วให้ Bid เคลื่อนลง 4001 -> 4000
+(SELL activation direction = downward crossing ของ Bid, รวม equality).
+`RunSellAnchorActivationPersistence()` (CR03-01) ยืนยัน: pending activation หลัง
+crossing, `RecordAnchorActivation(..., TGK_GRID_MODE_SELL, ...)` สำเร็จ, Journal
+lifecycle record `v1|ANCHOR_STATE|1|READY` ถูก append 1 ครั้ง, Reducer เป็น `READY`,
+Coordinator pending ถูกเคลียร์หลัง durable สำเร็จ, mapping ยังว่าง และการเรียกซ้ำ
+ถูกปฏิเสธโดยไม่ append เพิ่ม. ใช้ fake port เท่านั้น ไม่มี Trade Request.
+
+### 11.4 Files changed by this fix
+
+| File | Change |
+|---|---|
+| `Include/BotTrade/Grid/GridEntryExecutionAdapter.mqh` | `RecordAnchorActivation()`: pre-validation ของ canonical Anchor State + Anchor mapping ก่อน append; คง durability ordering และ confirm หลัง durable สำเร็จ. |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | CR02-01…04 และ CR03-01/SELL fixture (`AddSellAnchorActivationRecords()`, `PrepareSellAnchorActivation()`, `RunSellAnchorActivationPersistence()`). |
+| `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md` | §11 (CR-02/CR-03) และ status line. |
+| `PROJECT_STATUS.md` | current focus และ WP-05A.2 verification bullet. |
+| `Docs/EAs/Grid/Testing/testing.md` | WP-05A.2 implementation state. |
+
+ไม่มีการแก้ Reducer/Engine/Coordinator, ไม่แตะ `CODE_REVIEW.md`,
+`CR-01_REVIEW_FIX_HANDOFF.md`, `TEST_PLAN.md` หรือไฟล์ test อื่น.
+
+### 11.5 Tests added
+
+| ID | Case | Where |
+|---|---|---|
+| CR02-01 | Canonical Anchor เป็น `READY` แต่ Coordinator pending — ปฏิเสธ, ไม่ append, sequence/state/mapping/pending ไม่เปลี่ยน | adapter |
+| CR02-02 | Reducer ยังมี Anchor mapping (ACTIVE) แต่ Coordinator pending — ปฏิเสธ, ไม่ append, mapping count เท่าเดิม | adapter |
+| CR02-03 | Valid control: `WAIT_ACTIVATION` + ไม่มี mapping + pending — append 1 ครั้ง, `READY`, sequence +1, confirm | adapter |
+| CR02-04 | Duplicate: activation ที่สอง (coordinator confirmed แล้ว) ถูกปฏิเสธ ไม่มี record ซ้ำ | adapter |
+| CR03-01 | SELL durable activation ผ่าน Adapter -> Journal -> Reducer | adapter |
+
+Existing CR01-02 (BUY durable) และ CR01-12 (append failure) ยังอยู่และไม่ถูกแก้.
+
+### 11.6 Results, safety and limitations
+
+**Results (static checks):** brace balance ของไฟล์ที่แก้,
+`grep` ยืนยันว่าไม่มี Trade API (`OrderSend`, `CTrade`, `Buy()`, `Sell()`,
+`PositionClose()`) เพิ่มในไฟล์ทดสอบ, `git diff --check` (exit 0) และ
+`git diff --cached --check`.
+
+**Results (MetaEditor Compile — รันจริง 2026-11-24):** Freebuff รัน
+`metaeditor64.exe /compile:... /inc:<repo root> /log:...` ผ่าน Wine 11.0 ด้วย
+prefix ที่ใช้งานจริงของเครื่องผู้ใช้ (`$HOME/wine-python-mt5`) แล้วอ่าน log ที่ได้.
+คำสั่งที่ใช้จริง (ใช้ซ้ำได้):
+
+```bash
+export WINEPREFIX="$HOME/wine-python-mt5"
+PFX="Z:\\Users\\tachagon\\Documents\\13_Trade\\1_Bot\\BotTradeFramework"
+/usr/local/bin/wine "C:\\Program Files\\MetaTrader 5\\MetaEditor64.exe" \
+  /compile:"$PFX\\Experts\\TGK\\Tests\\Grids\\test_grid_entry_execution.mq5" \
+  /inc:"$PFX" /log:"$PFX\\compile_exec.log"
+iconv -f UTF-16LE -t UTF-8 compile_exec.log
+```
+
+`/inc` ต้องชี้ที่ root ของ repo (ไม่ใช่ `<repo>\Include`) เพราะ MetaEditor
+เติม `Include` เอง; `Z:` ใน prefix นี้ map ไปที่ `/`.
+
+| Program | Result |
+|---|---|
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` (CR-02 + CR-03 tests, includes `GridEntryExecutionAdapter.mqh`) | 0 errors, 0 warnings |
+| `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` (consumer อื่นของ Adapter ผ่าน `GridEntryExecutionPipeline.mqh`) | 0 errors, 0 warnings |
+
+`.ex5` ถูกสร้างใหม่ครบทั้งสองไฟล์; log ที่ใช้ตรวจถูกลบหลังอ่านแล้ว.
+
+**Not run by Freebuff:** ไม่ได้ execute test suite (ไม่มี MT5 runtime run) —
+MetaEditor Compile รันโดย Freebuff (§11.6 ข้างต้น) แต่ runtime test เป็นผลที่ผู้ใช้รายงาน
+
+**Results (user-reported 2026-11-24):** ผู้ใช้รัน no-trade Grid Regression suite ใน MT5
+แล้วรายงานว่า **ทุกไฟล์ test PASS** รวม CR02-01…04 และ CR03-01 — CR-02/CR-03
+จึงผ่าน user verification แล้ว; เหลือเพียง formal CTO re-review
+
+**Safety:** ไม่มี Trade Request; fake port เท่านั้น (`CTGKGridEntryExecutionFakePort`).
+ไม่มี `PositionsTotal()`, account scan, Deal History, `OnTradeTransaction`,
+entry selection/activation direction/crossing/Bounds/lot sizing/execution policy
+change และไม่มี commit/push.
+
+**Limitation:** ใน Reducer ที่ valid จะไม่มีทางที่ Anchor State เป็น `WAIT_ACTIVATION`
+พร้อมมี Anchor Position Mapping (`ACTIVE` <-> มี mapping เป็น invariant) ดังนั้น guard
+ข้อ "ไม่มี Anchor mapping" จึงเป็น defense-in-depth; CR02-02 ทดสอบสถานะที่ไม่ valid
+ร่วมกัน (mapping ยังอยู่ ขณะ Coordinator pending) และยืนยันการปฏิเสธแบบ fail-closed.

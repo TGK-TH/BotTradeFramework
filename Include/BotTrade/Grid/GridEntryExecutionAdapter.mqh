@@ -414,9 +414,11 @@ public:
     return true;
   }
 
-  // Persist the one observed Anchor activation. The Journal append happens
-  // before the Reducer applies the record, so an append/flush failure reports
-  // failure and leaves the canonical Anchor State at WAIT_ACTIVATION.
+  // Persist the one observed Anchor activation. Every canonical precondition
+  // is validated before any Journal append, so an invalid or conflicting
+  // activation never creates a durable record. The Journal append still
+  // happens before the Reducer applies the record, so an append/flush failure
+  // reports failure and leaves the canonical Anchor State at WAIT_ACTIVATION.
   bool RecordAnchorActivation(
     const string instance_id,
     const string symbol,
@@ -447,6 +449,20 @@ public:
          magic_number,
          mode,
          config_epoch))
+      return false;
+
+    // The Reducer is the canonical authority. Only an unmapped Anchor that
+    // still waits activation may move to READY, and the requested transition
+    // is exactly WAIT_ACTIVATION -> READY. A Coordinator/Reducer disagreement
+    // fails closed: no state is guessed, synchronized or repaired here.
+    ENUM_TGK_GRID_LEVEL_STATE canonical_anchor_state =
+      TGK_GRID_LEVEL_READY;
+    bool has_anchor_mapping = true;
+    if(!reducer.TryGetAnchorState(canonical_anchor_state) ||
+       TGKGridNormalizeLevelState(canonical_anchor_state) !=
+         TGK_GRID_LEVEL_WAIT_ACTIVATION ||
+       !reducer.TryGetPositionMapping(true, -1, has_anchor_mapping) ||
+       has_anchor_mapping)
       return false;
 
     long next_sequence = reducer.LastSequence() + 1;

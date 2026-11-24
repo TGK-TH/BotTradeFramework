@@ -120,6 +120,7 @@ void AddConfiguration(STGKGridMappingJournalRecord &records[])
 
 // A committed configuration, a mapped Anchor, and its close record. The close
 // leaves the canonical Anchor at WAIT_ACTIVATION with no Position Mapping.
+// Usage: truncate to 5 records when the Anchor mapping must still be present.
 void AddAnchorActivationRecords(STGKGridMappingJournalRecord &records[])
 {
   ArrayResize(records, 6);
@@ -315,6 +316,440 @@ void RunAnchorActivationPersistenceFailure()
   Tests.AssertTrue(
     "activation remains pending",
     coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+// Proves CR-02: an invalid activation is rejected before any Journal append,
+// so no durable record, Reducer state or Coordinator confirmation changes.
+void RunAnchorActivationRejectedWhenCanonicalReady()
+{
+  Tests.BeginTest("CR02-01 activation rejected when canonical state is already READY");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_WAIT_ACTIVATION;
+  bool has_anchor_mapping = true;
+
+  bool ready = PrepareAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+
+  // The Reducer already accepted READY while the Coordinator still reports a
+  // pending activation: this disagreement must fail closed.
+  STGKGridMappingJournalRecord records[];
+  ArrayResize(records, 1);
+  records[0].sequence = reducer.LastSequence() + 1;
+  records[0].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[0].payload = "v1|ANCHOR_STATE|1|READY";
+  bool canonical_ready = ready && reducer.Replay(records, 1);
+  long journal_sequence = reducer.LastSequence();
+  port.next_sequence = journal_sequence + 1;
+
+  Tests.AssertTrue("fixture prepares a pending activation", ready);
+  Tests.AssertTrue("canonical state is READY before the attempt", canonical_ready);
+  Tests.AssertTrue(
+    "coordinator still reports a pending activation",
+    coordinator.HasPendingAnchorActivation());
+
+  bool recorded = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertFalse("activation is rejected", recorded);
+  Tests.AssertFalse(
+    "rejection is a state conflict, not a recovery lock",
+    adapter.IsRecoveryRequired());
+  Tests.AssertEqualInt("journal append count unchanged", port.call_count, 0);
+  Tests.AssertEqualInt(
+    "journal sequence unchanged",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence);
+  Tests.AssertTrue(
+    "canonical Anchor State remains queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State remains READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertTrue(
+    "Anchor mapping query remains healthy",
+    reducer.TryGetPositionMapping(true, -1, has_anchor_mapping));
+  Tests.AssertFalse("no Anchor mapping exists", has_anchor_mapping);
+  Tests.AssertEqualInt(
+    "still no Position Mapping",
+    reducer.PositionCount(),
+    0);
+  Tests.AssertTrue(
+    "activation remains pending for recovery",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAnchorActivationRejectedWhenMappingExists()
+{
+  Tests.BeginTest("CR02-02 activation rejected while an Anchor mapping exists");
+  CTGKGridEntryMappingReducer prepared_reducer;
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_WAIT_ACTIVATION;
+  bool has_anchor_mapping = false;
+
+  bool ready = PrepareAnchorActivation(prepared_reducer, coordinator) &&
+               adapter.Initialize();
+
+  // A conflicting canonical state: the Anchor is mapped and ACTIVE, not an
+  // unmapped Anchor that waits activation.
+  STGKGridMappingJournalRecord records[];
+  AddAnchorActivationRecords(records);
+  ArrayResize(records, 5);
+  bool mapped = reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE") &&
+                reducer.Replay(records, ArraySize(records));
+  long journal_sequence = reducer.LastSequence();
+  port.next_sequence = journal_sequence + 1;
+
+  Tests.AssertTrue("fixture prepares a pending activation", ready);
+  Tests.AssertTrue("conflicting reducer fixture is replayed", mapped);
+  Tests.AssertTrue(
+    "Anchor mapping is present",
+    reducer.TryGetPositionMapping(true, -1, has_anchor_mapping) &&
+      has_anchor_mapping);
+  Tests.AssertEqualInt("mapping count is one", reducer.PositionCount(), 1);
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State is ACTIVE",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+
+  bool recorded = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertFalse("activation is rejected", recorded);
+  Tests.AssertEqualInt("journal append count unchanged", port.call_count, 0);
+  Tests.AssertEqualInt(
+    "journal sequence unchanged",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence);
+  Tests.AssertTrue(
+    "canonical Anchor State remains queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State remains ACTIVE",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.AssertEqualInt(
+    "Position Mapping count unchanged",
+    reducer.PositionCount(),
+    1);
+  Tests.AssertTrue(
+    "activation remains pending",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAnchorActivationValidControl()
+{
+  Tests.BeginTest("CR02-03 valid activation appends exactly one durable record");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_ACTIVE;
+
+  bool ready = PrepareAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+  long journal_sequence = reducer.LastSequence();
+  port.next_sequence = journal_sequence + 1;
+  Tests.AssertTrue("fixture prepares a pending activation", ready);
+
+  bool recorded = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertTrue("activation is recorded", recorded);
+  Tests.AssertEqualInt("exactly one journal append", port.call_count, 1);
+  Tests.AssertEqualString("append is a lifecycle record", port.call_order, "R");
+  Tests.AssertEqualString(
+    "canonical activation payload",
+    port.result_payload,
+    "v1|ANCHOR_STATE|1|READY");
+  Tests.AssertEqualInt(
+    "journal sequence advanced once",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence + 1);
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State becomes READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertFalse(
+    "activation is confirmed after durable success",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+void RunAnchorActivationDuplicateRejected()
+{
+  Tests.BeginTest("CR02-04 repeated activation appends no duplicate record");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_ACTIVE;
+
+  bool ready = PrepareAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+  port.next_sequence = reducer.LastSequence() + 1;
+  Tests.AssertTrue("fixture prepares a pending activation", ready);
+
+  bool first = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+  long journal_sequence = reducer.LastSequence();
+
+  // The reachable duplicate path: the Coordinator already confirmed the one
+  // durable activation, so a repeated request has no pending activation.
+  bool second = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_BUY,
+    1,
+    coordinator,
+    reducer,
+    port);
+
+  Tests.AssertTrue("first activation succeeds", first);
+  Tests.AssertFalse("repeated activation is rejected", second);
+  Tests.AssertEqualInt("only one journal append", port.call_count, 1);
+  Tests.AssertEqualInt(
+    "journal sequence unchanged by the repeat",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence);
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State remains READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertFalse(
+    "no activation is left pending",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
+  Tests.EndTest();
+}
+
+// SELL context fixture: the same lifecycle in SELL mode, so the durable path
+// is exercised for the downward activation direction.
+void AddSellAnchorActivationRecords(STGKGridMappingJournalRecord &records[])
+{
+  ArrayResize(records, 6);
+
+  records[0].sequence = 1;
+  records[0].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[0].payload = "v1|RESET_COMMITTED|1|SELL|5.0|3960.0|4040.0|4000.0|17";
+
+  records[1].sequence = 2;
+  records[1].record_type = TGK_GRID_MAPPING_RECORD_ENTRY_INTENT;
+  records[1].payload =
+    "v1|REQ-CR03-ANCHOR|XAUUSD|710001|SELL|ANCHOR|-1|0.01|1|UT_INSTANCE";
+
+  records[2].sequence = 3;
+  records[2].record_type = TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT;
+  records[2].payload = "v1|REQ-CR03-ANCHOR|DONE|1009981|0";
+
+  records[3].sequence = 4;
+  records[3].record_type = TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION;
+  records[3].payload = "v1|REQ-CR03-ANCHOR|2009981|3009981|0.01";
+
+  records[4].sequence = 5;
+  records[4].record_type = TGK_GRID_MAPPING_RECORD_POSITION_MAPPING;
+  records[4].payload =
+    "v1|REQ-CR03-ANCHOR|XAUUSD|710001|ANCHOR|-1|3009981|4009981|0.01|1|UT_INSTANCE";
+
+  records[5].sequence = 6;
+  records[5].record_type = TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE;
+  records[5].payload = "v1|POSITION_CLOSED|3009981|WAIT_ACTIVATION";
+}
+
+// Drives a SELL Anchor from ACTIVE to a pending WAIT_ACTIVATION -> READY
+// activation crossing on the Bid, which is the SELL activation direction.
+bool PrepareSellAnchorActivation(
+  CTGKGridEntryMappingReducer &reducer,
+  CTGKGridLevelRuntimeCoordinator &coordinator)
+{
+  if(!reducer.Initialize("XAUUSD", 710001, "UT_INSTANCE"))
+    return false;
+
+  STGKGridMappingJournalRecord records[];
+  AddSellAnchorActivationRecords(records);
+  if(!reducer.Replay(records, ArraySize(records)))
+    return false;
+
+  if(!coordinator.Initialize(
+    TGK_GRID_MODE_SELL,
+    4000.0,
+    5.0,
+    3960.0,
+    4040.0,
+    16,
+    "XAUUSD",
+    710001,
+    4001.0,
+    4002.0) ||
+     !coordinator.BindConfigEpoch(1))
+    return false;
+
+  STGKGridLevelPositionRecord anchor_position;
+  anchor_position.ticket = 6002;
+  anchor_position.symbol = "XAUUSD";
+  anchor_position.magic_number = 710001;
+  anchor_position.is_anchor = true;
+  anchor_position.level_index = -1;
+  anchor_position.volume = 0.01;
+  if(!coordinator.RegisterInitialAnchorPosition(anchor_position))
+    return false;
+
+  STGKGridLevelPositionRecord positions[];
+  STGKGridLevelCloseEvent close_events[];
+  STGKGridLevelCandidate candidate;
+  ENUM_TGK_GRID_COORDINATOR_RESULT result;
+  ArrayResize(close_events, 1);
+  close_events[0].is_anchor = true;
+  close_events[0].level_index = -1;
+  if(coordinator.Reconcile(
+    positions,
+    close_events,
+    TGK_GRID_ENTRY_RESOLUTION_PENDING,
+    4001.0,
+    4002.0,
+    result,
+    candidate) != TGK_GRID_COORDINATOR_NO_CANDIDATE)
+    return false;
+
+  if(coordinator.GetAnchorState() != TGK_GRID_LEVEL_WAIT_ACTIVATION)
+    return false;
+
+  // The Bid moves down to the Anchor price, which is the SELL activation
+  // direction (equality included at the current price).
+  coordinator.UpdatePrice(4000.0, 4001.0, result, candidate);
+  return coordinator.HasPendingAnchorActivation();
+}
+
+// Proves CR-03: the SELL activation uses the same durable
+// Adapter -> Journal -> Reducer path as the BUY case.
+void RunSellAnchorActivationPersistence()
+{
+  Tests.BeginTest("CR03-01 SELL Anchor activation is journaled through the durable path");
+  CTGKGridEntryMappingReducer reducer;
+  CTGKGridEntryExecutionAdapter adapter;
+  CTGKGridEntryExecutionFakePort port;
+  CTGKGridLevelRuntimeCoordinator coordinator;
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state = TGK_GRID_LEVEL_ACTIVE;
+  bool has_anchor_mapping = true;
+
+  bool ready = PrepareSellAnchorActivation(reducer, coordinator) &&
+               adapter.Initialize();
+  long journal_sequence = reducer.LastSequence();
+  port.next_sequence = journal_sequence + 1;
+  Tests.AssertTrue("SELL activation fixture is ready", ready);
+  Tests.AssertTrue(
+    "SELL activation is pending after the downward crossing",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertTrue(
+    "canonical Anchor State waits activation before append",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State is WAIT_ACTIVATION",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_WAIT_ACTIVATION);
+
+  bool recorded = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_SELL,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertTrue("SELL activation is recorded", recorded);
+  Tests.AssertEqualInt("exactly one journal append", port.call_count, 1);
+  Tests.AssertEqualString("append is a lifecycle record", port.call_order, "R");
+  Tests.AssertEqualString(
+    "single ANCHOR_STATE|READY lifecycle payload",
+    port.result_payload,
+    "v1|ANCHOR_STATE|1|READY");
+  Tests.AssertEqualInt(
+    "journal sequence advanced once",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence + 1);
+  Tests.AssertTrue(
+    "canonical Anchor State is queryable after append",
+    reducer.TryGetAnchorState(anchor_state));
+  Tests.AssertEqualInt(
+    "canonical Anchor State becomes READY",
+    (int)anchor_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.AssertFalse(
+    "activation is cleared only after durable success",
+    coordinator.HasPendingAnchorActivation());
+  Tests.AssertTrue(
+    "Anchor mapping query remains healthy",
+    reducer.TryGetPositionMapping(true, -1, has_anchor_mapping));
+  Tests.AssertFalse("activation creates no Anchor mapping", has_anchor_mapping);
+  Tests.AssertEqualInt(
+    "activation creates no Position Mapping",
+    reducer.PositionCount(),
+    0);
+
+  bool repeated = adapter.RecordAnchorActivation(
+    "UT_INSTANCE",
+    "XAUUSD",
+    710001,
+    TGK_GRID_MODE_SELL,
+    1,
+    coordinator,
+    reducer,
+    port);
+  Tests.AssertFalse("repeated SELL activation is rejected", repeated);
+  Tests.AssertEqualInt("no duplicate journal append", port.call_count, 1);
+  Tests.AssertEqualInt(
+    "journal sequence unchanged by the repeat",
+    (int)reducer.LastSequence(),
+    (int)journal_sequence + 1);
   Tests.AssertEqualInt("no trade request was sent", port.send_count, 0);
   Tests.EndTest();
 }
@@ -799,6 +1234,11 @@ int OnInit()
   RunJournalReducerSequenceMismatch();
   RunAnchorActivationPersistence();
   RunAnchorActivationPersistenceFailure();
+  RunAnchorActivationRejectedWhenCanonicalReady();
+  RunAnchorActivationRejectedWhenMappingExists();
+  RunAnchorActivationValidControl();
+  RunAnchorActivationDuplicateRejected();
+  RunSellAnchorActivationPersistence();
   Tests.EndSuite();
   return INIT_SUCCEEDED;
 }
