@@ -5,15 +5,16 @@ Updated: 2026-11-25 — Product Owner approved Design/Scope for WP-05A.3, WP-05B
 ## Repository baseline
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
-- Current HEAD: `4af51bf` (`WP-05C — Draft`), ahead of `origin/feature/grid-trading` by 4 commits: `b2a586a` (WP-05 planning), `9abac4c` (WP-05A.3 Draft), `c51d210` (WP-05B Draft), `4af51bf` (WP-05C Draft).
-- Current Product Owner approval/status documentation changes are unstaged and uncommitted. No commit/push was performed during this update. Preserve them.
+- Current HEAD: `eeaeab8` (`Update WP-05 documentation with Product Owner approvals for Design/Scope on 2026-11-25`), ahead of `origin/feature/grid-trading` by 5 commits: `b2a586a` (WP-05 planning), `9abac4c` (WP-05A.3 Draft), `c51d210` (WP-05B Draft), `4af51bf` (WP-05C Draft), `eeaeab8` (Product Owner Design/Scope approvals).
+- Current workflow documentation changes for Codex/Freebuff are local and uncommitted. No commit/push was performed during this update. Preserve them.
 - Recheck Git status and HEAD before every implementation handoff.
 - Source of Truth: repository source/tests/docs; Grid master roadmap `Docs/EAs/Grid/ROADMAP.md`; current status `PROJECT_STATUS.md`.
 
 ## Roles and workflow
-- ChatGPT = CTO/Technical Lead (design/spec/review/docs; no source implementation); Freebuff = Developer Agent (direct repository access; reads `AGENTS.md`, SPEC, TEST_PLAN, IMPLEMENTATION_TASK; no Serena MCP); user = Product Owner/QA and performs MetaEditor/MT5 runtime verification.
+- ChatGPT = CTO/Technical Lead (design/spec/review/docs; no source implementation); Codex or Freebuff = Developer Agent selected exclusively by the user for each Card (direct repository access; reads `AGENTS.md`, SPEC, TEST_PLAN and referenced source/docs; no dependence on chat history or Serena memories; Freebuff must not use Serena MCP); user = Product Owner/QA, chooses the Implementer, and performs MetaEditor/MT5 runtime verification.
+- Implementer preference: user uses Codex first until monthly quota is exhausted, then uses Freebuff. ChatGPT must not choose or switch Implementers and must prepare neutral handoffs usable by either.
 - **Parallel Planning, Sequential Execution**: CTO may design multiple related Cards, prepare multiple SPEC/TEST_PLAN documents, create Cards, and move them to Trello `In Progress` in parallel. Every planning Card must explicitly say `CTO Planning / Contract Design only; implementation not authorized`.
-- Implementation by Freebuff, User Verification, and formal CTO Code Review remain sequential, one Card at a time.
+- Implementation by the user-selected Implementer (Codex or Freebuff), User Verification, and formal CTO Code Review remain sequential, one Card at a time.
 - Design/Scope approved by Product Owner on 2026-11-25 for WP-05A.3, WP-05B, WP-05C. This is NOT implementation authorization.
 - No implementation until its SPEC/TEST_PLAN are final, Product Owner separately explicitly authorizes that Card, and user reports the required pre-change no-trade Grid Regression baseline.
 - Before new Grid feature/refactor implementation, remind the user to run latest relevant no-trade Grid Regression Tests and report baseline.

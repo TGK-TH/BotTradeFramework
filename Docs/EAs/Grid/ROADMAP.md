@@ -96,7 +96,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 - WP-05C Open Positions Reconciliation: [Trello](https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05C/`. Uses complete/stable Open Positions snapshots to reconcile by Position Identifier. Full Close is reason-free; Closing Deal History and TP/NON_TP classification are out of scope. Existing Entry Deal Association remains separate and unchanged. Implementation NOT AUTHORIZED.
 - WP-05D Production Event Integration remains a separate roadmap placeholder and is not authorized.
 - WP-05A.3, WP-05B, and WP-05C have Product Owner-approved Design/Scope (2026-11-25); none has implementation authorization. Each implementation requires final SPEC/TEST_PLAN, explicit Product Owner approval, and a fresh pre-change no-trade Grid Regression baseline.
-- Workflow: multiple related Cards may be designed/planned in parallel; Freebuff implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time.
+- Workflow: multiple related Cards may be designed/planned in parallel; the user selects the Implementer (current preference: Codex until monthly quota is exhausted, then Freebuff). Implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time. ChatGPT prepares neutral handoffs and does not select/switch agents.
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 

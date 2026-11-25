@@ -4,7 +4,7 @@
 - CTO-led Design/Planning may cover multiple related Cards concurrently. Create/update all necessary Cards and prepare multiple SPEC/TEST_PLAN documents in parallel; move planning Cards to `In Progress` when CTO planning is active.
 - Explicitly label each such Card `CTO Planning / Contract Design only; implementation not authorized`. `In Progress` is shared by Planning and Implementation; Card descriptions/comments must distinguish them.
 - Product behavior, trading behavior, and new WP scope still require explicit Product Owner approval.
-- Freebuff implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time. Each implementation requires final SPEC/TEST_PLAN, explicit PO authorization, and a fresh pre-change no-trade Grid Regression baseline.
+- Implementation by the user-selected agent (Codex or Freebuff), User Verification, and CTO formal Code Review remain sequential, one Card at a time. Each implementation requires final SPEC/TEST_PLAN, explicit PO authorization, and a fresh pre-change no-trade Grid Regression baseline.
 
 
 ## Authority
@@ -14,20 +14,20 @@
 
 ## Roles
 - **ChatGPT — CTO / Technical Lead:** co-designs architecture/contracts with the user, breaks work into WP/Phase/implementation Cards, writes developer specifications, performs formal Code Review only after user-reported Compile/Test PASS, records actionable findings, and updates technical documentation after approval.
-- **Freebuff — Developer Agent:** reads repository files directly (especially `AGENTS.md`, Card-linked `SPEC.md`, and `TEST_PLAN.md`), implements code/tests within the approved scope, and writes an implementation report. Freebuff must not depend on Serena MCP or prior chat history. Do not require Serena MCP setup/use from Freebuff.
-- **User — Product Owner / QA:** approves design/scope, directs Freebuff, runs MetaEditor/MT5 Compile and Tests, reports actual outcomes, and explicitly authorizes subsequent work.
-- ChatGPT does not implement or patch source code on Freebuff's behalf under this workflow unless the user explicitly changes the role agreement.
+- **Codex or Freebuff — Developer Agent:** the user chooses the Implementer for each Card. The current preference is Codex first until monthly quota is exhausted, then Freebuff. The selected agent reads repository files directly (especially `AGENTS.md`, Card-linked `SPEC.md`, and `TEST_PLAN.md`), implements only the approved scope, and writes an implementation report. Neither agent may depend on prior chat history or Serena memories; Freebuff must not use Serena MCP.
+- **User — Product Owner / QA:** approves design/scope, selects and invokes the Implementer, runs MetaEditor/MT5 Compile and Tests, reports actual outcomes, and explicitly authorizes subsequent work.
+- ChatGPT does not implement or patch source code on behalf of the selected Implementer unless the user explicitly changes the role agreement. ChatGPT prepares neutral handoffs and does not choose or switch agents.
 
 ## Per-Card workflow
 1. Agree on Design, Contract, scope, dependencies, Acceptance Criteria, and tests; obtain user approval.
 2. Create/update the Trello Card and prepare separate `SPEC.md` and `TEST_PLAN.md` files. State allowed files and out-of-scope work.
-3. User starts Freebuff implementation. Freebuff reads repository files directly and implements only the approved Card.
-4. Freebuff records changed files, summary, tests run/not run, exact results, and unresolved issues in `IMPLEMENTATION_REPORT.md`; move Card to User Verification.
-5. User performs MetaEditor/MT5 Compile and the specified tests. If any fail, Freebuff fixes and user repeats verification. Formal ChatGPT Code Review does not start before user reports PASS.
+3. User selects and starts Codex or Freebuff implementation. The selected agent reads repository files directly and implements only the approved Card.
+4. The selected agent records changed files, summary, tests run/not run, exact results, compile evidence, and unresolved issues in `IMPLEMENTATION_REPORT.md`; move Card to User Verification.
+5. User performs MetaEditor/MT5 Compile and the specified tests. If any fail, the same Implementer fixes and user repeats verification. Formal ChatGPT Code Review does not start before user reports PASS.
 6. After user reports PASS, move Card to Code Review and notify ChatGPT.
 7. ChatGPT reviews actual source/diff against SPEC, TEST_PLAN, architecture, Acceptance Criteria, and user-reported evidence. Record outcome/findings in `CODE_REVIEW.md`.
 8. Review status: `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`. Findings include ID, severity, file/location, problem, required fix, and acceptance condition.
-9. For changes requested, Freebuff fixes only the findings; user compiles/tests again before the next formal review cycle.
+9. For changes requested, the same user-selected Implementer fixes only the findings; user compiles/tests again before the next formal review cycle.
 10. After user verification PASS and CTO review APPROVED, ChatGPT updates relevant docs/status. Card becomes Done only with required documentation and user confirmation.
 11. Stop at every WP/Phase boundary and request explicit user approval before starting the next.
 
@@ -36,11 +36,11 @@
 - `TEST_PLAN.md`: Preconditions, Test IDs/scenarios, Expected Results, Regression Coverage, Safety Restrictions.
 - `IMPLEMENTATION_REPORT.md`: Changed Files, Implementation Summary, Tests Run/Not Run, Exact Results, Remaining Issues.
 - `CODE_REVIEW.md`: Review Status and actionable Findings.
-- These files and the approved Trello Card must contain enough context for Freebuff to work without relying on chat history.
+- These files and the approved Trello Card must contain enough context for either Codex or Freebuff to work without relying on chat history.
 
 ## Trello lifecycle
 - Target flow: `Product Backlog -> Ready -> In Progress -> User Verification -> Code Review -> Done`.
-- If user verification fails, return to `In Progress` for Freebuff fixes.
+- If user verification fails, return to `In Progress` for fixes by the same assigned Implementer.
 - If CTO review requests changes, use `Changes Requested` (or an agreed equivalent), then repeat User Verification before formal review again.
 - Reuse existing board lists where possible. Do not create/rename lists without user agreement; if the board lacks a matching stage, agree on mapping first.
 - Never mark Done from implementation completion alone.
