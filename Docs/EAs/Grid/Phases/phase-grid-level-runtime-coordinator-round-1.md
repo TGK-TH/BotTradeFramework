@@ -4,6 +4,8 @@
 
 **สถานะ: Completed — User Verified.** Implementation Round 1 เสร็จสมบูรณ์ตามผล Compile/Runtime ที่ผู้ใช้รายงาน — Test ใหม่และ Grid Regression Tests ผ่านครบ 12/12 ใน MetaEditor/MT5 (2026-11-09)
 
+**Historical Contract Notice (2026-11-24):** เอกสารฉบับนี้บันทึก Runtime Coordinator Round 1 ก่อน WP-05A.2. ข้อความเก่าที่กำหนดให้ Full Close ต้องมี Close Reason หรือ TP/NON_TP classification ถูก supersede โดย WP-05A.2: Full Close เป็น reason-free durable transition หลัง authoritative Open Positions reconciliation; ไม่อ่าน Closing Deal History. ให้ใช้ WP-05A.2 SPEC/IMPLEMENTATION_REPORT/CODE_REVIEW เป็น Contract ปัจจุบัน
+
 ผู้ใช้ยืนยันแนวทางเมื่อ 2026-11-07:
 1. หนึ่ง Grid Instance มี Entry Request ที่ยัง unresolved ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้
 2. Position-to-Level Mapping ต้องมาจาก Integration Layer อย่างชัดเจน โดยระบุ Anchor หรือ Level Index; Coordinator จะไม่เดา Mapping จากราคา Fill

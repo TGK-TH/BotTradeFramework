@@ -26,7 +26,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_types.mq5` | Enum และการกำหนด/อ่านค่าฟิลด์ของโครงสร้างข้อมูล | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
 | `Experts/TGK/Tests/Grids/test_grid_persistence.mq5` | Save/Restore, mismatch, invalid enum, Level State และ Delete | PASS (ผู้ใช้ยืนยัน Regression 11/11 เมื่อ 2026-11-07) |
 | `Experts/TGK/Tests/Grids/test_grid_level_engine.mq5` | Two-sided levels, Anchor Re-entry, State transitions, Candidate selection และ exact crossing | PASS (ผู้ใช้รายงาน 2026-11-04) |
-| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close, close reason validation และ Reducer/Coordinator context APIs | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังเพิ่ม context/epoch tests |
+| `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5` | Candidate handoff, one unresolved request, Deferred Candidate, initial Anchor registration, explicit Position mapping, partial/full close, durable Anchor activation และ Reducer/Coordinator context APIs | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังเพิ่ม context/epoch tests |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_storage.mq5` | Append/Replay Journal, Schema/Sequence, large decimal identifier text, Instance isolation, Comment independence, incomplete tail และ malformed record; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน Compile/Run และ Regression 12/12 เมื่อ 2026-11-12) |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_reducer.mq5` | Typed Payload validation, deterministic replay, Request/Deal/Position mapping, partial fill/close, reset retention, geometry-derived Level Count, Snapshot codec และ direct tests สำหรับ context/mapping queries; ไม่มี Trade Request | ผู้ใช้รายงาน Compile/Run ผ่าน 2026-11-18 หลังแก้ out-of-range query ให้ใช้ index 200 |
 | `Experts/TGK/Tests/Grids/test_grid_entry_mapping_snapshot.mq5` | Reducer Snapshot round-trip, dual Manifest Slot, Journal generation rotation, crash recovery, capacity และ bounded retention; ไม่มี Trade Request | PASS (ผู้ใช้ยืนยัน 2026-11-14) |
@@ -357,7 +357,7 @@ Test EA: `Experts/TGK/Tests/Grids/test_grid_level_runtime_coordinator.mq5`
 - Deferred Candidate: BUY เก็บราคาต่ำสุด / SELL เก็บราคาสูงสุด และตรวจ Level State ล่าสุดก่อนนำกลับมาใช้
 - Accepted/Placed ไม่เปลี่ยน Level เป็น ACTIVE; ต้องมี Reconciliation ยืนยัน Position ที่ Mapping ตรง Request
 - Position mapping ต้องตรวจ Symbol + Magic + Ticket + Anchor/Level Index + Volume และปฏิเสธ mapping ซ้ำ/ไม่ถูกต้อง
-- Partial Close คง ACTIVE; Full Close ต้องทราบ TP/Non-TP ก่อนเปลี่ยน State
+- Historical Round 1 behavior (2026-11-09) required an explicit close reason; superseded by WP-05A.2 (2026-11-24): Partial Close คง ACTIVE; Full Close เป็น reason-free transition หลัง authoritative Open Positions reconciliation
 - Coordinator ไม่มี Trade API หรือ Live Account API
 
 **Baseline:** ผู้ใช้ยืนยันว่า Grid Regression Tests เดิมครบ 11 ไฟล์ผ่านทั้งหมดเมื่อ 2026-11-07 ก่อนเริ่ม Implementation

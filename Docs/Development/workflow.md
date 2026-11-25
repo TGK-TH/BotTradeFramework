@@ -8,6 +8,14 @@
 
 ChatGPT ทำหน้าที่ CTO/Review ไม่ใช่ผู้ Implement: ห้าม ChatGPT แก้ Source Code แทน Freebuff ภายใต้ Workflow นี้ เว้นแต่ผู้ใช้จะเปลี่ยนข้อตกลงอย่างชัดเจน
 
+## Parallel Planning, Sequential Execution (2026-11-25)
+
+- ช่วง Design/Planning ที่ CTO รับผิดชอบสามารถทำหลาย Cards พร้อมกันได้ เมื่อ Scope มีหลาย Deliverables: ออกแบบ, แตกงาน, สร้าง/ปรับ Trello Cards, จัดทำ SPEC/TEST_PLAN และย้าย Planning Cards ไป `In Progress` พร้อมกันได้
+- ทุก Planning Card ต้องระบุชัดเจนว่า `CTO Planning / Contract Design only; implementation not authorized` เพราะ List `In Progress` ใช้ร่วมกันระหว่าง Planning และ Implementation
+- การมีหลาย Cards ใน In Progress ระหว่าง Planning ไม่ได้แปลว่าได้รับอนุญาตให้ Implement; Product behavior, Trading behavior และ Scope ใหม่ยังต้องได้รับ Product Owner Approval
+- ช่วง Freebuff Implementation, User Verification และ CTO Formal Code Review ยังคงทำทีละ Card ตามลำดับ ห้าม Implement หรือ Formal Review หลาย Cards พร้อมกัน
+- ก่อน Implementation ของแต่ละ Card ต้องมี SPEC/TEST_PLAN ฉบับ Final, Explicit Product Owner Authorization และ Pre-change no-trade Grid Regression Baseline
+
 ## ลำดับการทำงานต่อ Implementation Card
 
 1. ร่วมกันกำหนด Design, Contract, Dependency, Scope และ Acceptance Criteria; ต้องได้รับอนุมัติจากผู้ใช้
@@ -36,7 +44,7 @@ ChatGPT ทำหน้าที่ CTO/Review ไม่ใช่ผู้ Imple
 - CTO Review ขอแก้: ใช้ `Changes Requested` (หรือ List ที่ตกลงให้เทียบเท่า) แล้วกลับ User Verification ก่อน Review รอบใหม่
 - ห้ามย้ายเป็น `Done` จากคำรายงานว่าเขียน Code เสร็จเพียงอย่างเดียว
 - Trello ใช้ติดตามสถานะและชี้ไปยังไฟล์ใน Repository; Repository Markdown เป็นแหล่ง Contract/Technical Handoff ที่ละเอียดและเป็นหลัก
-- Mapping ปัจจุบันของบอร์ด TGK Grid Bot (2026-11-21): `MT5 Testing` ใช้เป็น User Verification, `Code Review` ใช้สำหรับ CTO Review, `In Progress` ใช้ทั้งช่วง Freebuff Implement และช่วงแก้ Review Findings (ต้องระบุเหตุผลใน Comment), `Blocked` ใช้เมื่อมี Dependency/ข้อขัดข้องที่หยุดงานไว้ ทั้งนี้ไม่ต้องสร้างหรือเปลี่ยนชื่อ List เพิ่ม
+- Mapping ปัจจุบันของบอร์ด TGK Grid Bot (2026-11-25): `MT5 Testing` ใช้เป็น User Verification, `Code Review` ใช้สำหรับ CTO Review, `In Progress` ใช้ได้ทั้ง CTO Planning/Contract Design แบบขนาน และ Freebuff Implementation/Review Fixes แบบทีละ Card (ต้องระบุให้ชัดใน Card Description/Comment), `Blocked` ใช้เมื่อมี Dependency/ข้อขัดข้องที่หยุดงานไว้ ทั้งนี้ไม่ต้องสร้างหรือเปลี่ยนชื่อ List เพิ่ม
 
 ## ทำงานเป็น Phase
 

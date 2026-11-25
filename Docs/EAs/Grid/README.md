@@ -29,7 +29,10 @@
 - [Grid Entry Execution Policy — Design, Contract และ Test-First](Phases/phase-grid-entry-execution-policy.md)
 - [Grid Entry Execution Resolver — WP-02](Phases/phase-grid-entry-execution-resolver.md)
 - [Grid Entry Pipeline Integration — WP-04](Phases/phase-grid-entry-pipeline-integration.md)
-- [WP-05A — Persistence Foundation and Freebuff Handoff](WorkPackages/WP-05A/README.md)
+- [WP-05A — Persistence Foundation](WorkPackages/WP-05A/README.md)
+- [WP-05A.3 — Anchor State Persistence Integration & Hardening](WorkPackages/WP-05A/Phase-1.3/SPEC.md)
+- [WP-05B — Runtime State Restoration](WorkPackages/WP-05B/SPEC.md)
+- [WP-05C — Open Positions Reconciliation](WorkPackages/WP-05C/SPEC.md)
 
 ## Current implementation boundary
 

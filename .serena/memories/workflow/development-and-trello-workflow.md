@@ -1,5 +1,12 @@
 # TGK BotTradeFramework Development + Trello Workflow V2
 
+## Parallel Planning, Sequential Execution (effective 2026-11-25)
+- CTO-led Design/Planning may cover multiple related Cards concurrently. Create/update all necessary Cards and prepare multiple SPEC/TEST_PLAN documents in parallel; move planning Cards to `In Progress` when CTO planning is active.
+- Explicitly label each such Card `CTO Planning / Contract Design only; implementation not authorized`. `In Progress` is shared by Planning and Implementation; Card descriptions/comments must distinguish them.
+- Product behavior, trading behavior, and new WP scope still require explicit Product Owner approval.
+- Freebuff implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time. Each implementation requires final SPEC/TEST_PLAN, explicit PO authorization, and a fresh pre-change no-trade Grid Regression baseline.
+
+
 ## Authority
 - Repository source, tests, and Markdown docs are the technical source of truth.
 - Trello board **TGK Grid Bot** tracks work item status, ownership, blockers, and approvals; keep Cards linked to repository specifications and evidence.

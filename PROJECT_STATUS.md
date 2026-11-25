@@ -1,28 +1,21 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-24
+Last updated: 2026-11-25
 
 ## Current focus
 
-**Grid V1 — WP-05A Persistence Foundation:** WP-05A.1 and WP-05A.2 are Done. WP-05A.2 implementation, CR-01/CR-02/CR-03 review fixes, Freebuff MetaEditor compile (both Adapter consumers: 0 errors, 0 warnings), and user-reported full no-trade Grid Regression PASS (2026-11-24) are recorded in the implementation report. CTO Code Review is **APPROVED** (2026-11-24); CR-01, CR-02 and CR-03 are resolved. The user authorized closure; Trello card is moved to Done and marked complete. No commit/push was performed by CTO. WP-05C/WP-05D remain separate, unauthorized work packages.
+**Grid V1 — WP-05 Persistence / Runtime Restoration / Position Reconciliation planning.** WP-05A.1 and WP-05A.2 are formally Done; WP-05A remains In Progress for WP-05A.3 Persistence Integration & Hardening planning. WP-05B Runtime State Restoration and WP-05C Open Positions Reconciliation are being designed in parallel, with implementation dependencies preserved (A.3 → B → C).
 
-- Parent WP: [WP-05A — Persistence Foundation](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation).
-- WP-05A breakdown and handoff index: [WP-05A README](Docs/EAs/Grid/WorkPackages/WP-05A/README.md).
-- Current review candidate: [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) — user Compile/Test PASS; CTO Code Review APPROVED; user confirmed Done on 2026-11-21.
-- Implementation Card: [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions).
-- WP-05A.2 implementation report: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_REPORT.md`; CTO review: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/CODE_REVIEW.md` (**APPROVED 2026-11-24**).
-- WP-05A.2 verification and closure: Freebuff compiled both Adapter-consuming programs with 0 errors / 0 warnings; the user reported the full no-trade Grid Regression suite PASS on 2026-11-24, including CR02-01…04 and CR03-01. CTO re-review approved CR-01/02/03 and the user authorized closure; WP-05A.2 is Done. Details: `IMPLEMENTATION_REPORT.md` §11 and `CODE_REVIEW.md`.
-- WP-05A.2 handoff: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/IMPLEMENTATION_TASK.md`.
-- WP-05A.2 SPEC: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/SPEC.md`.
-- WP-05A.2 TEST_PLAN: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.2/TEST_PLAN.md`.
-- Approved WP-05A.2 behavior: no Closing Deal History for Full Close detection; Position Identifier is canonical; Partial Close retains ACTIVE; Full Close is reason-free and atomic; WAIT_RETURN normalizes to READY; state-based idempotency.
-- Pre-change no-trade Grid Regression baseline accepted (user-reported 2026-11-23); Demo order-opening tests were excluded. WP-05A.2 implementation was authorized after this gate.
-- Workflow V2: ChatGPT = CTO/Technical Lead (no source implementation); Freebuff = Developer Agent (direct repository access; no Serena MCP required); user = Product Owner/QA. Formal CTO Code Review begins only after the user reports MetaEditor Compile/Test PASS.
-- Trello workflow mapping: `MT5 Testing` is User Verification; `Code Review` is CTO review; `Done` requires user verification, CTO APPROVED, documentation gate, and user confirmation.
-- **Historical WP-05A.1 Pre-change Baseline:** user's 2026-11-20 report (19 no-trade Grid Test EAs passed; Demo Trade Request test excluded). This is historical and is NOT the WP-05A.2 baseline because source changed during WP-05A.1.
-- **WP-05A.2 Pre-change Baseline:** ACCEPTED (user-reported 2026-11-23): all current no-trade Grid test files passed; Demo order-opening tests were intentionally excluded.
-- No Demo or Live Trade Request is authorized. No commit/push is authorized.
-- Current branch: `feature/grid-trading`. WP-05A.1 implementation changes are staged from Freebuff; CTO review/documentation changes are unstaged. User-reported MetaEditor/MT5 Compile and Tests PASS on 2026-11-21. No Commit/Push has been made.
+- Repository baseline: branch `feature/grid-trading`, HEAD `b092ae3` (`WP-05A.2 -- DONE`), matched `origin/feature/grid-trading` on 2026-11-25. Working tree was clean before the current CTO planning/documentation changes.
+- WP-05A.1 — Anchor State Model: Done; user Compile/Test PASS and CTO Review APPROVED 2026-11-21.
+- WP-05A.2 — Anchor State Transitions: [Trello](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions); Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; Freebuff Compile 0 errors/0 warnings for both Adapter consumers; user-reported full no-trade Grid Regression PASS; CTO Review APPROVED.
+- WP-05A.3 — Anchor State Persistence Integration & Hardening: [Trello](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening); CTO Planning only. Draft: `Docs/EAs/Grid/WorkPackages/WP-05A/Phase-1.3/SPEC.md` and `TEST_PLAN.md`.
+- WP-05B — Runtime State Restoration: [Trello](https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration); CTO Planning only. Draft SPEC/TEST_PLAN under `Docs/EAs/Grid/WorkPackages/WP-05B/`.
+- WP-05C — Open Positions Reconciliation: [Trello](https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation); CTO Planning only. Its previous TP/NON_TP / Closing Deal History scope is superseded by WP-05A.2; draft SPEC/TEST_PLAN under `Docs/EAs/Grid/WorkPackages/WP-05C/`.
+- Approved WP-05A.2 architecture: Position Identifier is canonical; Position Ticket is refreshable metadata; Partial Close retains ACTIVE; Full Close is reason-free and confirmed by authoritative Open Positions reconciliation; no Closing Deal History or TP/SL/manual classification; state-based idempotency; existing Entry Deal Association remains unchanged.
+- **Implementation authorization:** none of WP-05A.3, WP-05B, or WP-05C is authorized yet. Cards in Trello In Progress currently mean CTO Planning / Contract Design only. Each implementation requires finalized SPEC/TEST_PLAN, explicit Product Owner approval, and a fresh pre-change no-trade Grid Regression baseline.
+- Workflow: CTO may plan multiple related Cards in parallel. Freebuff implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time. See `AGENTS.md` and Serena memory `workflow/parallel-planning-sequential-execution`.
+- Safety: no Demo/Live Trade Request is authorized; no commit/push is authorized. Preserve all existing user changes.
 
 ---
 

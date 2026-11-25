@@ -1,10 +1,12 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-23
+อัปเดตล่าสุด: 2026-11-25
 
 ## ขอบเขตของเอกสาร
 
 เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component เสร็จแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
+
+**สถานะ WP-05 Planning (2026-11-25):** WP-05A.1/.2 Done; WP-05A.3, WP-05B และ WP-05C อยู่ใน CTO Planning พร้อมกัน โดย Implementation Dependency คือ A.3 → B → C. WP-05B เป็นการ Hydrate Canonical Reducer State เข้า Engine/Coordinator เท่านั้น ไม่ทำ Live Position Scan; WP-05C เป็นผู้ Acquire Complete/Stable Open Positions Snapshot และทำ Reconciliation. WP-05C ไม่มี Closing Deal History หรือ TP/NON_TP Classification สำหรับ Full Close; ใช้ Reason-free Full Close ตาม WP-05A.2. ดู Draft SPEC/TEST_PLAN ใน `WorkPackages/WP-05A/Phase-1.3/`, `WorkPackages/WP-05B/` และ `WorkPackages/WP-05C/`.
 
 **สถานะ Anchor State ใน Persistence (2026-11-23):** `CTGKGridEntryMappingReducer` มี Typed Anchor State จาก WP-05A.1 (ผู้ใช้รายงาน Compile/Test PASS และ CTO Review APPROVED). WP-05A.2 Implement แล้วโดย Freebuff เมื่อ 2026-11-23: Anchor State ถูก Serialize ใน Snapshot (Required Field), Anchor Mapping เปลี่ยน State เป็น ACTIVE, Partial Close คง ACTIVE, Full Close เป็น reason-free atomic transition, `WAIT_RETURN` normalize เป็น `READY` และ Idempotency อ้างอิง Mapping State. **Freebuff แก้ CR-01/CR-02/CR-03 ครบ; MetaEditor Compile ของ Adapter consumers ผ่าน 0 errors / 0 warnings และผู้ใช้รายงาน full no-trade Grid Regression PASS เมื่อ 2026-11-24. CTO Code Review APPROVED เมื่อ 2026-11-24; WP-05A.2 Done.** ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
 
@@ -147,7 +149,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 - Accepted Request is not a fill; only a matching Position Snapshot confirms the Candidate and sets ACTIVE
 - Position Snapshot uses explicit Anchor/Level mapping and exact Symbol + Magic identity
 - Initial Anchor Position must be registered through `RegisterInitialAnchorPosition()` before the first snapshot reconciliation
-- Partial close retains ACTIVE; disappearance requires an explicit TP/Non-TP Close Event
+- Historical Round 1 behavior (2026-11-09): disappearance required an explicit TP/Non-TP Close Event. Superseded by WP-05A.2 (2026-11-24): Partial Close retains ACTIVE; Full Close is reason-free after authoritative Open Positions reconciliation.
 - ผู้ใช้ยืนยันว่า Coordinator Test EA และ Grid Regression Tests เดิมทั้ง 11 ไฟล์ Compile/Run ผ่านใน MetaEditor/MT5 ครบ 12/12 เมื่อ 2026-11-09 (User-reported; Assistant did not independently run MT5)
 
 - ผู้ใช้ยืนยันให้หนึ่ง Instance มี Unresolved Entry Request ได้สูงสุดหนึ่งรายการ และเก็บ Deferred Candidate ที่ดีที่สุดไว้ (BUY ราคาต่ำสุด / SELL ราคาสูงสุด)
