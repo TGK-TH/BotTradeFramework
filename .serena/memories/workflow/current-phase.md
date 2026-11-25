@@ -1,12 +1,12 @@
 # Current TGK BotTradeFramework / Grid V1 Phase
 
-Updated: 2026-11-25 — WP-05A.3 Compile/Runtime re-verification reported PASS; CTO Code Review APPROVED; Product Owner formal closure pending.
+Updated: 2026-11-25 — WP-05A.3 formally DONE; Product Owner confirmed closure and Trello Card moved to Done.
 
 ## Repository baseline
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
 - Current HEAD: `ee100d7` (`WP-05A.3 -- Fix By ChatGPT`), ahead of `origin/feature/grid-trading` by 10 commits.
-- WP-05A.3 implementation and CTO review follow-up are committed; Product Owner reports Compile and all tests PASS on the latest source. CTO Code Review is APPROVED; formal Product Owner Card closure remains pending. Final review/status documentation updates are local and uncommitted; no commit/push was performed.
+- WP-05A.3 implementation and CTO review follow-up are committed; Product Owner reports Compile and all tests PASS on the latest source. CTO Code Review is APPROVED; Product Owner formally closed WP-05A.3 on 2026-11-25; Trello Card is in Done. Final review/status documentation updates are local and uncommitted; no commit/push was performed.
 - WP-05B/WP-05C remain design-approved only, unauthorized, and blocked by dependency order. No commit/push was performed by the reviewer.
 - Recheck Git status and HEAD before every implementation handoff.
 - Source of Truth: repository source/tests/docs; Grid master roadmap `Docs/EAs/Grid/ROADMAP.md`; current status `PROJECT_STATUS.md`.
@@ -22,11 +22,11 @@ Updated: 2026-11-25 — WP-05A.3 Compile/Runtime re-verification reported PASS; 
 - Unit tests never send Trade Requests. Demo tests require separate explicit approval and designated test positions. Never Live trade. No commit/push unless explicitly requested. Preserve user changes; no destructive Git operations.
 
 ## WP-05 status and approvals
-- WP-05 parent remains In Progress; WP-05A parent remains In Progress pending Product Owner formal closure of WP-05A.3.
+- WP-05 parent remains In Progress; WP-05A persistence foundation is complete through WP-05A.3. Parent WP-05A status should be reconciled after reviewing its Trello parent Card.
 - WP-05A.1 Anchor State Model: Done; user Compile/Test PASS and CTO Review APPROVED 2026-11-21.
 - WP-05A.2 Anchor State Transitions: Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; Freebuff compiled both Adapter consumers with 0 errors/0 warnings; user reported full no-trade Grid Regression PASS; CTO Review APPROVED.
-- WP-05A.3 Anchor State Persistence Integration & Hardening: Design/Scope approved and Codex implementation explicitly authorized by Product Owner on 2026-11-25. CTO follow-up corrected A3-08 coverage/reporting. Product Owner reported Compile and all tests PASS on the latest source; CTO Code Review APPROVED 2026-11-25. Awaiting Product Owner formal Card closure. Trello https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening.
-- WP-05B Runtime State Restoration: Design/Scope approved 2026-11-25; SPEC/TEST_PLAN final in `Docs/EAs/Grid/WorkPackages/WP-05B/`; Trello https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration. Runtime ends RESTORED_PENDING_RECONCILIATION with Entry/Candidate gate closed. Implementation NOT AUTHORIZED.
+- WP-05A.3 Anchor State Persistence Integration & Hardening: Design/Scope approved and Codex implementation explicitly authorized by Product Owner on 2026-11-25. CTO follow-up corrected A3-08 coverage/reporting. Product Owner reported Compile and all tests PASS on the latest source; CTO Code Review APPROVED 2026-11-25; Product Owner confirmed formal closure and Trello Card moved to Done. Trello https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening.
+- WP-05B Runtime State Restoration: Design/Scope approved 2026-11-25; SPEC/TEST_PLAN final in `Docs/EAs/Grid/WorkPackages/WP-05B/`; Trello https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration. Runtime ends RESTORED_PENDING_RECONCILIATION with Entry/Candidate gate closed. WP-05A.3 is now Done, so WP-05B is the next dependency; implementation NOT AUTHORIZED until fresh pre-change no-trade Grid Regression baseline and explicit Product Owner authorization.
 - WP-05C Open Positions Reconciliation: Design/Scope approved 2026-11-25; SPEC/TEST_PLAN final in `Docs/EAs/Grid/WorkPackages/WP-05C/`; Trello https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation. It owns complete/stable Open Positions snapshots, Position Identifier reconciliation, current executable-side quote for reason-free Full Close (BUY=Ask, SELL=Bid), and releasing WP-05B gate only after successful reconciliation. No Closing Deal History or TP/NON_TP. Implementation NOT AUTHORIZED.
 - Implementation dependency order: WP-05A.3 → WP-05B → WP-05C. WP-05B restores canonical persisted state into Engine/Coordinator and does not scan live account positions. WP-05C owns complete/stable Open Positions snapshots and reconciliation.
 - WP-05D Production Event Integration remains separate and unauthorized.

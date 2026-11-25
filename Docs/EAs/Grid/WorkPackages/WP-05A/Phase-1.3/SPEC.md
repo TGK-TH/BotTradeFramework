@@ -1,7 +1,7 @@
 # WP-05A.3 — Anchor State Persistence Integration & Hardening
 
 **สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
-**Implementation: AUTHORIZED and completed; Product Owner-reported Compile/Runtime PASS; CTO Code Review APPROVED 2026-11-25; Product Owner Card closure pending**
+**Status: DONE — Product Owner confirmed formal closure 2026-11-25; Compile/Runtime PASS reported; CTO Code Review APPROVED**
 **Parent:** WP-05A — Persistence Foundation
 **Dependencies:** WP-05A.1 และ WP-05A.2 (Done)
 

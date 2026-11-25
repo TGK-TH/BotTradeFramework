@@ -67,5 +67,5 @@
 
 - Product Owner reported Compile and all tests PASS after the CTO review follow-up, including A3-01..A3-09 and the latest no-trade Grid Regression suite.
 - CTO Code Review: APPROVED 2026-11-25. See [CODE_REVIEW.md](CODE_REVIEW.md).
-- Product Owner retains the formal Card-closure decision. WP-05A.3 remains open until the Product Owner confirms closure.
-- WP-05B implementation remains unauthorized and blocked until WP-05A.3 is formally closed.
+- Product Owner explicitly confirmed formal closure on 2026-11-25; WP-05A.3 is DONE and its Trello Card is in Done.
+- WP-05B is the next dependency and is unblocked for planning/authorization; implementation remains unauthorized until the Product Owner grants explicit authorization after a fresh pre-change no-trade Grid Regression baseline.
