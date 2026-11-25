@@ -85,17 +85,17 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1 and WP-05A.2 are Done. WP-05A.3 is in CTO Planning to close the remaining Anchor Snapshot/Rotation integration verification gap. WP-05B Runtime State Restoration and WP-05C Open Positions Reconciliation are being designed in parallel; implementation order remains WP-05A.3 → WP-05B → WP-05C.
+**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1 and WP-05A.2 are Done. Product Owner approved Design/Scope for WP-05A.3, WP-05B and WP-05C on 2026-11-25. Implementation order remains WP-05A.3 → WP-05B → WP-05C; implementation authorization is still separate and has not been granted.
 
 - WP-05A parent: [Trello](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation); remains In Progress until WP-05A.3 is completed.
 - WP-05A breakdown: [WP-05A README](WorkPackages/WP-05A/README.md).
 - WP-05A.1 Anchor State Model: Done; user Compile/Test PASS and CTO APPROVED 2026-11-21.
 - WP-05A.2 Anchor State Transitions: Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; user-reported full no-trade Grid Regression PASS; CTO APPROVED. See `WorkPackages/WP-05A/Phase-1.2/`.
-- WP-05A.3 Anchor State Persistence Integration & Hardening: [Trello](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening); CTO Planning only. Draft SPEC/TEST_PLAN: `WorkPackages/WP-05A/Phase-1.3/`.
-- WP-05B Runtime State Restoration: [Trello](https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration); CTO Planning only. Restores canonical Snapshot/Journal state into Engine/Coordinator; it does not scan or reconcile live account positions. Draft SPEC/TEST_PLAN: `WorkPackages/WP-05B/`.
-- WP-05C Open Positions Reconciliation: [Trello](https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation); CTO Planning only. Uses complete/stable Open Positions snapshots to reconcile by Position Identifier. Full Close is reason-free; Closing Deal History and TP/NON_TP classification are out of scope. Existing Entry Deal Association remains separate and unchanged. Draft SPEC/TEST_PLAN: `WorkPackages/WP-05C/`.
+- WP-05A.3 Anchor State Persistence Integration & Hardening: [Trello](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05A/Phase-1.3/`. Implementation NOT AUTHORIZED.
+- WP-05B Runtime State Restoration: [Trello](https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05B/`. Restores canonical Snapshot/Journal state into Engine/Coordinator; it does not scan or reconcile live account positions. Implementation NOT AUTHORIZED.
+- WP-05C Open Positions Reconciliation: [Trello](https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05C/`. Uses complete/stable Open Positions snapshots to reconcile by Position Identifier. Full Close is reason-free; Closing Deal History and TP/NON_TP classification are out of scope. Existing Entry Deal Association remains separate and unchanged. Implementation NOT AUTHORIZED.
 - WP-05D Production Event Integration remains a separate roadmap placeholder and is not authorized.
-- WP-05A.3, WP-05B, and WP-05C are planning only; none has implementation authorization. Each implementation requires final SPEC/TEST_PLAN, explicit Product Owner approval, and a fresh pre-change no-trade Grid Regression baseline.
+- WP-05A.3, WP-05B, and WP-05C have Product Owner-approved Design/Scope (2026-11-25); none has implementation authorization. Each implementation requires final SPEC/TEST_PLAN, explicit Product Owner approval, and a fresh pre-change no-trade Grid Regression baseline.
 - Workflow: multiple related Cards may be designed/planned in parallel; Freebuff implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time.
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน

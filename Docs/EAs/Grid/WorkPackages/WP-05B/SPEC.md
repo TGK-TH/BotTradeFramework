@@ -1,6 +1,6 @@
 # WP-05B — Runtime State Restoration
 
-**สถานะ: DRAFT — CTO Planning / Contract Design เท่านั้น**  
+**สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
 **Implementation: NOT AUTHORIZED**  
 **Dependencies:** WP-05A Persistence Foundation (รวม WP-05A.3)
 

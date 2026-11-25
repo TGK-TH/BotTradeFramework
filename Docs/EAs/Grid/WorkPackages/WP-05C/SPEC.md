@@ -1,6 +1,6 @@
 # WP-05C — Open Positions Reconciliation
 
-**สถานะ: DRAFT — CTO Planning / Contract Design เท่านั้น**  
+**สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
 **Implementation: NOT AUTHORIZED**  
 **Dependencies:** WP-05A และ WP-05B
 

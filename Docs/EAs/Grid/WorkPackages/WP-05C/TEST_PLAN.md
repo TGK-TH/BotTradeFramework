@@ -1,6 +1,6 @@
 # WP-05C — Test Plan
 
-**สถานะ: DRAFT — ยังไม่อนุมัติสำหรับ Implementation**
+**สถานะ: APPROVED สำหรับ Design/Scope 2026-11-25 — Implementation ยัง NOT AUTHORIZED**
 
 ## 1. Preconditions
 

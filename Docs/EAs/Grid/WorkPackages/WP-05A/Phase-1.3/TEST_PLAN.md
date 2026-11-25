@@ -1,6 +1,6 @@
 # WP-05A.3 — Test Plan
 
-**สถานะ: DRAFT — ยังไม่อนุมัติสำหรับ Implementation**  
+**สถานะ: APPROVED สำหรับ Design/Scope 2026-11-25 — Implementation ยัง NOT AUTHORIZED**
 **Test Type:** No-trade Reducer / Snapshot Storage Integration
 
 ## 1. Preconditions
