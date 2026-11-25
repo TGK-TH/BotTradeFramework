@@ -6,10 +6,11 @@
 ## 1. Preconditions
 
 - WP-05A.1 และ WP-05A.2 ต้องคงสถานะ Done / CTO APPROVED
+- ผู้ใช้รายงานเมื่อ 2026-11-25 ว่ารัน Test ปัจจุบันแล้วผ่านทั้งหมด; ใช้เป็น Pre-change Baseline ที่ผู้ใช้รายงานสำหรับ WP-05A.3 (ไม่มี per-file log แนบในเอกสารนี้)
+- Implementation ยังต้องได้รับ Explicit Product Owner Authorization แยกจาก Design/Scope Approval
 - ใช้ Test Instance ID แยกสำหรับแต่ละ Scenario และ Cleanup เฉพาะ Storage Files ของ Test Instance นั้น
 - ใช้ Fake Journal Records / Deterministic Fixtures
 - ห้ามเรียก CTrade, OrderSend, PositionClose หรือส่ง Trade Request
-- ก่อน Implementation ผู้ใช้ต้องรัน Current no-trade Grid Regression Inventory และรายงาน Baseline ใหม่
 
 ## 2. Test Cases
 

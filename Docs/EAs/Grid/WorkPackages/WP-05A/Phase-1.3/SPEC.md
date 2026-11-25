@@ -53,7 +53,7 @@
 - `Include/BotTrade/Grid/GridEntryMappingSnapshotStorage.mqh` (แก้เฉพาะเมื่อพบ Defect)
 - เอกสาร WP-05A ที่เกี่ยวข้อง
 
-รายการ Allowed Files ขั้นสุดท้ายจะระบุใน Implementation Task หลัง SPEC/TEST_PLAN ได้รับอนุมัติ
+รายการ Allowed Files และขอบเขตการแก้ไขขั้นสุดท้ายระบุไว้ใน [IMPLEMENTATION_TASK.md](IMPLEMENTATION_TASK.md)
 
 ## 5. Acceptance Criteria
 
@@ -68,8 +68,12 @@
 
 ## 6. Implementation Gate
 
-Design/Scope และ SPEC/TEST_PLAN ฉบับนี้ได้รับ Product Owner Approval เมื่อ 2026-11-25 แล้ว ขั้นตอนที่ยังค้างก่อน Implement คือ:
-1. ผู้ใช้รัน Latest no-trade Grid Regression Tests และรายงาน Pre-change Baseline
-2. ผู้ใช้อนุมัติ WP-05A.3 Implementation อย่างชัดเจน
+Design/Scope และ SPEC/TEST_PLAN ฉบับนี้ได้รับ Product Owner Approval เมื่อ 2026-11-25 แล้ว ผู้ใช้รายงานเมื่อ 2026-11-25 ว่ารัน Test ปัจจุบันแล้วผ่านทั้งหมด จึงถือว่า Pre-change Baseline gate ผ่านตามผลที่ผู้ใช้รายงาน (ไม่มี per-file log แนบในเอกสารนี้)
 
-การ์ด Trello ที่อยู่ In Progress ในช่วงนี้หมายถึง CTO Planning เท่านั้น ไม่ใช่ Implementation Authorization
+ขั้นตอนที่ยังค้างก่อน Implement คือ:
+1. ผู้ใช้อนุมัติ WP-05A.3 Implementation อย่างชัดเจนแยกจาก Design/Scope Approval
+2. ผู้ใช้เลือกและเรียก Implementer (Codex หรือ Freebuff)
+
+Implementation Handoff: [IMPLEMENTATION_TASK.md](IMPLEMENTATION_TASK.md)
+
+การ์ด Trello ที่อยู่ In Progress และการเตรียม Handoff ไม่ใช่ Implementation Authorization จนกว่าผู้ใช้จะอนุมัติให้แก้ Source อย่างชัดเจน
