@@ -2,7 +2,7 @@
 
 **Implementer:** Codex (initial implementation); CTO (review follow-up)
 **วันที่:** 2026-11-25
-**สถานะ:** CTO review findings addressed in working tree; awaiting Product Owner Compile/Runtime verification and final CTO review
+**สถานะ:** Product Owner-reported Compile/Runtime PASS after CTO follow-up; CTO Code Review APPROVED 2026-11-25; awaiting Product Owner formal Card closure
 
 ## ไฟล์ที่เปลี่ยน
 
@@ -35,7 +35,7 @@
 | A3-05 Anchor lifecycle rotation และ restart generation ใหม่ | Yes | User-reported PASS รอบล่าสุด | User-reported PASS รอบล่าสุด |
 | A3-06 pre-commit rotation failure รักษา generation ก่อนหน้า | Yes | User-reported PASS รอบล่าสุด | User-reported PASS รอบล่าสุด |
 | A3-07 post-commit cleanup failure กู้ generation ใหม่และ retry cleanup | Yes | User-reported PASS รอบล่าสุด | User-reported PASS รอบล่าสุด |
-| A3-08 missing/invalid/conflicting Snapshot, WAIT_ACTIVATION Entry Intent rejection และ orphan Mapping fail closed | Yes | Pending user recompile | Pending user runtime verification |
+| A3-08 missing/invalid/conflicting Snapshot, WAIT_ACTIVATION Entry Intent rejection และ orphan Mapping fail closed | Yes | Product Owner-reported PASS | Product Owner-reported PASS |
 | A3-09 duplicate activation ถูกปฏิเสธโดยไม่เพิ่ม sequence/mapping; repeated rotation คง READY | Yes | User-reported PASS รอบล่าสุด | User-reported PASS รอบล่าสุด |
 
 ไม่มีกรณีใดถูกระบุว่าไม่เกี่ยวข้อง
@@ -57,14 +57,15 @@
 - Root cause จาก log รอบแรก: fixtures ของ A3-04/A3-06/A3-09 และ ACTIVE Snapshot ของ A3-07 ใช้ Snapshot `Instance ID` ไม่ตรงกับ Reducer ปลายทาง ทำให้ Restore fail และ assertions หลังจากนั้นล้มตาม; A3-08 ใช้ String replacement pattern ที่ไม่ตรงตำแหน่ง field จึงไม่ได้สร้าง READY-with-Mapping Snapshot ตามเจตนา
 - มี exploratory MT5 UI run ที่ Codex รายงานก่อนแก้ A3-09: 29/30 tests และ 542/548 assertions ผ่าน; 6 assertions ที่เหลือเกิดจาก negative duplicate check ทำให้ Reducer ตัวที่ใช้ export/rotation เข้า `RECOVERY_ERROR`. การรันนี้ไม่ถือเป็น Runtime Verification ตาม workflow; แยก duplicate check ไป Reducer อีก instance แล้ว และให้ Product Owner เป็นผู้ยืนยัน Runtime Test อย่างเป็นทางการ
 - Product Owner รายงาน runtime rerun หลังแก้ว่า Snapshot test ผ่าน และ test ไฟล์อื่นที่รันผ่านทั้งหมด; ไม่มี per-file logs/จำนวนไฟล์แนบในข้อความรายงานล่าสุด จึงบันทึกเป็น User-reported PASS โดยไม่ระบุจำนวนเพิ่มเติม
-- Product Owner รายงาน Compile/Test ทั้งหมดหลัง Codex self-review follow-up ผ่าน; ไม่ได้รับ per-file log/count จึงบันทึกเป็น User-reported PASS เท่านั้น. การแก้ไข A3-08 โดย CTO หลังจากนั้นยังต้อง Compile และ Runtime Test ใหม่
+- Product Owner รายงาน Compile/Test ทั้งหมดหลัง Codex self-review follow-up ผ่าน; ไม่ได้รับ per-file log/count จึงบันทึกเป็น User-reported PASS เท่านั้น. การแก้ไข A3-08 โดย CTO ได้รับการ Compile และ Runtime Test ใหม่แล้ว; Product Owner รายงานว่าผ่านทั้งหมด
 - ไม่มี Trade Request ถูกส่ง และไม่มีการเปิด/ปิด/แก้ไข position
 - Compile ไม่ได้เรียก test EA; ไม่มี storage ของ real Instance หรือ user data ถูกแตะต้อง
 - ไม่มี production source เปลี่ยน; ไม่พบ defect ที่ทำซ้ำได้ซึ่งต้องแก้ภายในขอบเขตนี้
 - Product Owner runtime PASS reported; รายละเอียด per-file ของชุด test อื่นยังไม่ได้แนบ
 
-## Next Step
+## Final Review and Closure
 
-1. Product Owner Compile `test_grid_entry_mapping_snapshot.mq5` ฉบับล่าสุดและรายงานผล/Log
-2. Product Owner รัน A3-01 ถึง A3-09 และ latest no-trade Grid Regression ใหม่
-3. CTO ทำ final review หลังได้รับผล PASS; WP-05A.3 ยังไม่ถือว่า APPROVED หรือปิด Card
+- Product Owner reported Compile and all tests PASS after the CTO review follow-up, including A3-01..A3-09 and the latest no-trade Grid Regression suite.
+- CTO Code Review: APPROVED 2026-11-25. See [CODE_REVIEW.md](CODE_REVIEW.md).
+- Product Owner retains the formal Card-closure decision. WP-05A.3 remains open until the Product Owner confirms closure.
+- WP-05B implementation remains unauthorized and blocked until WP-05A.3 is formally closed.

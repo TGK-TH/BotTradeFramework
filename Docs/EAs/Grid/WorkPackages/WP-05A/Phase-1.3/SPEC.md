@@ -1,7 +1,7 @@
 # WP-05A.3 — Anchor State Persistence Integration & Hardening
 
 **สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
-**Implementation: AUTHORIZED by Product Owner; Codex implementation completed; CTO review follow-up addressed, pending Product Owner re-verification and final CTO approval**
+**Implementation: AUTHORIZED and completed; Product Owner-reported Compile/Runtime PASS; CTO Code Review APPROVED 2026-11-25; Product Owner Card closure pending**
 **Parent:** WP-05A — Persistence Foundation
 **Dependencies:** WP-05A.1 และ WP-05A.2 (Done)
 
@@ -70,4 +70,4 @@
 
 Design/Scope และ SPEC/TEST_PLAN ฉบับนี้ได้รับ Product Owner Approval เมื่อ 2026-11-25 แล้ว ผู้ใช้รายงานเมื่อ 2026-11-25 ว่ารัน Test ปัจจุบันแล้วผ่านทั้งหมด จึงถือว่า Pre-change Baseline gate ผ่านตามผลที่ผู้ใช้รายงาน (ไม่มี per-file log แนบในเอกสารนี้)
 
-Product Owner อนุมัติให้ Implement WP-05A.3 โดย Codex เมื่อ 2026-11-25; Implementation เสร็จและอยู่ระหว่าง CTO Review. CTO review follow-up ปรับ A3-08 test coverage แล้ว. ก่อน Final Approval ต้องให้ Product Owner Compile/Run Test Plan และ latest no-trade Grid Regression บนฉบับล่าสุด และรายงานผล PASS.
+Product Owner อนุมัติให้ Implement WP-05A.3 โดย Codex เมื่อ 2026-11-25; Implementation และ CTO review follow-up เสร็จแล้ว. Product Owner รายงาน Compile และ Test ทั้งหมดบนฉบับล่าสุดผ่าน; CTO Code Review APPROVED เมื่อ 2026-11-25 (ดู [CODE_REVIEW.md](CODE_REVIEW.md)). รอ Product Owner ยืนยันปิด Card อย่างเป็นทางการก่อนเริ่ม WP-05B.
