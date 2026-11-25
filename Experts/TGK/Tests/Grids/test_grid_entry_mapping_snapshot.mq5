@@ -141,7 +141,7 @@ void AssertAnchorPersistenceState(
 
   bool has_anchor_mapping = !expect_mapping;
   Tests.AssertTrue(
-    label + " Anchor mapping query succeeds",
+    label + " Anchor target mapping query succeeds",
     reducer.TryGetPositionMapping(true, -1, has_anchor_mapping));
   Tests.AssertEqualInt(
     label + " Anchor Mapping count",
@@ -167,6 +167,79 @@ void AssertAnchorPersistenceState(
       reducer.PositionVolumeAt(0),
       0.12);
   }
+}
+
+void AssertRejectedAnchorJournalRecord(
+  string instance_id,
+  string snapshot_instance_id,
+  string snapshot_payload,
+  long checkpoint_sequence,
+  ENUM_TGK_GRID_MAPPING_RECORD_TYPE record_type,
+  string journal_payload,
+  string label)
+{
+  CTGKGridEntryMappingSnapshotStorage storage;
+  Tests.AssertTrue(
+    label + " initialize isolated storage",
+    storage.Initialize(_Symbol, instance_id));
+  Tests.AssertTrue(
+    label + " bootstrap valid Anchor Snapshot",
+    storage.Bootstrap(snapshot_payload, checkpoint_sequence));
+  Tests.AssertTrue(
+    label + " append invalid Anchor Journal record",
+    storage.Append(record_type, journal_payload));
+
+  CTGKGridEntryMappingSnapshotStorage restarted_storage;
+  Tests.AssertTrue(
+    label + " restart storage",
+    restarted_storage.Initialize(_Symbol, instance_id));
+  string persisted_payload;
+  long persisted_checkpoint = -1;
+  STGKGridMappingJournalRecord persisted_records[];
+  int persisted_record_count = 0;
+  long persisted_next_sequence = 0;
+  Tests.AssertTrue(
+    label + " replay committed Snapshot and Journal bytes",
+    restarted_storage.Replay(
+      persisted_payload,
+      persisted_checkpoint,
+      persisted_records,
+      persisted_record_count,
+      persisted_next_sequence));
+  Tests.AssertEqualInt(
+    label + " one invalid Journal record is persisted",
+    persisted_record_count,
+    1);
+  Tests.AssertEqualLong(
+    label + " Journal record follows checkpoint",
+    persisted_records[0].sequence,
+    checkpoint_sequence + 1);
+  Tests.AssertEqualLong(
+    label + " next sequence follows invalid record",
+    persisted_next_sequence,
+    checkpoint_sequence + 2);
+
+  CTGKGridEntryMappingReducer reducer;
+  Tests.AssertTrue(
+    label + " initialize Reducer",
+    reducer.Initialize(_Symbol, 710001, snapshot_instance_id));
+  Tests.AssertTrue(
+    label + " restore valid checkpoint before Journal replay",
+    reducer.RestoreSnapshot(persisted_payload, persisted_checkpoint));
+  Tests.AssertFalse(
+    label + " Reducer rejects invalid Anchor Journal record",
+    reducer.Replay(persisted_records, persisted_record_count));
+  Tests.AssertEqualInt(
+    label + " Reducer fails closed",
+    (int)reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.AssertEqualInt(
+    label + " rejected Journal record does not create a Mapping",
+    reducer.PositionCount(),
+    0);
+  Tests.AssertTrue(
+    label + " isolated files are cleaned",
+    restarted_storage.DeleteAllFilesForTest());
 }
 
 void AssertRejectedAnchorSnapshot(
@@ -334,6 +407,11 @@ void RunAnchorPersistenceIntegrationTests(string instance_id)
     TGK_GRID_LEVEL_ACTIVE,
     true,
     "A3-02 restored ACTIVE");
+  bool restored_anchor_mapping = false;
+  Tests.AssertTrue(
+    "A3-02 restored mapping is addressable by Anchor target",
+    active_restored.TryGetPositionMapping(true, -1, restored_anchor_mapping));
+  Tests.AssertTrue("A3-02 restored Anchor target has its Mapping", restored_anchor_mapping);
   Tests.AssertEqualLong("A3-02 checkpoint", recovered_checkpoint, 6);
   Tests.AssertEqualLong("A3-02 next sequence", recovered_next_sequence, 7);
   Tests.AssertTrue("A3-02 clean ACTIVE storage", active_restart_storage.DeleteAllFilesForTest());
@@ -759,6 +837,24 @@ void RunAnchorPersistenceIntegrationTests(string instance_id)
     ready_with_mapping_payload,
     active_source.LastSequence(),
     "A3-08 READY with Mapping");
+
+  AssertRejectedAnchorJournalRecord(
+    instance_id + "_A308_JOURNAL_INVALID",
+    instance_id + "_A303",
+    waiting_payload,
+    waiting_source.LastSequence(),
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|ANCHOR_STATE|1|INVALID",
+    "A3-08 invalid Anchor State in Journal");
+  AssertRejectedAnchorJournalRecord(
+    instance_id + "_A308_JOURNAL_MAPPING",
+    instance_id + "_A303",
+    waiting_payload,
+    waiting_source.LastSequence(),
+    TGK_GRID_MAPPING_RECORD_POSITION_MAPPING,
+    "v1|REQ-ORPHAN|" + _Symbol + "|710001|ANCHOR|-1|30005002|40005002|0.12|1|" +
+      instance_id + "_A303",
+    "A3-08 conflicting orphan Anchor Mapping in Journal");
   Tests.EndTest();
 
   Tests.BeginTest("A3-09 replay and repeated rotation preserve one activation result");
