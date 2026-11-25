@@ -18,7 +18,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 |---|---|---|---|
 | [WP-05A.1 — Anchor State Model](https://trello.com/c/K2y13ndo/12-wp-05a1-anchor-state-model) | Reducer In-memory Anchor State, Initialization/Reset, Validation, Getter และ Unit Tests | Done — User Verification PASS, CTO Code Review APPROVED และผู้ใช้ยืนยันปิด Card เมื่อ 2026-11-21 | ไม่มี |
 | [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | **Done — CTO Code Review APPROVED 2026-11-24; CR-01/CR-02/CR-03 resolved; user-reported full no-trade Grid Regression PASS.** See [CODE_REVIEW.md](Phase-1.2/CODE_REVIEW.md) and [IMPLEMENTATION_REPORT.md](Phase-1.2/IMPLEMENTATION_REPORT.md) §10–11 | WP-05A.1 |
-| [WP-05A.3 — Anchor State Persistence Integration & Hardening](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening) | ทดสอบ Anchor READY/ACTIVE/WAIT_ACTIVATION ผ่าน Snapshot, Journal Rotation และ Restart Recovery แบบ End-to-end | Design/Scope APPROVED; user-reported pre-change test baseline PASS 2026-11-25; implementation handoff ready; explicit implementation authorization pending | WP-05A.1, WP-05A.2 |
+| [WP-05A.3 — Anchor State Persistence Integration & Hardening](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening) | ทดสอบ Anchor READY/ACTIVE/WAIT_ACTIVATION ผ่าน Snapshot, Journal Rotation และ Restart Recovery แบบ End-to-end | Design/Scope APPROVED; Codex implementation complete; CTO review follow-up applied; awaiting PO Compile/Runtime verification and final CTO approval | WP-05A.1, WP-05A.2 |
 
 WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Replay และ Snapshot compatibility ที่จำเป็นต่อ Atomic State ตาม SPEC. WP-05A.3 จะปิดช่องว่างการพิสูจน์ Non-default Anchor State ผ่าน Snapshot/Journal Rotation/Restart Recovery; Product Owner อนุมัติ Design/Scope แล้วเมื่อ 2026-11-25 แต่ Implementation ยังต้องได้รับอนุมัติแยกต่างหาก. WP-05B Runtime State Restoration ได้รับการออกแบบควบคู่กับ WP-05A.3 แล้วตามแนวทาง Parallel Planning, Sequential Execution แต่ Implementation ต้องรอ WP-05A.3 ปิดก่อน
 
@@ -49,7 +49,7 @@ WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Repla
 - TEST_PLAN: [Phase-1.3/TEST_PLAN.md](Phase-1.3/TEST_PLAN.md)
 - Implementation Task: [Phase-1.3/IMPLEMENTATION_TASK.md](Phase-1.3/IMPLEMENTATION_TASK.md) — neutral handoff for Codex or Freebuff; user chooses the Implementer.
 - Purpose: verify non-default Anchor State (`READY`, `ACTIVE`, `WAIT_ACTIVATION`) across Reducer Snapshot export, Snapshot Storage, Journal/Manifest rotation, restart recovery and replay.
-- Status: Product Owner approved Design/Scope on 2026-11-25; user reported current tests PASS on 2026-11-25; handoff is ready. Explicit implementation authorization remains pending. WP-05A.3 is the remaining WP-05A verification card before WP-05B implementation.
+- Status: Product Owner approved Design/Scope and explicitly authorized Codex implementation on 2026-11-25. Codex implementation completed; CTO review follow-up addressed A3-08 coverage/reporting. Awaiting Product Owner Compile, A3-01..09 Runtime Test and latest no-trade Grid Regression on the updated file, followed by final CTO approval. WP-05B remains blocked.
 
 ## Workflow Gates
 

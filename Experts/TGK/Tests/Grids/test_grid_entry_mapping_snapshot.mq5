@@ -839,6 +839,17 @@ void RunAnchorPersistenceIntegrationTests(string instance_id)
     "A3-08 READY with Mapping");
 
   AssertRejectedAnchorJournalRecord(
+    instance_id + "_A308_JOURNAL_ENTRY_INTENT",
+    instance_id + "_A303",
+    waiting_payload,
+    waiting_source.LastSequence(),
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    StringFormat(
+      "v1|REQ-WAIT-BLOCKED|%s|710001|BUY|ANCHOR|-1|0.12|1|%s",
+      _Symbol,
+      instance_id + "_A303"),
+    "A3-08 WAIT_ACTIVATION rejects new Anchor Entry Intent");
+  AssertRejectedAnchorJournalRecord(
     instance_id + "_A308_JOURNAL_INVALID",
     instance_id + "_A303",
     waiting_payload,
@@ -854,7 +865,7 @@ void RunAnchorPersistenceIntegrationTests(string instance_id)
     TGK_GRID_MAPPING_RECORD_POSITION_MAPPING,
     "v1|REQ-ORPHAN|" + _Symbol + "|710001|ANCHOR|-1|30005002|40005002|0.12|1|" +
       instance_id + "_A303",
-    "A3-08 conflicting orphan Anchor Mapping in Journal");
+    "A3-08 orphan Anchor Mapping cannot bypass missing accepted Request");
   Tests.EndTest();
 
   Tests.BeginTest("A3-09 replay and repeated rotation preserve one activation result");

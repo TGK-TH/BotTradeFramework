@@ -1,8 +1,8 @@
 # WP-05A.3 — Anchor State Persistence Integration & Hardening
 
 **สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
-**Implementation: NOT AUTHORIZED**  
-**Parent:** WP-05A — Persistence Foundation  
+**Implementation: AUTHORIZED by Product Owner; Codex implementation completed; CTO review follow-up addressed, pending Product Owner re-verification and final CTO approval**
+**Parent:** WP-05A — Persistence Foundation
 **Dependencies:** WP-05A.1 และ WP-05A.2 (Done)
 
 ## 1. วัตถุประสงค์
@@ -70,10 +70,4 @@
 
 Design/Scope และ SPEC/TEST_PLAN ฉบับนี้ได้รับ Product Owner Approval เมื่อ 2026-11-25 แล้ว ผู้ใช้รายงานเมื่อ 2026-11-25 ว่ารัน Test ปัจจุบันแล้วผ่านทั้งหมด จึงถือว่า Pre-change Baseline gate ผ่านตามผลที่ผู้ใช้รายงาน (ไม่มี per-file log แนบในเอกสารนี้)
 
-ขั้นตอนที่ยังค้างก่อน Implement คือ:
-1. ผู้ใช้อนุมัติ WP-05A.3 Implementation อย่างชัดเจนแยกจาก Design/Scope Approval
-2. ผู้ใช้เลือกและเรียก Implementer (Codex หรือ Freebuff)
-
-Implementation Handoff: [IMPLEMENTATION_TASK.md](IMPLEMENTATION_TASK.md)
-
-การ์ด Trello ที่อยู่ In Progress และการเตรียม Handoff ไม่ใช่ Implementation Authorization จนกว่าผู้ใช้จะอนุมัติให้แก้ Source อย่างชัดเจน
+Product Owner อนุมัติให้ Implement WP-05A.3 โดย Codex เมื่อ 2026-11-25; Implementation เสร็จและอยู่ระหว่าง CTO Review. CTO review follow-up ปรับ A3-08 test coverage แล้ว. ก่อน Final Approval ต้องให้ Product Owner Compile/Run Test Plan และ latest no-trade Grid Regression บนฉบับล่าสุด และรายงานผล PASS.

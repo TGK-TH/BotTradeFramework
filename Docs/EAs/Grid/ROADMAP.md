@@ -79,13 +79,13 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | Snapshot Serialization + Journal Rotation | Implemented; ผู้ใช้รายงาน Snapshot/Reducer/Regression ผ่าน 2026-11-15 |
 | Entry Execution Policy — Phase 1 Design | Approved |
 | Entry Execution Policy — WP-01 | Implemented; ผู้ใช้รายงาน Policy 44/44 และ Grid Regression 15/15 Compile/Runtime PASS 2026-11-17 |
-| WP-05A Persistence Foundation | WP-05A.1 and WP-05A.2 Done / user-verified / CTO-approved; WP-05A.3 handoff prepared after user-reported baseline PASS; explicit implementation authorization pending |
+| WP-05A Persistence Foundation | WP-05A.1 and WP-05A.2 Done / user-verified / CTO-approved; WP-05A.3 Codex implementation complete; CTO review follow-up applied; awaiting PO Compile/Runtime verification and final CTO approval |
 
 ผล Compile/Runtime ในตารางเป็น User-reported เท่านั้น; Codex/Assistant ห้ามเขียนว่าเป็นผลที่ตนเองรัน
 
 ### 3.2 Current Work Item
 
-**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1 and WP-05A.2 are Done. Product Owner approved Design/Scope for WP-05A.3, WP-05B and WP-05C on 2026-11-25. User reported current tests PASS on 2026-11-25 and the WP-05A.3 neutral implementation handoff is prepared. Implementation order remains WP-05A.3 → WP-05B → WP-05C; explicit implementation authorization is still pending.
+**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1 and WP-05A.2 are Done. Product Owner approved Design/Scope for WP-05A.3, WP-05B and WP-05C on 2026-11-25 and explicitly authorized Codex to implement WP-05A.3. Codex implementation is complete; CTO review follow-up is applied and awaits Product Owner Compile/Runtime verification and final CTO approval. Implementation order remains WP-05A.3 → WP-05B → WP-05C.
 
 - WP-05A parent: [Trello](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation); remains In Progress until WP-05A.3 is completed.
 - WP-05A breakdown: [WP-05A README](WorkPackages/WP-05A/README.md).
