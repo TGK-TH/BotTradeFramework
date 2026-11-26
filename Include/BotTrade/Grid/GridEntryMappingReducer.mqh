@@ -50,6 +50,42 @@ struct STGKGridMappingLevelState
   ENUM_TGK_GRID_LEVEL_STATE state;
 };
 
+// Typed read-only projection of one committed Position Mapping. Runtime
+// Restore consumes this instead of re-deriving Mapping identity from Order
+// Comments, prices or the operational Ticket. Position Identifier stays the
+// canonical identity; the Ticket is only its current operational handle.
+struct STGKGridPositionMappingProjection
+{
+  string position_identifier;
+  string position_ticket;
+  double remaining_volume;
+  string symbol;
+  long magic_number;
+  string instance_id;
+  string target_kind;
+  int level_index;
+  long config_epoch;
+};
+
+// Typed read-only projection of the committed Grid configuration. Runtime
+// Hydration validates its requested configuration against this canonical
+// projection, so the persisted configuration stays the only authority.
+// "persisted_level_count" includes the Anchor, so the Engine Level count is
+// one less than this value.
+struct STGKGridPersistedConfigProjection
+{
+  string instance_id;
+  string symbol;
+  long magic_number;
+  ENUM_TGK_GRID_MODE mode;
+  double anchor_price;
+  double grid_step;
+  double lower_bound;
+  double upper_bound;
+  int persisted_level_count;
+  long config_epoch;
+};
+
 enum ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS
 {
   TGK_GRID_MAPPING_STATUS_NORMAL = 0,
@@ -528,6 +564,16 @@ private:
         return true;
     }
     return false;
+  }
+
+  // A committed configuration and a healthy Recovery status are the minimum
+  // preconditions for any Runtime Restore projection.
+  bool IsRuntimeViewHealthy()
+  {
+    return m_initialized &&
+           !m_failed &&
+           m_recovery_status == TGK_GRID_MAPPING_STATUS_NORMAL &&
+           m_config_epoch > 0;
   }
 
   void RemoveRequestAt(int index)
@@ -1999,6 +2045,61 @@ public:
     return true;
   }
 
+  // Typed read-only projection of the committed Grid configuration. Runtime
+  // Hydration compares its requested geometry against this projection before it
+  // applies any Runtime state. The projection never mutates the committed
+  // configuration and returns false instead of exposing a partial value.
+  bool TryGetPersistedConfig(STGKGridPersistedConfigProjection &config)
+  {
+    config.instance_id = "";
+    config.symbol = "";
+    config.magic_number = 0;
+    config.mode = TGK_GRID_MODE_BUY;
+    config.anchor_price = 0.0;
+    config.grid_step = 0.0;
+    config.lower_bound = 0.0;
+    config.upper_bound = 0.0;
+    config.persisted_level_count = 0;
+    config.config_epoch = 0;
+
+    if(!IsRuntimeViewHealthy() ||
+       !IsToken(m_instance_id) ||
+       m_symbol == "" ||
+       m_magic_number <= 0)
+      return false;
+
+    ENUM_TGK_GRID_MODE mode;
+    if(m_mode == "BUY")
+      mode = TGK_GRID_MODE_BUY;
+    else if(m_mode == "SELL")
+      mode = TGK_GRID_MODE_SELL;
+    else
+      return false;
+
+    if(m_level_count <= 1 ||
+       ArraySize(m_levels) != m_level_count - 1 ||
+       !MathIsValidNumber(m_anchor_price) ||
+       !MathIsValidNumber(m_grid_step) ||
+       !MathIsValidNumber(m_lower_bound) ||
+       !MathIsValidNumber(m_upper_bound) ||
+       m_grid_step <= 0.0 ||
+       m_lower_bound > m_anchor_price ||
+       m_anchor_price > m_upper_bound)
+      return false;
+
+    config.instance_id = m_instance_id;
+    config.symbol = m_symbol;
+    config.magic_number = m_magic_number;
+    config.mode = mode;
+    config.anchor_price = m_anchor_price;
+    config.grid_step = m_grid_step;
+    config.lower_bound = m_lower_bound;
+    config.upper_bound = m_upper_bound;
+    config.persisted_level_count = m_level_count;
+    config.config_epoch = m_config_epoch;
+    return true;
+  }
+
   int RequestCount()
   {
     return ArraySize(m_requests);
@@ -2061,6 +2162,109 @@ public:
     if(index < 0)
       return -1;
     return (int)m_levels[index].state;
+  }
+
+  // Typed read-only projection for Runtime Restore. The index order is the
+  // committed Replay order, so repeated Restores of the same dataset produce
+  // the same sequence. Invalid committed fields fail closed.
+  bool TryGetPositionMappingAt(
+    int index,
+    STGKGridPositionMappingProjection &projection)
+  {
+    projection.position_identifier = "";
+    projection.position_ticket = "";
+    projection.remaining_volume = 0.0;
+    projection.symbol = "";
+    projection.magic_number = 0;
+    projection.instance_id = "";
+    projection.target_kind = "";
+    projection.level_index = -1;
+    projection.config_epoch = 0;
+
+    if(!IsRuntimeViewHealthy() ||
+       index < 0 ||
+       index >= ArraySize(m_positions))
+      return false;
+
+    bool is_anchor = m_positions[index].target_kind == "ANCHOR";
+    if(is_anchor)
+    {
+      if(m_positions[index].level_index != -1)
+        return false;
+    }
+    else if(m_positions[index].target_kind != "LEVEL" ||
+            !IsValidGridLevelIndex(m_positions[index].level_index))
+      return false;
+
+    if(m_positions[index].symbol != m_symbol ||
+       m_positions[index].magic_number != m_magic_number ||
+       m_positions[index].config_epoch != m_config_epoch ||
+       !IsDecimalString(m_positions[index].position_identifier) ||
+       !IsDecimalString(m_positions[index].position_ticket) ||
+       !MathIsValidNumber(m_positions[index].volume) ||
+       m_positions[index].volume <= 0.0)
+      return false;
+
+    projection.position_identifier = m_positions[index].position_identifier;
+    projection.position_ticket = m_positions[index].position_ticket;
+    projection.remaining_volume = m_positions[index].volume;
+    projection.symbol = m_positions[index].symbol;
+    projection.magic_number = m_positions[index].magic_number;
+    projection.instance_id = m_instance_id;
+    projection.target_kind = m_positions[index].target_kind;
+    projection.level_index = m_positions[index].level_index;
+    projection.config_epoch = m_positions[index].config_epoch;
+    return true;
+  }
+
+  // Typed read-only projection of the single unresolved Entry Request.
+  // "has_unresolved_request" reports absence, while a false return reports an
+  // unhealthy Reducer or a state that cannot be Restored deterministically.
+  // The Request is evidence only: Restore never turns it into ACTIVE.
+  bool TryGetUnresolvedRequest(
+    bool &has_unresolved_request,
+    STGKGridMappingRequestState &request)
+  {
+    STGKGridMappingRequestState cleared;
+    request = cleared;
+    has_unresolved_request = false;
+
+    if(!IsRuntimeViewHealthy())
+      return false;
+
+    int unresolved_index = -1;
+    for(int i = 0; i < ArraySize(m_requests); i++)
+    {
+      if(!m_requests[i].unresolved)
+        continue;
+      if(unresolved_index >= 0)
+        return false;
+      unresolved_index = i;
+    }
+
+    if(unresolved_index < 0)
+      return true;
+
+    bool is_anchor = m_requests[unresolved_index].target_kind == "ANCHOR";
+    if(!IsToken(m_requests[unresolved_index].request_id) ||
+       m_requests[unresolved_index].config_epoch != m_config_epoch ||
+       m_requests[unresolved_index].mode != m_mode ||
+       !MathIsValidNumber(m_requests[unresolved_index].requested_volume) ||
+       m_requests[unresolved_index].requested_volume <= 0.0)
+      return false;
+
+    if(is_anchor)
+    {
+      if(m_requests[unresolved_index].level_index != -1)
+        return false;
+    }
+    else if(m_requests[unresolved_index].target_kind != "LEVEL" ||
+            !IsValidGridLevelIndex(m_requests[unresolved_index].level_index))
+      return false;
+
+    request = m_requests[unresolved_index];
+    has_unresolved_request = true;
+    return true;
   }
 };
 

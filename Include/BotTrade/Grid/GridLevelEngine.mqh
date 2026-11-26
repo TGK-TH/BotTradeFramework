@@ -264,6 +264,24 @@ public:
     m_initialized = false;
   }
 
+  // Drops every derived Level price, Level state and Anchor activation flag and
+  // restores the constructor baseline, so a failed Runtime Restore cannot leave
+  // the Geometry or State of a previous initialization behind. IsInitialized()
+  // reports false afterwards and every Level accessor refuses to answer.
+  void Reset()
+  {
+    m_mode = TGK_GRID_MODE_BUY;
+    m_anchor_price = 0.0;
+    m_grid_step_price = 0.0;
+    m_lower_bound = 0.0;
+    m_upper_bound = 0.0;
+    m_anchor_state = TGK_GRID_LEVEL_ACTIVE;
+    m_anchor_activation_pending = false;
+    ArrayResize(m_level_prices, 0);
+    ArrayResize(m_level_states, 0);
+    m_initialized = false;
+  }
+
   bool Initialize(
     ENUM_TGK_GRID_MODE mode,
     double anchor_price,

@@ -1,7 +1,7 @@
 # WP-05B — Runtime State Restoration
 
 **สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
-**Implementation: NOT AUTHORIZED**  
+**Implementation: AUTHORIZED — Product Owner อนุมัติ Implementation 2026-11-26; Implement เสร็จรอบแรกและ Remediation ตาม CTO `CHANGES_REQUESTED` เสร็จแล้วทั้ง 2 รอบ (F-01/F-02/F-03/F-05/F-10 และ F-11/F-12); Product Owner รายงาน Compile/Runtime Test PASS 2026-11-26 ทั้งบน Source หลัง Remediation รอบที่ 1 และ Source หลัง Remediation รอบที่ 2 (รัน Test ครบทุกไฟล์) — ขั้นที่เหลือคือ CTO Formal Code Review**
 **Dependencies:** WP-05A Persistence Foundation (รวม WP-05A.3)
 
 ## 1. วัตถุประสงค์

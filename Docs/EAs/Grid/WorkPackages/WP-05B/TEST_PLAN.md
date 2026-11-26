@@ -1,6 +1,6 @@
 # WP-05B — Test Plan
 
-**สถานะ: APPROVED สำหรับ Design/Scope 2026-11-25 — Implementation ยัง NOT AUTHORIZED**
+**สถานะ: APPROVED สำหรับ Design/Scope 2026-11-25 — Implementation ได้รับอนุมัติจาก Product Owner 2026-11-26; Implement เสร็จและ Remediation ตาม CTO Review เสร็จแล้วทั้ง 2 รอบ (F-01/F-02/F-03/F-05/F-10 และ F-11/F-12); Product Owner รายงาน Run Test PASS 2026-11-26 ทั้งบน Source หลัง Remediation รอบที่ 1 และ Source หลัง Remediation รอบที่ 2 (รันครบทุกไฟล์) — ขั้นที่เหลือคือ CTO Formal Code Review**
 
 ## 1. Test Strategy
 
@@ -17,9 +17,9 @@
 | B-05 | Restore หลาย Position Mappings | แต่ละ Position Identifier ถูกจับคู่กับ Target/Level/Ticket/Volume ที่ถูกต้อง |
 | B-06 | Restore Unresolved Entry Request | Request ยังคง unresolved; ห้ามสร้าง Mapping หรือ ACTIVE |
 | B-07 | Reducer/Storage Recovery Error | Runtime ไม่ Activate; Fail Closed |
-| B-08 | Identity/Symbol/Magic/Mode/Config Epoch mismatch | ปฏิเสธ Hydration ทั้งชุด; ไม่มี Partial Runtime State |
+| B-08 | Identity/Symbol/Magic/Mode/Config Epoch mismatch และ Persisted Geometry | ปฏิเสธ Hydration ทั้งชุด; ไม่มี Partial Runtime State; Anchor ที่ต่างภายใน Engine epsilon ต้อง Hydrate ด้วย Geometry ของ Persisted Configuration (F-11) ไม่ใช่ Geometry ของ Request |
 | B-09 | Mapping ซ้ำ Target หรือ Identifier / Target ไม่ถูกต้อง | ปฏิเสธ Restore; ไม่เดา Target จากราคา/Ticket |
-| B-10 | Hydration ล้มเหลวระหว่าง Level/Mapping หลายรายการ | Runtime ไม่พร้อมใช้งาน; ไม่มีการปล่อย Partial State ให้ Price Update |
+| B-10 | Hydration ล้มเหลวระหว่าง Level/Mapping หลายรายการ และ Hydration ครั้งที่สองหลัง Restore สำเร็จ | Runtime ไม่พร้อมใช้งาน; ไม่มีการปล่อย Partial State ให้ Price Update; Hydration ที่ล้มเหลวต้องไม่เปิดเผย Anchor/Level/Position/Request/Instance State ที่ค้างจาก Restore ก่อนหน้า (F-12) |
 | B-11 | Restore Dataset เดิมซ้ำ | ได้ Runtime Projection เดิม; ไม่ Append Journal |
 | B-12 | Restore หลัง Snapshot Checkpoint + Journal Replay | Runtime สะท้อน State หลัง Replay และ Sequence ถูกต้อง |
 | B-13 | Restore Mapping สำเร็จ แต่ WP-05C ยังไม่ Reconcile Live Positions | Runtime คง RESTORED_PENDING_RECONCILIATION; ห้าม Offer Candidate/Entry Request |
