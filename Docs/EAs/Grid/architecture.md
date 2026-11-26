@@ -1,12 +1,12 @@
 # ภาพรวมสถาปัตยกรรม Grid
 
-อัปเดตล่าสุด: 2026-11-25
+อัปเดตล่าสุด: 2026-11-26
 
 ## ขอบเขตของเอกสาร
 
 เอกสารนี้อธิบาย Grid components ที่มีอยู่ใน Source Code ณ วันที่อัปเดต ไม่ใช่คำอธิบาย Grid Engine ที่เสร็จสมบูรณ์แล้ว ปัจจุบันมีโครงสร้างข้อมูล ระบบ Identity/Persistence, Lifecycle/Runtime Orchestration, Close Execution Adapter, Two-sided Level Engine/Coordinator, Persistent Entry Mapping/Reducer/Snapshot Rotation, Entry Execution Policy, Resolver/Caller, Entry CTrade Adapter และ WP-04 Pipeline component เสร็จแล้ว อย่างไรก็ตามยังไม่มี Production EA Event Handler หรือ End-to-End Grid V1
 
-**สถานะ WP-05 Design/Scope Approved (2026-11-25):** WP-05A.1/.2 Done; Product Owner อนุมัติ Design/Scope ของ WP-05A.3, WP-05B และ WP-05C แล้ว โดย Implementation Dependency คือ A.3 → B → C แต่ยังไม่มี Implementation Authorization. WP-05B เป็นการ Hydrate Canonical Reducer State เข้า Engine/Coordinator เท่านั้น ไม่ทำ Live Position Scan; หลัง Hydration ต้องปิด Entry/Candidate Gate ไว้. WP-05C เป็นผู้ Acquire Complete/Stable Open Positions Snapshot และทำ Reconciliation เพื่อปลด Gate เมื่อสำเร็จ. WP-05C ไม่มี Closing Deal History หรือ TP/NON_TP Classification สำหรับ Full Close; ใช้ Reason-free Full Close ตาม WP-05A.2. ดู SPEC/TEST_PLAN ที่อนุมัติแล้วใน `WorkPackages/WP-05A/Phase-1.3/`, `WorkPackages/WP-05B/` และ `WorkPackages/WP-05C/`.
+**สถานะ WP-05 ณ 2026-11-26:** WP-05A.1/.2/.3 และ WP-05B ปิดแล้ว; WP-05B Restore Canonical Reducer State เข้า Engine/Coordinator แบบ All-or-Nothing โดยไม่ทำ Live Position Scan และคง Entry/Candidate Gate ปิดหลัง Hydration จนกว่า WP-05C จะ Reconcile สำเร็จ. WP-05C Design/Scope Approved และเป็น Dependency ถัดไป แต่ Implementation ยังไม่ได้รับอนุญาต. WP-05C เป็นผู้ Acquire Complete/Stable Open Positions Snapshot และทำ Reconciliation เพื่อปลด Gate เมื่อสำเร็จ. ไม่มี Closing Deal History หรือ TP/NON_TP Classification สำหรับ Full Close; ใช้ Reason-free Full Close ตาม WP-05A.2. ดู SPEC/TEST_PLAN ใน `WorkPackages/WP-05A/Phase-1.3/`, `WorkPackages/WP-05B/` และ `WorkPackages/WP-05C/`.
 
 **สถานะ Anchor State ใน Persistence (2026-11-23):** `CTGKGridEntryMappingReducer` มี Typed Anchor State จาก WP-05A.1 (ผู้ใช้รายงาน Compile/Test PASS และ CTO Review APPROVED). WP-05A.2 Implement แล้วโดย Freebuff เมื่อ 2026-11-23: Anchor State ถูก Serialize ใน Snapshot (Required Field), Anchor Mapping เปลี่ยน State เป็น ACTIVE, Partial Close คง ACTIVE, Full Close เป็น reason-free atomic transition, `WAIT_RETURN` normalize เป็น `READY` และ Idempotency อ้างอิง Mapping State. **Freebuff แก้ CR-01/CR-02/CR-03 ครบ; MetaEditor Compile ของ Adapter consumers ผ่าน 0 errors / 0 warnings และผู้ใช้รายงาน full no-trade Grid Regression PASS เมื่อ 2026-11-24. CTO Code Review APPROVED เมื่อ 2026-11-24; WP-05A.2 Done.** ดู [WP-05A Work Package](WorkPackages/WP-05A/README.md).
 
@@ -160,7 +160,7 @@ Design Contract and implementation notes: [Grid Level Runtime Coordinator — Ro
 
 ## WP-05 Persistence / Runtime Restoration / Open Positions Reconciliation — Approved Design/Scope 2026-11-25
 
-Product Owner อนุมัติ Design/Scope ของ WP-05A.3, WP-05B และ WP-05C เมื่อ 2026-11-25; Implementation ยังไม่ได้รับอนุญาต และต้องทำตาม Dependency `WP-05A.3 → WP-05B → WP-05C`.
+Product Owner อนุมัติ Design/Scope ของ WP-05A.3, WP-05B และ WP-05C เมื่อ 2026-11-25; WP-05A.3 และ WP-05B Implement, User Verify และ CTO Review APPROVED/ปิดแล้ว. Dependency ถัดไปคือ WP-05C ซึ่งยังต้องมี Fresh Baseline และ Explicit Product Owner Implementation Authorization.
 
 - WP-05A.3 พิสูจน์ Anchor `READY` / `ACTIVE` / `WAIT_ACTIVATION` ผ่าน Canonical Reducer Snapshot, Journal Replay, Rotation และ Restart Recovery; ไม่เพิ่ม Persistence Authority.
 - WP-05B Restore Canonical Reducer State เข้า Engine/Coordinator แบบ All-or-Nothing; หลัง Hydration ต้องคง `RESTORED_PENDING_RECONCILIATION` และปิด Entry/Candidate Gate.

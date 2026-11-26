@@ -50,4 +50,4 @@ Repository checks performed during review:
 
 WP-05A.3 satisfies its approved scope and acceptance intent. **CTO Code Review is APPROVED.**
 
-The Product Owner retains the formal Card-closure decision. WP-05A.3 should be marked Done only after the Product Owner confirms closure. WP-05B implementation remains unauthorized and blocked until that closure; WP-05C remains unauthorized and dependency-blocked.
+Historical review status as of 2026-11-25: The Product Owner retained the formal WP-05A.3 closure decision; WP-05B implementation remained unauthorized until that closure, and WP-05C remained dependency-blocked. Subsequently, WP-05A.3 was closed on 2026-11-25 and WP-05B was authorized, implemented, CTO-approved, and formally closed on 2026-11-26. WP-05C remains unauthorized. See current status in `../../../../../../PROJECT_STATUS.md`.

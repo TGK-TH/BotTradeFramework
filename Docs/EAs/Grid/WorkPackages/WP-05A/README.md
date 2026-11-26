@@ -20,7 +20,7 @@ Parent Trello Card: https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundatio
 | [WP-05A.2 — Anchor State Transitions](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions) | Anchor Mapping Activation, Partial/Full Close, reason-free Atomic Reducer Transition, WAIT_RETURN normalization, replay/idempotency และ Tests | **Done — CTO Code Review APPROVED 2026-11-24; CR-01/CR-02/CR-03 resolved; user-reported full no-trade Grid Regression PASS.** See [CODE_REVIEW.md](Phase-1.2/CODE_REVIEW.md) and [IMPLEMENTATION_REPORT.md](Phase-1.2/IMPLEMENTATION_REPORT.md) §10–11 | WP-05A.1 |
 | [WP-05A.3 — Anchor State Persistence Integration & Hardening](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening) | ทดสอบ Anchor READY/ACTIVE/WAIT_ACTIVATION ผ่าน Snapshot, Journal Rotation และ Restart Recovery แบบ End-to-end | DONE 2026-11-25; Product Owner-reported Compile/Runtime PASS; CTO Code Review APPROVED; Trello Card moved to Done | WP-05A.1, WP-05A.2 |
 
-WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Replay และ Snapshot compatibility ที่จำเป็นต่อ Atomic State ตาม SPEC. WP-05A.3 ปิดช่องว่างการพิสูจน์ Non-default Anchor State ผ่าน Snapshot/Journal Rotation/Restart Recovery แล้ว โดย Product Owner รายงาน Compile/Runtime PASS และ CTO Code Review APPROVED; รอ Product Owner ยืนยันปิด Card อย่างเป็นทางการ. WP-05B Runtime State Restoration ได้รับการออกแบบควบคู่กับ WP-05A.3 ตามแนวทาง Parallel Planning, Sequential Execution แต่ Implementation ต้องรอ WP-05A.3 ปิดก่อน
+WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Replay และ Snapshot compatibility ที่จำเป็นต่อ Atomic State ตาม SPEC. WP-05A.3 ปิดช่องว่างการพิสูจน์ Non-default Anchor State ผ่าน Snapshot/Journal Rotation/Restart Recovery แล้ว โดย Product Owner รายงาน Compile/Runtime PASS และ CTO Code Review APPROVED; Product Owner ปิด Card อย่างเป็นทางการเมื่อ 2026-11-25. WP-05B Runtime State Restoration ได้รับการออกแบบควบคู่กับ WP-05A.3 ตามแนวทาง Parallel Planning, Sequential Execution และปิดอย่างเป็นทางการเมื่อ 2026-11-26 หลัง Freebuff Implement, Product Owner รายงาน Compile/Runtime PASS, CTO Formal Code Review APPROVED และ Trello Card moved to Done. WP-05C เป็น Dependency ถัดไปและยังต้องได้รับ Implementation Authorization แยกต่างหาก
 
 ## WP-05A.1 Handoff
 
@@ -49,7 +49,7 @@ WP-05A.2 ครอบคลุม Durable Anchor/Level Transition, Journal Repla
 - TEST_PLAN: [Phase-1.3/TEST_PLAN.md](Phase-1.3/TEST_PLAN.md)
 - Implementation Task: [Phase-1.3/IMPLEMENTATION_TASK.md](Phase-1.3/IMPLEMENTATION_TASK.md) — neutral handoff for Codex or Freebuff; user chooses the Implementer.
 - Purpose: verify non-default Anchor State (`READY`, `ACTIVE`, `WAIT_ACTIVATION`) across Reducer Snapshot export, Snapshot Storage, Journal/Manifest rotation, restart recovery and replay.
-- Status: DONE 2026-11-25. Product Owner reported Compile, A3-01..09 Runtime Test and latest no-trade Grid Regression PASS; CTO Code Review APPROVED; Product Owner confirmed closure and Trello Card moved to Done. WP-05B is the next dependency; implementation remains unauthorized pending its own fresh baseline and explicit PO authorization.
+- Status: DONE 2026-11-25. Product Owner reported Compile, A3-01..09 Runtime Test and latest no-trade Grid Regression PASS; CTO Code Review APPROVED; Product Owner confirmed closure and Trello Card moved to Done. WP-05B was the next dependency and is now formally DONE (2026-11-26); WP-05C is the next dependency and remains unauthorized pending its own fresh baseline and explicit PO authorization.
 
 ## Workflow Gates
 

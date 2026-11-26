@@ -1,13 +1,13 @@
 # Current TGK BotTradeFramework / Grid V1 Phase
 
-Updated: 2026-11-25 — WP-05A.3 formally DONE; Product Owner confirmed closure and Trello Card moved to Done.
+Updated: 2026-11-26 — WP-05B formally DONE; Product Owner confirmed closure and Trello Card moved to Done.
 
 ## Repository baseline
 - Repository: `/Users/tachagon/Documents/13_Trade/1_Bot/BotTradeFramework`
 - Branch: `feature/grid-trading`
-- Current HEAD: `ee100d7` (`WP-05A.3 -- Fix By ChatGPT`), ahead of `origin/feature/grid-trading` by 10 commits.
-- WP-05A.3 implementation and CTO review follow-up are committed; Product Owner reports Compile and all tests PASS on the latest source. CTO Code Review is APPROVED; Product Owner formally closed WP-05A.3 on 2026-11-25; Trello Card is in Done. Final review/status documentation updates are local and uncommitted; no commit/push was performed.
-- WP-05B/WP-05C remain design-approved only, unauthorized, and blocked by dependency order. No commit/push was performed by the reviewer.
+- Current HEAD at WP-05B closure: `f6262ce` (`WP-05B -- Implemented By Freebuff`), ahead of `origin/feature/grid-trading` by 1 commit. Recheck Git status/HEAD before next implementation.
+- WP-05A.3 implementation and CTO review follow-up are committed; Product Owner reports Compile and all tests PASS on the latest source. CTO Code Review is APPROVED; Product Owner formally closed WP-05A.3 on 2026-11-25; Trello Card is in Done. Its final review/status documentation updates were local and uncommitted at that historical checkpoint. WP-05B closure documentation is also local/uncommitted; no commit/push was performed by CTO.
+- WP-05B is formally DONE (2026-11-26): Freebuff implementation and two CTO remediation rounds complete; user-reported Compile/Runtime PASS on latest source; CTO Formal Code Review APPROVED; Product Owner confirmed closure and Trello Card moved to Done. WP-05C remains design-approved but implementation unauthorized.
 - Recheck Git status and HEAD before every implementation handoff.
 - Source of Truth: repository source/tests/docs; Grid master roadmap `Docs/EAs/Grid/ROADMAP.md`; current status `PROJECT_STATUS.md`.
 
@@ -16,7 +16,7 @@ Updated: 2026-11-25 — WP-05A.3 formally DONE; Product Owner confirmed closure 
 - Implementer preference: user uses Codex first until monthly quota is exhausted, then uses Freebuff. ChatGPT must not choose or switch Implementers and must prepare neutral handoffs usable by either.
 - **Parallel Planning, Sequential Execution**: CTO may design multiple related Cards, prepare multiple SPEC/TEST_PLAN documents, create Cards, and move them to Trello `In Progress` in parallel. Every planning Card must explicitly say `CTO Planning / Contract Design only; implementation not authorized`.
 - Implementation by the user-selected Implementer (Codex or Freebuff), User Verification, and formal CTO Code Review remain sequential, one Card at a time.
-- Design/Scope approved by Product Owner on 2026-11-25 for WP-05A.3, WP-05B, WP-05C. WP-05A.3 subsequently received explicit implementation authorization; WP-05B and WP-05C remain design-only and unauthorized.
+- Design/Scope approved by Product Owner on 2026-11-25 for WP-05A.3, WP-05B, WP-05C. WP-05A.3 and WP-05B subsequently received explicit implementation authorization and are formally DONE; WP-05C remains design-approved and implementation unauthorized.
 - No implementation until SPEC/TEST_PLAN are final, Product Owner explicitly authorizes that Card, and user reports the required pre-change no-trade Grid Regression baseline. WP-05A.3 passed these gates and is now CTO-approved after Product Owner-reported recompile/runtime PASS.
 - Before new Grid feature/refactor implementation, remind the user to run latest relevant no-trade Grid Regression Tests and report baseline.
 - Unit tests never send Trade Requests. Demo tests require separate explicit approval and designated test positions. Never Live trade. No commit/push unless explicitly requested. Preserve user changes; no destructive Git operations.
@@ -26,9 +26,9 @@ Updated: 2026-11-25 — WP-05A.3 formally DONE; Product Owner confirmed closure 
 - WP-05A.1 Anchor State Model: Done; user Compile/Test PASS and CTO Review APPROVED 2026-11-21.
 - WP-05A.2 Anchor State Transitions: Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; Freebuff compiled both Adapter consumers with 0 errors/0 warnings; user reported full no-trade Grid Regression PASS; CTO Review APPROVED.
 - WP-05A.3 Anchor State Persistence Integration & Hardening: Design/Scope approved and Codex implementation explicitly authorized by Product Owner on 2026-11-25. CTO follow-up corrected A3-08 coverage/reporting. Product Owner reported Compile and all tests PASS on the latest source; CTO Code Review APPROVED 2026-11-25; Product Owner confirmed formal closure and Trello Card moved to Done. Trello https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening.
-- WP-05B Runtime State Restoration: Design/Scope approved 2026-11-25; SPEC/TEST_PLAN final in `Docs/EAs/Grid/WorkPackages/WP-05B/`; Trello https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration. Runtime ends RESTORED_PENDING_RECONCILIATION with Entry/Candidate gate closed. WP-05A.3 is now Done, so WP-05B is the next dependency; implementation NOT AUTHORIZED until fresh pre-change no-trade Grid Regression baseline and explicit Product Owner authorization.
+- WP-05B Runtime State Restoration: DONE / formally closed 2026-11-26; Trello https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration is in Done and marked complete. Freebuff implemented; Product Owner reported Compile PASS (0 errors/0 warnings), B-01..B-13 and latest no-trade Grid Regression PASS on source after remediation round 2; CTO Formal Code Review APPROVED. F-01/F-02/F-03/F-05/F-10/F-11/F-12 resolved; F-04 explicitly deferred to WP-05C; F-06/F-07/F-08/F-09 accepted unchanged. Runtime ends RESTORED_PENDING_RECONCILIATION with Entry/Candidate gate closed.
 - WP-05C Open Positions Reconciliation: Design/Scope approved 2026-11-25; SPEC/TEST_PLAN final in `Docs/EAs/Grid/WorkPackages/WP-05C/`; Trello https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation. It owns complete/stable Open Positions snapshots, Position Identifier reconciliation, current executable-side quote for reason-free Full Close (BUY=Ask, SELL=Bid), and releasing WP-05B gate only after successful reconciliation. No Closing Deal History or TP/NON_TP. Implementation NOT AUTHORIZED.
-- Implementation dependency order: WP-05A.3 → WP-05B → WP-05C. WP-05B restores canonical persisted state into Engine/Coordinator and does not scan live account positions. WP-05C owns complete/stable Open Positions snapshots and reconciliation.
+- Implementation dependency order: WP-05A.3 → WP-05B → WP-05C. WP-05A.3 and WP-05B are DONE. WP-05B restores canonical persisted state into Engine/Coordinator and does not scan live account positions. WP-05C owns complete/stable Open Positions snapshots and reconciliation; it remains the next dependency but is NOT AUTHORIZED.
 - WP-05D Production Event Integration remains separate and unauthorized.
 
 ## WP-05A.2 approved architecture

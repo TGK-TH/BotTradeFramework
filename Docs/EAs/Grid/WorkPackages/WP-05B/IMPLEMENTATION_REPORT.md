@@ -4,7 +4,7 @@
 **วันที่ Implement รอบแรก:** 2026-11-26
 **วันที่ Remediation ตาม CTO Review:** 2026-11-26
 **Branch:** `feature/grid-trading`
-**สถานะ:** Implemented + CTO Remediation รอบที่ 1 (F-01, F-02, F-03, F-05, F-10) และ Remediation รอบที่ 2 (F-11, F-12) เสร็จ — Compile PASS (0 errors, 0 warnings) ทุกโปรแกรมที่ได้รับผลกระทบ; Product Owner รายงาน Runtime Verification PASS 2026-11-26 บน Source หลัง Remediation รอบที่ 1 และ PASS อีกครั้งบน Source หลัง Remediation รอบที่ 2 (รัน Test ครบทุกไฟล์); WP-05B ยังไม่ Done จนกว่า CTO Formal Code Review จะ `APPROVED`
+**สถานะ:** DONE 2026-11-26 — Freebuff implementation และ CTO Remediation รอบที่ 1 (F-01/F-02/F-03/F-05/F-10) + รอบที่ 2 (F-11/F-12) เสร็จ; Compile PASS (0 errors, 0 warnings) ทุกโปรแกรมที่ได้รับผลกระทบ; Product Owner รายงาน Runtime Verification PASS บน Source ล่าสุด (รัน Test ครบทุกไฟล์); CTO Formal Code Review `APPROVED`; Product Owner ยืนยันปิด Card และ Trello moved to Done.
 
 ## 1. ไฟล์ที่เปลี่ยน
 
@@ -201,7 +201,7 @@ Helper ที่เพิ่มใน Test EA: `HydrateRequest()` (Hydration ด
 - Product Owner รายงานว่า Run Test ครบทุกไฟล์บน Source ปัจจุบัน (§6 Remediation 2) แล้วผ่านทั้งหมด — รวม Assertion ใหม่ของ F-11 (Engine Geometry มาจาก Persisted Configuration) ใน B-08 และ F-12 (Failed Hydration ไม่เหลือ Stale State) ใน B-10
 - Implementer ไม่ได้ Run Test เอง และไม่ได้สร้างตัวเลข Assertion/เวลารันขึ้นเอง
 - ยังไม่มี Log ดิบหรือผลราย Assertion แนบมากับรายงานนี้; หาก Product Owner ส่ง Log มา จะบันทึกเพิ่มใน §5 โดยไม่แก้ข้อความสรุป
-- Runtime Verification ครบทั้ง 2 รอบแล้ว; ขั้นที่เหลือคือ CTO Formal Code Review (WP-05B ยังไม่ Done)
+- Runtime Verification ครบทั้ง 2 รอบแล้ว; CTO Formal Code Review APPROVED และ Product Owner ปิด WP-05B อย่างเป็นทางการเมื่อ 2026-11-26.
 
 ## 6. Compile Evidence
 
@@ -249,10 +249,10 @@ Compile PASS เป็นเพียง Compile Evidence **ไม่ใช่ T
 5. **`IsReconciliationPending()` ยังคืน `false` เมื่อ Coordinator ไม่ initialized (F-07)** — `RestoreStatus()` เป็นตัวชี้ Restore Error ที่เป็นทางการ
 6. **Helper Predicate ซ้ำ (F-08)** — `IsDecimalIdentity()`/`IsTokenLiteral()` ใน Coordinator ยังซ้ำกับ Reducer; คงไว้ตามคำสั่ง CTO
 7. **`UpdatePrice()` ระหว่าง Gate ปิดคืน `NO_CANDIDATE` (F-09)** — ไม่คืน `REQUEST_UNRESOLVED` แม้มี Restored Request; `IsRequestUnresolved()`/`PendingRequestId()` ยังเป็น Accessor แยก
-8. **Hydration ล้มเหลวจะทิ้ง Runtime เดิม** — เพื่อ All-or-Nothing ในเชิง Activation; Caller ต้องสร้าง Instance/Coordinator ใหม่หรือคง Fail Closed
+8. **Failed Hydration invalidates the previous Runtime** — เป็น Fail-Closed behavior ที่เพิ่มใน F-12; Caller ต้องสร้าง Instance/Coordinator ใหม่หลัง Restore Error.
 9. **Level State Projection ต้องครบทุก Level** — Hydration ปฏิเสธ Projection ที่ไม่ครอบคลุม Normal Level ทุกตัวและไม่รับ `WAIT_RETURN` ที่หลุดมาจาก Persistence รุ่นเก่า
 10. **`normal_level_count` คือ Engine Level Count** — ต้องเท่ากับ `persisted_level_count - 1`; ตอนนี้ Hydration ตรวจความสัมพันธ์นี้เองแล้ว (ไม่ใช่แค่เอกสารกำกับ)
 11. **WP-05C/WP-05D ไม่ได้ Implement** — ไม่มี MT5 Open Positions scan, Deal History ingestion, Production `OnTradeTransaction` หรือ Entry/Close execution
-12. **เอกสาร Status ระดับโครงการยังไม่อัปเดต** — `PROJECT_STATUS.md`/`Docs/EAs/Grid/*` และ Documentation Consistency Gate เป็นขั้นของ CTO หลัง Formal Review; รายนี้หยุดที่ Implementation + Remediation ของ WP-05B เท่านั้น
+12. **Documentation Consistency Gate** — ดำเนินการหลัง CTO Formal Review และ Product Owner Closure; สถานะปัจจุบันบันทึกใน `PROJECT_STATUS.md`, Grid Roadmap/Architecture, Testing Inventory และ WP-05B `CODE_REVIEW.md`.
 13. **`GetAnchorState()` ของ Coordinator ที่ไม่ initialized คืน `TGK_GRID_LEVEL_WAIT_ACTIVATION`** — เป็น Placeholder ที่ไม่เข้าเงื่อนไข Entry (ไม่ใช่ `READY`) แทนการอ่าน `m_engine` ตรง ๆ ซึ่งเคยค้างค่าเก่า; Caller ที่ต้องการแยก "ยังไม่ initialized" ควรตรวจ Accessor ที่ Fail Closed เช่น `GetLevelState()`/`GetLevelPrice()` หรือสถานะ `RestoreStatus()`
 14. **`Initialize()` ยังไม่ Invalidate Runtime Field ชุดเดิมเมื่อล้มเหลว** — F-12 จำกัดขอบเขตที่ Failed Hydration; Public Accessor ที่เหลือถูก Guard ด้วย `m_initialized` ทั้งหมดจึงไม่เปิดเผย State เก่า แต่ Field ภายในยังค้างจนกว่าจะ Invalidate; หากต้องการให้ `Initialize()` ล้มเหลวแล้วล้างด้วยเช่นกัน ถือเป็นการเปลี่ยน Behavior ของ API เดิมและต้องขออนุมัติ CTO

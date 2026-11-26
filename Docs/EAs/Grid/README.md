@@ -31,12 +31,12 @@
 - [Grid Entry Pipeline Integration — WP-04](Phases/phase-grid-entry-pipeline-integration.md)
 - [WP-05A — Persistence Foundation](WorkPackages/WP-05A/README.md)
 - [WP-05A.3 — Anchor State Persistence Integration & Hardening](WorkPackages/WP-05A/Phase-1.3/SPEC.md)
-- [WP-05B — Runtime State Restoration](WorkPackages/WP-05B/SPEC.md)
+- [WP-05B — Runtime State Restoration](WorkPackages/WP-05B/SPEC.md) — DONE 2026-11-26; [CTO Code Review](WorkPackages/WP-05B/CODE_REVIEW.md)
 - [WP-05C — Open Positions Reconciliation](WorkPackages/WP-05C/SPEC.md)
 
 ## Current implementation boundary
 
-มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator และ Entry Mapping Storage/Reducer/Snapshot Rotation แล้ว โดยผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
+มี Source สำหรับ Identity, Snapshot/Level Persistence, State Machine, Lifecycle/Runtime Orchestration, Position Reconciliation, Close Execution Adapter, Two-sided Level Engine, Runtime Coordinator, Entry Mapping Storage/Reducer/Snapshot Rotation และ WP-05B Runtime State Restoration แล้ว โดย WP-05B Restore Canonical Reducer State เข้า Engine/Coordinator และคง Reconciliation Gate ปิดจน WP-05C ยืนยัน Live Snapshot; ผล Compile/Runtime เป็นผลที่ผู้ใช้รายงานตาม Phase Notes
 
 Grid Entry Execution Policy WP-01, Resolver/Caller WP-02 และ Entry CTrade Adapter WP-03 เสร็จตามผล Compile/Run ที่ผู้ใช้รายงาน (WP-02 เมื่อ 2026-11-18; WP-03 เมื่อ 2026-11-19). WP-02 มี Resolver/Caller Source และ Test EA 17 cases; WP-03 มี Adapter Source และ Fake Port Test EA 13 cases. WP-04 Entry Pipeline Integration เสร็จแล้ว; Test EA มี 9 Fake Port cases (P01–P08, P11) และผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Compile/Run Tests ทั้งหมดผ่าน รวมการเปลี่ยนแปลงล่าสุด
 

@@ -1,6 +1,6 @@
 # คู่มือทดสอบ Grid
 
-อัปเดตล่าสุด: 2026-11-21
+อัปเดตล่าสุด: 2026-11-26
 
 ## ก่อนเริ่ม
 
@@ -34,6 +34,7 @@
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_resolver.mq5` | Resolver/Caller provenance, stale context, fail-closed และ fresh mapping tests; ไม่มี Trade Request | ผู้ใช้รายงานว่า test files ผ่าน 2026-11-18 |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution.mq5` | Entry Adapter Fake Port tests 13 cases: Persist-before-send, Policy/Identity gate, retcode, duplicate prevention, retry IDs, ticket precision, sequence mismatch และ Recovery lock; Test EA ไม่เรียก CTrade หรือ File I/O | Static PASS; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19 |
 | `Experts/TGK/Tests/Grids/test_grid_entry_execution_pipeline.mq5` | Entry Pipeline integration ด้วย Fake Port: Candidate → Resolver/Policy → Adapter → Coordinator request state; 9 cases P01–P08, P11; ไม่มี Real Trade Request | ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-20 |
+| `Experts/TGK/Tests/Grids/test_grid_runtime_restoration.mq5` | WP-05B Runtime Hydration no-trade tests B-01 ถึง B-13: persisted config, canonical Engine geometry, Anchor/Level/Position/Request hydration, reconciliation gate, failed hydration fail-closed | ผู้ใช้รายงาน Compile/Run PASS บน Source ล่าสุดหลัง Remediation รอบที่ 2 เมื่อ 2026-11-26 |
 | `Experts/TGK/Tests/Grids/test_grid_identity.mq5` | Initialize และ Identity คงเดิมเมื่อเรียกซ้ำบนกราฟเดียว | ผ่าน |
 | `Experts/TGK/Tests/Grids/test_grid_lifecycle.mq5` | Lifecycle + Persistence integration, Anchor restore, reset recovery และ safe error state | ผ่าน (ผู้ใช้รายงาน 2026-10-29) |
 | `Experts/TGK/Tests/Grids/test_grid_state_machine.mq5` | Grid State Machine: Initial State, Anchor จาก Fill, Mode/Step Reset และ Recovery Error | ผ่าน (ผู้ใช้รายงาน 2026-10-27) |
@@ -45,7 +46,7 @@
 
 ผล Compile/Runtime ข้างต้นเป็นผลที่ผู้ใช้รายงานจาก MetaEditor/MT5 ไม่ใช่ผลจากการรันโดย Assistant. ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run ผ่านครบหลังแก้ Reducer boundary test.
 
-ณ 2026-11-20 มี Grid Test Sources 20 ไฟล์ใน Directory: 15 Component/Regression Tests, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์, Pipeline Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. ผู้ใช้รายงานเมื่อ 2026-11-20 ว่า Compile และ Run Tests ทั้งหมดผ่าน รวม WP-04 Test EA หลังเพิ่ม P08/P11. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
+ณ 2026-11-26 มี Grid Test Sources 21 ไฟล์ใน Directory: 15 Component/Regression Tests ก่อน Policy Test, Policy Test EA 1 ไฟล์, Resolver/Caller Integration Test EA 1 ไฟล์, Entry Adapter Test EA 1 ไฟล์, Pipeline Test EA 1 ไฟล์, WP-05B Runtime Restoration Test EA 1 ไฟล์ และ Demo Integration Test 1 ไฟล์ที่แยก Safety Gate ออกจาก Regression Suite. Product Owner รายงานว่า WP-05B Test Suite และ Latest no-trade Grid Regression ผ่านบน Source ล่าสุดเมื่อ 2026-11-26. ให้ตรวจ Directory จริงก่อนนับ Full Regression ทุกครั้ง
 
 ผู้ใช้รายงานเมื่อ 2026-11-18 ว่า Compile/Run Test ทั้งหมดผ่านหลังแก้ `test_grid_entry_mapping_reducer.mq5`: fixture มี valid normal level indices 0–199 ดังนั้น out-of-range query ใช้ index 200. ห้ามเริ่ม Phase ถัดไปก่อนผู้ใช้อนุมัติแยกต่างหาก
 

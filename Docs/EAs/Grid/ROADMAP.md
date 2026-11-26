@@ -85,27 +85,28 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 
 ### 3.2 Current Work Item
 
-**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1 and WP-05A.2 are Done. WP-05A.3 implementation and CTO review follow-up are complete; Product Owner reported Compile/Runtime PASS and CTO Code Review is APPROVED 2026-11-25. Awaiting Product Owner formal closure before WP-05B implementation. WP-05B and WP-05C remain unauthorized. Dependency order remains WP-05A.3 → WP-05B → WP-05C.
+**WP-05 — Persistence / Runtime Restoration / Position Reconciliation:** WP-05A.1/.2/.3 and WP-05B are Done. WP-05B implementation, both CTO remediation rounds, user-reported Compile/Runtime PASS and CTO Formal Code Review APPROVED are complete; Product Owner formally closed the Card and Trello is Done on 2026-11-26. WP-05C is the next dependency; Design/Scope approved, implementation not yet authorized. Dependency order remains WP-05A.3 → WP-05B → WP-05C.
 
-- WP-05A parent: [Trello](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation); remains In Progress until WP-05A.3 is completed.
+- WP-05A parent: [Trello](https://trello.com/c/4ojeeFID/8-wp-05a-persistence-foundation); parent tracking remains separate from completion of its child work packages.
 - WP-05A breakdown: [WP-05A README](WorkPackages/WP-05A/README.md).
 - WP-05A.1 Anchor State Model: Done; user Compile/Test PASS and CTO APPROVED 2026-11-21.
 - WP-05A.2 Anchor State Transitions: Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; user-reported full no-trade Grid Regression PASS; CTO APPROVED. See `WorkPackages/WP-05A/Phase-1.2/`.
 - WP-05A.3 Anchor State Persistence Integration & Hardening: [Trello](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening); DONE 2026-11-25; Product Owner-reported Compile/Runtime PASS; CTO Code Review APPROVED; Trello Card moved to Done.
-- WP-05B Runtime State Restoration: [Trello](https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05B/`. Restores canonical Snapshot/Journal state into Engine/Coordinator; it does not scan or reconcile live account positions. Implementation NOT AUTHORIZED.
+- WP-05B Runtime State Restoration: [Trello](https://trello.com/c/86s3rVfy/9-wp-05b-runtime-state-restoration); **DONE 2026-11-26**. Restores canonical Snapshot/Journal state into Engine/Coordinator; does not scan/reconcile live account positions. User-reported Compile/Runtime PASS; CTO Formal Code Review APPROVED. See `WorkPackages/WP-05B/CODE_REVIEW.md` and `IMPLEMENTATION_REPORT.md`.
 - WP-05C Open Positions Reconciliation: [Trello](https://trello.com/c/c6iAiBw6/10-wp-05c-open-positions-reconciliation); Design/Scope approved by Product Owner 2026-11-25; SPEC/TEST_PLAN finalized: `WorkPackages/WP-05C/`. Uses complete/stable Open Positions snapshots to reconcile by Position Identifier. Full Close is reason-free; Closing Deal History and TP/NON_TP classification are out of scope. Existing Entry Deal Association remains separate and unchanged. Implementation NOT AUTHORIZED.
 - WP-05D Production Event Integration remains a separate roadmap placeholder and is not authorized.
-- WP-05A.3, WP-05B, and WP-05C have Product Owner-approved Design/Scope (2026-11-25). WP-05A.3 implementation is complete, user-verified PASS, and CTO-approved; Product Owner formal closure is the remaining gate. WP-05B/WP-05C remain unauthorized and dependency-gated; each requires its own fresh pre-change baseline and explicit Product Owner implementation authorization.
+- WP-05A.3 and WP-05B have completed implementation, user verification and CTO review; both are formally closed. WP-05C Design/Scope is approved and remains the next implementation dependency; it requires its own fresh pre-change no-trade baseline and explicit PO authorization.
 - Workflow: multiple related Cards may be designed/planned in parallel; the user selects the Implementer (current preference: Codex until monthly quota is exhausted, then Freebuff). Implementation, User Verification, and CTO formal Code Review remain sequential, one Card at a time. ChatGPT prepares neutral handoffs and does not select/switch agents.
 
 ### 3.3 จำนวน Test Sources ปัจจุบัน
 
-มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 20 ไฟล์ ณ วันที่อัปเดต:
+มีไฟล์ `.mq5` ใน `Experts/TGK/Tests/Grids/` จำนวน 21 ไฟล์ ณ วันที่อัปเดต:
 - 15 existing component/regression test files ที่เป็น baseline ก่อน Policy Test
 - `test_grid_entry_execution_policy.mq5` เป็น Policy Test EA; ผู้ใช้รายงาน Compile/Run ผ่าน
 - `test_grid_entry_execution_resolver.mq5` เป็น Resolver/Caller Integration Test EA; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-18
 - `test_grid_entry_execution.mq5` เป็น WP-03 Entry Adapter Unit Test EA จำนวน 13 cases; ผู้ใช้รายงาน Compile/Run ผ่านเมื่อ 2026-11-19
 - `test_grid_entry_execution_pipeline.mq5` เป็น WP-04 Fake Port Pipeline Test EA จำนวน 9 Test IDs (P01–P08, P11); ผู้ใช้รายงาน Compile/Run Tests ทั้งหมดผ่านเมื่อ 2026-11-20
+- `test_grid_runtime_restoration.mq5` เป็น WP-05B no-trade Runtime Hydration Test EA ครอบคลุม B-01 ถึง B-13; ผู้ใช้รายงาน Compile/Run PASS บน Source ล่าสุดเมื่อ 2026-11-26
 - `test_grid_order_execution_demo.mq5` เป็น Demo Integration Test แยกจาก Unit/Regression suite และมี Trade Request จริงบน Demo ตาม Safety Gate
 
 ให้ตรวจไฟล์ใน Directory จริงก่อนนับหรือกำหนด Regression Suite ใหม่; อย่า Hard-code จำนวน 12/13 จากเอกสารเก่าโดยไม่ตรวจรายการล่าสุด
@@ -120,7 +121,7 @@ Repository เป็น Technical Source of Truth; `PROJECT_STATUS.md` เป็
 | WP-02 | Target-Level Resolver / Caller Integration | COMPLETE (USER-REPORTED PASS 2026-11-18) | Resolve Candidate ไปยัง Level/Instance/Config Epoch ที่ถูกต้อง; Fresh Context; Resolver failure Fail Closed; Integration tests พิสูจน์ provenance และ Level 0/7 mapping scenario |
 | WP-03 | Entry CTrade Adapter | COMPLETE (USER-REPORTED PASS 2026-11-19) | Persist/Flush Intent ก่อนส่ง Market Entry; retcode/result handling; ไม่ถือ Accepted เป็น Fill; ไม่มี duplicate request; seam/unit tests ไม่ส่ง Trade Request |
 | WP-04 | Entry Pipeline Integration | COMPLETE (user-reported Compile/Run PASS 2026-11-20) | เชื่อม Coordinator Candidate → Resolver → Policy → Entry Adapter → Coordinator request state; accepted/uncertain request รอ Deal/Position reconciliation; ห้ามสร้าง Mapping หรือ ACTIVE จาก CTrade result |
-| WP-05 | Persistence / Runtime Restoration / Position Reconciliation Integration | IN PROGRESS (WP-05A.1/.2 Done; WP-05A.3 Done; WP-05B/WP-05C remain unauthorized) | WP-05A.3 Anchor Snapshot/Rotation hardening → WP-05B canonical runtime restoration → WP-05C complete/stable Open Positions reconciliation; WP-05D Production Event Integration remains a separate placeholder. Full Close is reason-free; no Closing Deal History or TP/NON_TP classification. |
+| WP-05 | Persistence / Runtime Restoration / Position Reconciliation Integration | IN PROGRESS (WP-05A.1/.2/.3 and WP-05B Done; WP-05C not yet authorized) | WP-05A.3 Anchor Snapshot/Rotation hardening → WP-05B canonical runtime restoration → WP-05C complete/stable Open Positions reconciliation; WP-05D Production Event Integration remains a separate placeholder. Full Close is reason-free; no Closing Deal History or TP/NON_TP classification. |
 | WP-06 | Production EA Lifecycle/Event Handler | NOT STARTED | EA shell และ OnInit/OnDeinit/OnTick/OnTimer/OnTradeTransaction ตามที่จำเป็น; initialize identity/config/storage/runtime อย่างถูกลำดับ; restart/recovery และ safe shutdown |
 | WP-07 | Configuration, Bounds และ Runtime Safety Integration | NOT STARTED | Inputs และ validation ของ Mode/Bounds/Step/FixedLot; initial entry เฉพาะใน Bounds; no new entries นอก Bounds แต่ manage existing positions ต่อ; reset Mode/Step ตาม Contract |
 | WP-08 | End-to-End Test & Demo Validation | NOT STARTED | Integration Test ครอบคลุม BUY/SELL, multi-level crossing, TP/re-entry, partial fills/closes, foreign-position isolation, restart, Mode/Step reset, Storage failure และ Recovery; Demo Test เฉพาะเมื่อผู้ใช้อนุมัติขั้นตอน Trade Request |

@@ -1,6 +1,6 @@
 # WP-05B — Test Plan
 
-**สถานะ: APPROVED สำหรับ Design/Scope 2026-11-25 — Implementation ได้รับอนุมัติจาก Product Owner 2026-11-26; Implement เสร็จและ Remediation ตาม CTO Review เสร็จแล้วทั้ง 2 รอบ (F-01/F-02/F-03/F-05/F-10 และ F-11/F-12); Product Owner รายงาน Run Test PASS 2026-11-26 ทั้งบน Source หลัง Remediation รอบที่ 1 และ Source หลัง Remediation รอบที่ 2 (รันครบทุกไฟล์) — ขั้นที่เหลือคือ CTO Formal Code Review**
+**สถานะ: COMPLETED — Product Owner ปิด WP-05B 2026-11-26; Freebuff Implement และ CTO Remediation ทั้ง 2 รอบเสร็จ, Product Owner รายงาน Run Test PASS บน Source ล่าสุด (รันครบทุกไฟล์), CTO Formal Code Review APPROVED.**
 
 ## 1. Test Strategy
 

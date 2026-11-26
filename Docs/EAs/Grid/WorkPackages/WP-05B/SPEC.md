@@ -1,7 +1,7 @@
 # WP-05B — Runtime State Restoration
 
-**สถานะ: APPROVED — Product Owner อนุมัติ Design/Scope 2026-11-25**
-**Implementation: AUTHORIZED — Product Owner อนุมัติ Implementation 2026-11-26; Implement เสร็จรอบแรกและ Remediation ตาม CTO `CHANGES_REQUESTED` เสร็จแล้วทั้ง 2 รอบ (F-01/F-02/F-03/F-05/F-10 และ F-11/F-12); Product Owner รายงาน Compile/Runtime Test PASS 2026-11-26 ทั้งบน Source หลัง Remediation รอบที่ 1 และ Source หลัง Remediation รอบที่ 2 (รัน Test ครบทุกไฟล์) — ขั้นที่เหลือคือ CTO Formal Code Review**
+**สถานะ: DONE — Product Owner ปิด WP-05B อย่างเป็นทางการ 2026-11-26**
+**Implementation:** Freebuff implementation และ CTO Remediation ทั้ง 2 รอบเสร็จแล้ว (F-01/F-02/F-03/F-05/F-10 และ F-11/F-12); Product Owner รายงาน Compile/Runtime Test PASS 2026-11-26 บน Source ล่าสุด (รัน Test ครบทุกไฟล์); CTO Formal Code Review `APPROVED` 2026-11-26; Trello Card moved to Done. ดู [CODE_REVIEW.md](CODE_REVIEW.md) และ [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md).
 **Dependencies:** WP-05A Persistence Foundation (รวม WP-05A.3)
 
 ## 1. วัตถุประสงค์
@@ -59,19 +59,19 @@
 
 ## 6. Acceptance Criteria
 
-- [ ] Storage Recovery + Reducer Restore/Replay ให้ Canonical State เดิมอย่าง Deterministic
-- [ ] Anchor State และทุก Normal Level State ตรงกับ Reducer
-- [ ] Position Mapping ทุกตัวถูก Hydrate ไปยัง Target ที่ถูกต้อง โดยใช้ Identifier เป็น Logical Identity
-- [ ] Ticket/Volume metadata ถูก Restore ครบ
-- [ ] Unresolved Entry Request ยังคง unresolved และไม่ทำให้ Level ACTIVE
-- [ ] Invalid/Missing/Duplicate/Conflicting state ทำให้ Runtime ไม่พร้อมใช้งานและ Fail Closed
-- [ ] Valid Hydration จบที่ RESTORED_PENDING_RECONCILIATION; Entry/Candidate gate ยังคงปิดจน WP-05C ยืนยัน Live Snapshot
-- [ ] Hydration ไม่ Append Journal และไม่เปลี่ยน Reducer Canonical State
-- [ ] Repeated Restore จาก Dataset เดิมให้ Runtime State เหมือนเดิม
-- [ ] No-trade tests ไม่มี Trade Request
+- [x] Storage Recovery + Reducer Restore/Replay ให้ Canonical State เดิมอย่าง Deterministic
+- [x] Anchor State และทุก Normal Level State ตรงกับ Reducer
+- [x] Position Mapping ทุกตัวถูก Hydrate ไปยัง Target ที่ถูกต้อง โดยใช้ Identifier เป็น Logical Identity
+- [x] Ticket/Volume metadata ถูก Restore ครบ
+- [x] Unresolved Entry Request ยังคง unresolved และไม่ทำให้ Level ACTIVE
+- [x] Invalid/Missing/Duplicate/Conflicting state ทำให้ Runtime ไม่พร้อมใช้งานและ Fail Closed
+- [x] Valid Hydration จบที่ RESTORED_PENDING_RECONCILIATION; Entry/Candidate gate ยังคงปิดจน WP-05C ยืนยัน Live Snapshot
+- [x] Hydration ไม่ Append Journal และไม่เปลี่ยน Reducer Canonical State
+- [x] Repeated Restore จาก Dataset เดิมให้ Runtime State เหมือนเดิม
+- [x] No-trade tests ไม่มี Trade Request
 
 ## 7. Dependencies / Gate
 
-WP-05B ต้องรอ WP-05A.3 ปิดก่อน Implementation เพื่อยืนยัน Anchor persistence path แต่สามารถทำ Design/Planning พร้อม WP-05A.3 ได้
+เงื่อนไขก่อน Implement ได้รับการปฏิบัติครบแล้ว: WP-05A.3 ปิดก่อนเริ่ม WP-05B, Product Owner อนุมัติ Implementation แยกต่างหาก และมี Pre-change no-trade Grid Regression Baseline PASS เมื่อ 2026-11-26. WP-05B ปิดแล้ว; WP-05C ยังคงต้องผ่าน Baseline และ Authorization ของตนเอง
 
 Implementation ต้องได้รับ Product Owner Approval แยกต่างหาก และต้องมี Pre-change no-trade Grid Regression Baseline ใหม่
