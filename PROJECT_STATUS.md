@@ -1,12 +1,12 @@
 # TGK BotTradeFramework — Project Status
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 ## Current focus
 
-**Grid V1 — WP-05 Persistence / Runtime Restoration / Position Reconciliation.** WP-05A.1, WP-05A.2, WP-05A.3 และ WP-05B ปิดแล้ว โดย WP-05B ผ่าน Compile/Runtime Verification ตามรายงาน Product Owner, CTO Formal Code Review APPROVED และ Trello Card moved to Done เมื่อ 2026-11-26. WP-05C เป็น Dependency ถัดไป; Design/Scope ได้รับอนุมัติแล้ว แต่ Implementation ยังไม่ได้รับอนุญาต. Dependency order remains A.3 → B → C.
+**Grid V1 — WP-05C Open Positions Reconciliation.** WP-05A.1, WP-05A.2, WP-05A.3 และ WP-05B ปิดแล้ว; WP-05B ผ่าน Compile/Runtime Verification ตามรายงาน Product Owner และ CTO Formal Code Review APPROVED เมื่อ 2026-11-26. งาน Shared Implementation SKILL สำหรับ Freebuff, Codex และ Claude Code เสร็จแล้ว. วันที่ 2026-11-27 CTO ทำ WP-05C Contract Preparation เสร็จ: เพิ่ม Technical Contract Addendum ใน SPEC/TEST_PLAN และสร้าง `Docs/EAs/Grid/WorkPackages/WP-05C/IMPLEMENTATION_TASK.md`. WP-05C ยัง NOT AUTHORIZED สำหรับ Implementation; ต้องให้ Product Owner รัน Latest no-trade Grid Regression Baseline บน Source ปัจจุบันและอนุมัติ Implementation แยกต่างหาก.
 
-- Repository: branch `feature/grid-trading`, HEAD `f6262ce` (`WP-05B -- Implemented By Freebuff`), ahead of `origin/feature/grid-trading` by 1 commit at closure. Working tree was clean before closure documentation updates; CTO did not commit or push.
+- Repository at WP-05B closure: branch `feature/grid-trading`, HEAD `f6262ce` (`WP-05B -- Implemented By Freebuff`), ahead of origin by 1 commit. Current checkpoint (2026-11-27): HEAD `8279295` (`create skill: tgk-implementation-self-review`), branch ahead of origin by 1; WP-05C preparation docs are local uncommitted changes. CTO did not commit or push.
 - WP-05A.1 — Anchor State Model: Done; user Compile/Test PASS and CTO Review APPROVED 2026-11-21.
 - WP-05A.2 — Anchor State Transitions: [Trello](https://trello.com/c/1fjrNdNX/13-wp-05a2-anchor-state-transitions); Done / formally closed 2026-11-24; CR-01/CR-02/CR-03 resolved; Freebuff Compile 0 errors/0 warnings for both Adapter consumers; user-reported full no-trade Grid Regression PASS; CTO Review APPROVED.
 - WP-05A.3 — Anchor State Persistence Integration & Hardening: [Trello](https://trello.com/c/gaSElnBj/14-wp-05a3-anchor-state-persistence-integration-hardening); DONE 2026-11-25; Product Owner-reported Compile/Runtime PASS after CTO follow-up; CTO Code Review APPROVED; Trello Card moved to Done.

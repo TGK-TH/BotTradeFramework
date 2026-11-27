@@ -71,3 +71,53 @@
 ต้องใช้ Restore Contract จาก WP-05B และ Canonical Persistence Contract จาก WP-05A.2/WP-05A.3
 
 การ Implement ต้องได้รับ Product Owner Approval แยกต่างหาก และต้องรัน Latest no-trade Grid Regression Baseline ก่อน Source Change
+
+---
+
+## 8. Technical Contract Addendum (CTO Preparation — 2026-11-27)
+
+ส่วนนี้ทำให้ Approved Scope เชื่อมกับ Source API ปัจจุบันได้โดยไม่เปลี่ยน Product Behavior
+
+### 8.1 Component Boundary
+
+- คง `CTGKGridPositionReconciler` เดิมไว้สำหรับ Reset/Close-confirmation; WP-05C เพิ่ม Snapshot Acquisition component แยกต่างหาก ไม่ขยายความหมายของ `CountLiveOwnedPositions()` ให้เป็น Authoritative Snapshot
+- เพิ่ม Read-only Snapshot DTO/Port และ Production MT5 Adapter ที่อ่าน Position Identifier, Ticket, Symbol, Magic และ Volume ครบทุก Position
+- แยก Reconciliation Policy/Orchestration ออกจาก MT5 Account API และแยก Mapping Journal Port ออกจาก `CTrade` Execution Port
+- Reducer ยังคงเป็น Canonical Mapping/State Authority; Coordinator ยังคงเป็น Runtime/Engine Authority
+
+### 8.2 Snapshot Freshness and Stability
+
+- ใช้สอง Full Account Scans ใน serialized EA event เดียวกัน และเปรียบเทียบ Owned Position Set แบบไม่ขึ้นกับลำดับ Enumeration
+- ต้องตรวจ Enumeration count, Ticket selection และ Property Read ทุกขั้นตอน; failure ใด ๆ ทำให้ Snapshot ใช้ไม่ได้ทั้งชุด
+- Snapshot ต้องมี Acquisition Generation, Consumed flag/token และ Reducer Base Sequence; Consume ปฏิเสธ Token ที่เก่ากว่า/ถูกใช้แล้ว หรือ Base Sequence ไม่ตรงกับ Reducer ปัจจุบัน
+- ห้าม Queue accepted snapshot; Acquisition และ Consume ต้องอยู่ใน Event เดียวกัน
+- Empty Snapshot ยอมรับได้เฉพาะเมื่อ Full Scan ทั้งสองรอบสำเร็จและพบ Position Total เป็นศูนย์ตรงกัน
+
+### 8.3 Durable Batch Transaction
+
+- หนึ่ง Stable Snapshot อาจสร้างหลาย Metadata/Full Close updates; ทั้งหมดต้อง Persist เป็น Journal Record เดียวชนิด `TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE` ด้วย Versioned Reconciliation Batch payload
+- Reducer ต้อง Validate/Apply sub-events แบบ Transactional; malformed/conflicting event หนึ่งรายการต้องทำให้ทั้ง Batch ไม่เปลี่ยน In-memory State
+- Append/Flush failure ต้องไม่เปลี่ยน Reducer/Coordinator; หาก Journal Append สำเร็จแต่ Apply หลัง Append ล้มเหลว ให้ Fail Closed และ Recovery จาก Journal เท่านั้น
+- No-op batch ไม่ Append และไม่เพิ่ม Sequence; Duplicate Snapshot ต้องไม่สร้าง Full Close ซ้ำ
+- ต้องรักษา Legacy Lifecycle Payload replay compatibility
+
+### 8.4 Unresolved Entry Evidence
+
+- Snapshot เพียงอย่างเดียวห้ามสร้าง Position Mapping หรือเดา Target
+- Owned Live Position ที่ไม่มี Mapping จะไม่ถูก Adopt; อนุญาตให้คงเป็น unresolved evidence ได้เฉพาะเมื่อ Position Identifier เชื่อมโยงกับ Durable Entry Deal Association ของ Single Valid Unresolved Entry Request ได้
+- ต้องเพิ่ม Read-only Deal Association projection ให้ Reconciliation Policy ตรวจ Request ID, Position Identifier และ Associated Volume ได้โดยไม่แก้ Deal state
+- กรณี evidence ไม่ครบให้ Request คง unresolved และ Target ไม่เป็น ACTIVE; ถ้าไม่สามารถพิสูจน์ว่า Live Position เป็นของ Request ที่ unresolved ให้ Fail Closed เป็น Orphan
+
+### 8.5 Runtime Gate Release
+
+- หลัง Durable Batch สำเร็จ ให้สร้าง Runtime Hydration Projection ใหม่จาก Canonical Reducer เท่านั้น
+- เพิ่ม Explicit Coordinator API สำหรับ Release Gate หลังตรวจ Accepted Snapshot และ Reducer Projection ตรงกันครบ (Identity/Symbol/Magic/Config Epoch/Identifier/Target/Ticket/Volume/Unresolved Request)
+- Release API ต้องใช้ Quote ปัจจุบันที่ Valid; Full Close ใช้ BUY=Ask / SELL=Bid ณ Consume Time
+- Release Gate ไม่สร้าง Candidate; รีเซ็ต Quote Baseline และอนุญาต Price Processing ใน Event ถัดไป
+- Hydration/Release failure หลัง Durable Commit ต้องคง Fail Closed; Recovery ต้องเริ่มจาก Reducer/Journal ห้ามสร้าง compensating state เอง
+
+### 8.6 Proposed New Modules
+
+- `GridOpenPositionSnapshot.mqh`: Snapshot DTO, fakeable acquisition port, read-only MT5 port, stable two-scan acquisition
+- `GridOpenPositionReconciliation.mqh`: diff policy, freshness guard, durable batch coordination, canonical Coordinator hydration and Gate release
+- ชื่อไฟล์เปลี่ยนได้โดย Implementer หาก responsibility และ API boundary คงเดิม
