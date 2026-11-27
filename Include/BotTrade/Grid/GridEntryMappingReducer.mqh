@@ -99,6 +99,7 @@ enum ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS
 #define TGK_GRID_MAPPING_MAX_SERIALIZATION_BUFFER_BYTES 16777216
 #define TGK_GRID_MAPPING_MAX_STRING_FIELD_BYTES 4096
 #define TGK_GRID_MAPPING_MAX_RECORD_BYTES 65536
+#define TGK_GRID_MAPPING_MAX_RECONCILIATION_EVENTS TGK_GRID_MAPPING_MAX_POSITIONS
 
 // Deterministically reduces typed Journal events into the current mapping state.
 // It has no Trade API dependency and never reads Order Comments.
@@ -121,6 +122,7 @@ private:
   bool m_initialized;
   bool m_failed;
   ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS m_recovery_status;
+  bool m_restore_failure_injected;
   ENUM_TGK_GRID_LEVEL_STATE m_anchor_state;
 
   STGKGridMappingRequestState m_requests[];
@@ -607,6 +609,98 @@ private:
       if(m_deals[i].request_id == request_id)
         RemoveDealAt(i);
     }
+  }
+
+  bool CopyRequests(
+    STGKGridMappingRequestState &destination[],
+    STGKGridMappingRequestState &source[])
+  {
+    int total = ArraySize(source);
+    if(ArrayResize(destination, total) != total)
+      return false;
+
+    for(int index = 0; index < total; index++)
+      destination[index] = source[index];
+    return true;
+  }
+
+  bool CopyDeals(
+    STGKGridMappingDealState &destination[],
+    STGKGridMappingDealState &source[])
+  {
+    int total = ArraySize(source);
+    if(ArrayResize(destination, total) != total)
+      return false;
+
+    for(int index = 0; index < total; index++)
+      destination[index] = source[index];
+    return true;
+  }
+
+  bool CopyPositions(
+    STGKGridMappingPositionState &destination[],
+    STGKGridMappingPositionState &source[])
+  {
+    int total = ArraySize(source);
+    if(ArrayResize(destination, total) != total)
+      return false;
+
+    for(int index = 0; index < total; index++)
+      destination[index] = source[index];
+    return true;
+  }
+
+  bool CopyLevels(
+    STGKGridMappingLevelState &destination[],
+    STGKGridMappingLevelState &source[])
+  {
+    int total = ArraySize(source);
+    if(ArrayResize(destination, total) != total)
+      return false;
+
+    for(int index = 0; index < total; index++)
+      destination[index] = source[index];
+    return true;
+  }
+
+  // A Reconciliation Batch must be all-or-nothing. Every mutable collection a
+  // sub-event can touch is copied first, so a malformed or conflicting event
+  // can never leave a prefix of the batch applied.
+  bool BackupState(
+    STGKGridMappingRequestState &requests[],
+    STGKGridMappingDealState &deals[],
+    STGKGridMappingPositionState &positions[],
+    STGKGridMappingLevelState &levels[])
+  {
+    return CopyRequests(requests, m_requests) &&
+           CopyDeals(deals, m_deals) &&
+           CopyPositions(positions, m_positions) &&
+           CopyLevels(levels, m_levels);
+  }
+
+  // Restores the pre-batch state. A false return means the rollback guarantee
+  // could not be honoured, so the Caller must fail the Reducer closed instead
+  // of continuing with a partially mutated state.
+  bool RestoreState(
+    STGKGridMappingRequestState &requests[],
+    STGKGridMappingDealState &deals[],
+    STGKGridMappingPositionState &positions[],
+    STGKGridMappingLevelState &levels[],
+    ENUM_TGK_GRID_LEVEL_STATE anchor_state,
+    ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS recovery_status)
+  {
+    if(m_restore_failure_injected)
+      return false;
+
+    if(!CopyRequests(m_requests, requests) ||
+       !CopyDeals(m_deals, deals) ||
+       !CopyPositions(m_positions, positions) ||
+       !CopyLevels(m_levels, levels))
+      return false;
+
+    m_anchor_state = anchor_state;
+    m_recovery_status = recovery_status;
+    return true;
   }
 
   bool SetLevelState(int level_index, ENUM_TGK_GRID_LEVEL_STATE state)
@@ -1196,6 +1290,123 @@ private:
     return true;
   }
 
+  // One accepted Stable Snapshot may cause several Metadata and Full Close
+  // updates. They are carried by a single Lifecycle Journal record with a
+  // Versioned Reconciliation Batch payload, and every sub-event is applied
+  // against a state backup so one bad event rejects the whole batch.
+  //
+  // Payload: v1|RECONCILIATION_BATCH|<event_count>|<event_1>|...|<event_N>
+  // Event:   POSITION_METADATA|<identifier>|<volume>|<ticket>
+  //          POSITION_CLOSED|<identifier>|<READY_OR_WAIT_ACTIVATION>
+  bool ApplyReconciliationBatch(string payload)
+  {
+    string fields[];
+    int field_count = StringSplit(payload, '|', fields);
+    if(field_count < 3 ||
+       fields[0] != TGK_GRID_MAPPING_PAYLOAD_VERSION ||
+       fields[1] != "RECONCILIATION_BATCH" ||
+       !IsDecimalString(fields[2], true) ||
+       StringFormat("%d", (int)StringToInteger(fields[2])) != fields[2])
+      return false;
+
+    int event_count = (int)StringToInteger(fields[2]);
+    if(event_count <= 0 ||
+       event_count > TGK_GRID_MAPPING_MAX_RECONCILIATION_EVENTS)
+      return false;
+
+    STGKGridMappingRequestState backup_requests[];
+    STGKGridMappingDealState backup_deals[];
+    STGKGridMappingPositionState backup_positions[];
+    STGKGridMappingLevelState backup_levels[];
+    ENUM_TGK_GRID_LEVEL_STATE backup_anchor_state = m_anchor_state;
+    ENUM_TGK_GRID_MAPPING_RECOVERY_STATUS backup_recovery_status =
+      m_recovery_status;
+
+    if(!BackupState(
+      backup_requests,
+      backup_deals,
+      backup_positions,
+      backup_levels))
+      return false;
+
+    bool valid = true;
+    int field_index = 3;
+
+    for(int event_index = 0; valid && event_index < event_count; event_index++)
+    {
+      if(field_index >= field_count)
+      {
+        valid = false;
+        break;
+      }
+
+      string operation = fields[field_index];
+      string sub_fields[];
+
+      if(operation == "POSITION_METADATA")
+      {
+        if(field_index + 3 >= field_count)
+        {
+          valid = false;
+          break;
+        }
+
+        ArrayResize(sub_fields, 5);
+        sub_fields[0] = TGK_GRID_MAPPING_PAYLOAD_VERSION;
+        sub_fields[1] = operation;
+        sub_fields[2] = fields[field_index + 1];
+        sub_fields[3] = fields[field_index + 2];
+        sub_fields[4] = fields[field_index + 3];
+        field_index += 4;
+        valid = ApplyPositionMetadata(sub_fields);
+      }
+      else if(operation == "POSITION_CLOSED")
+      {
+        if(field_index + 2 >= field_count)
+        {
+          valid = false;
+          break;
+        }
+
+        ArrayResize(sub_fields, 4);
+        sub_fields[0] = TGK_GRID_MAPPING_PAYLOAD_VERSION;
+        sub_fields[1] = operation;
+        sub_fields[2] = fields[field_index + 1];
+        sub_fields[3] = fields[field_index + 2];
+        field_index += 3;
+        valid = ApplyPositionClosed(sub_fields);
+      }
+      else
+        valid = false;
+    }
+
+    if(valid && field_index != field_count)
+      valid = false;
+
+    if(!valid)
+    {
+      if(!RestoreState(
+        backup_requests,
+        backup_deals,
+        backup_positions,
+        backup_levels,
+        backup_anchor_state,
+        backup_recovery_status))
+      {
+        // The Batch was rejected but its partial mutations could not be undone.
+        // Nothing may keep using this state: mark the Reducer failed and put it
+        // into RECOVERY_ERROR with scalar assignments only, so the fail-closed
+        // decision cannot depend on another allocation. Recovery is a Journal
+        // replay into a fresh Reducer; no compensating record is written here.
+        m_failed = true;
+        m_recovery_status = TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR;
+      }
+      return false;
+    }
+
+    return true;
+  }
+
   bool ApplyLifecycleUpdate(string payload)
   {
     string fields[];
@@ -1203,6 +1414,8 @@ private:
     if(count < 2 || fields[0] != TGK_GRID_MAPPING_PAYLOAD_VERSION)
       return false;
 
+    if(fields[1] == "RECONCILIATION_BATCH")
+      return ApplyReconciliationBatch(payload);
     if(fields[1] == "LEVEL_STATE")
       return ApplyLevelState(fields);
     if(fields[1] == "ANCHOR_STATE")
@@ -1272,6 +1485,7 @@ public:
     m_initialized = false;
     m_failed = false;
     m_recovery_status = TGK_GRID_MAPPING_STATUS_NORMAL;
+    m_restore_failure_injected = false;
     m_anchor_state = TGK_GRID_LEVEL_READY;
   }
 
@@ -1302,6 +1516,7 @@ public:
     m_upper_level_count = 0;
     m_failed = false;
     m_recovery_status = TGK_GRID_MAPPING_STATUS_NORMAL;
+    m_restore_failure_injected = false;
     m_anchor_state = TGK_GRID_LEVEL_READY;
     ArrayResize(m_requests, 0);
     ArrayResize(m_deals, 0);
@@ -1945,6 +2160,79 @@ public:
       m_recovery_status = TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR;
       return false;
     }
+    return true;
+  }
+
+  // Test seam for the rollback-failure path. Production never enables it; it
+  // exists so the Fail Closed guarantee of ApplyReconciliationBatch() can be
+  // verified without inducing an allocation failure.
+  bool SetRestoreFailureInjectionForTest(bool enabled)
+  {
+    m_restore_failure_injected = enabled;
+    return true;
+  }
+
+  // Applies one already-persisted Journal record to the live Reducer. The
+  // Caller must have appended it at LastSequence() + 1; this method never
+  // writes. A false return leaves the in-memory state untouched, so the
+  // Caller must enter Recovery Required and rebuild from the Journal.
+  bool ApplyCommittedRecord(
+    ENUM_TGK_GRID_MAPPING_RECORD_TYPE record_type,
+    string payload)
+  {
+    if(!m_initialized ||
+       m_failed ||
+       m_recovery_status != TGK_GRID_MAPPING_STATUS_NORMAL)
+      return false;
+
+    STGKGridMappingJournalRecord record;
+    record.sequence = m_last_sequence + 1;
+    record.record_type = record_type;
+    record.payload = payload;
+    return ApplyRecord(record);
+  }
+
+  // Read-only Deal Association projection. Reconciliation uses it to prove
+  // that an Owned Live Position without a Mapping belongs to the single
+  // unresolved Entry Request. It never mutates Deal state and never reads
+  // Closing Deal History.
+  bool TryGetDealAssociationProjection(
+    string position_identifier,
+    bool &has_association,
+    string &request_id,
+    double &associated_volume)
+  {
+    has_association = false;
+    request_id = "";
+    associated_volume = 0.0;
+
+    if(!IsRuntimeViewHealthy() ||
+       !IsDecimalString(position_identifier))
+      return false;
+
+    int matching_deals = 0;
+    for(int index = 0; index < ArraySize(m_deals); index++)
+    {
+      if(m_deals[index].position_identifier != position_identifier)
+        continue;
+
+      if(matching_deals == 0)
+        request_id = m_deals[index].request_id;
+      else if(request_id != m_deals[index].request_id)
+        return false;
+
+      matching_deals++;
+      associated_volume += m_deals[index].volume;
+    }
+
+    if(matching_deals == 0)
+    {
+      request_id = "";
+      associated_volume = 0.0;
+      return true;
+    }
+
+    has_association = true;
     return true;
   }
 

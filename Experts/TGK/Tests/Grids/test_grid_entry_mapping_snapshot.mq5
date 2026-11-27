@@ -1964,6 +1964,139 @@ int OnInit()
     fallback_recovery.DeleteAllFilesForTest());
   Tests.EndTest();
 
+  Tests.BeginTest("Reconciliation Batch is one durable record and replays after restart");
+  string batch_instance_id = instance_id + "_RECON_BATCH";
+  string batch_symbol = _Symbol;
+  long batch_magic = 710102;
+  string batch_identifier = "18446744073709551613";
+  string batch_ticket = "18446744073709551614";
+  string batch_payload =
+    "v1|RECONCILIATION_BATCH|2|" +
+    "POSITION_METADATA|" + batch_identifier + "|0.05|" + batch_ticket + "|" +
+    "POSITION_CLOSED|" + batch_identifier + "|READY";
+
+  STGKGridMappingJournalRecord batch_seed_records[];
+  BuildMappedReducerFixture(
+    batch_seed_records,
+    batch_symbol,
+    batch_magic,
+    batch_instance_id);
+
+  CTGKGridEntryMappingReducer batch_seed_reducer;
+  Tests.AssertTrue(
+    "initialize the batch seed Reducer",
+    batch_seed_reducer.Initialize(
+      batch_symbol,
+      batch_magic,
+      batch_instance_id));
+  Tests.AssertTrue(
+    "replay the batch seed fixture",
+    batch_seed_reducer.Replay(
+      batch_seed_records,
+      ArraySize(batch_seed_records)));
+  Tests.AssertEqualInt(
+    "seed fixture has one Mapping",
+    batch_seed_reducer.PositionCount(),
+    1);
+
+  string batch_seed_payload = "";
+  Tests.AssertTrue(
+    "export the seed Snapshot",
+    batch_seed_reducer.ExportSnapshot(batch_seed_payload));
+  long batch_checkpoint = batch_seed_reducer.LastSequence();
+
+  CTGKGridEntryMappingSnapshotStorage batch_storage;
+  Tests.AssertTrue(
+    "initialize the batch test identity",
+    batch_storage.Initialize(batch_symbol, batch_instance_id));
+  Tests.AssertTrue(
+    "bootstrap the batch Generation",
+    batch_storage.Bootstrap(batch_seed_payload, batch_checkpoint));
+  Tests.AssertTrue(
+    "append one Reconciliation Batch record",
+    batch_storage.Append(
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      batch_payload));
+  Tests.AssertEqualLong(
+    "the whole batch costs one Journal Sequence",
+    batch_storage.LastSequence(),
+    batch_checkpoint + 1);
+  Tests.AssertFalse(
+    "the batch record fits the current Generation",
+    batch_storage.NeedsRotation(
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      batch_payload));
+
+  CTGKGridEntryMappingSnapshotStorage batch_restarted;
+  Tests.AssertTrue(
+    "reinitialize the batch identity after restart",
+    batch_restarted.Initialize(batch_symbol, batch_instance_id));
+
+  string batch_replay_payload = "";
+  long batch_replay_checkpoint = 0;
+  STGKGridMappingJournalRecord batch_replay_records[];
+  int batch_replay_count = 0;
+  long batch_replay_next_sequence = 0;
+  Tests.AssertTrue(
+    "Replay the batch Generation after restart",
+    batch_restarted.Replay(
+      batch_replay_payload,
+      batch_replay_checkpoint,
+      batch_replay_records,
+      batch_replay_count,
+      batch_replay_next_sequence));
+  Tests.AssertEqualInt(
+    "exactly one Journal record was written",
+    batch_replay_count,
+    1);
+  Tests.AssertEqualLong(
+    "restored checkpoint",
+    batch_replay_checkpoint,
+    batch_checkpoint);
+  Tests.AssertEqualString(
+    "restored Snapshot payload",
+    batch_replay_payload,
+    batch_seed_payload);
+  Tests.AssertEqualLong(
+    "next Sequence follows the batch",
+    batch_replay_next_sequence,
+    batch_checkpoint + 2);
+
+  CTGKGridEntryMappingReducer batch_restarted_reducer;
+  Tests.AssertTrue(
+    "initialize the restarted Reducer",
+    batch_restarted_reducer.Initialize(
+      batch_symbol,
+      batch_magic,
+      batch_instance_id));
+  Tests.AssertTrue(
+    "restore the committed Snapshot",
+    batch_restarted_reducer.RestoreSnapshot(
+      batch_replay_payload,
+      batch_replay_checkpoint));
+  Tests.AssertTrue(
+    "replay the durable batch record",
+    batch_restarted_reducer.Replay(
+      batch_replay_records,
+      batch_replay_count));
+  Tests.AssertEqualLong(
+    "the batch advanced one Sequence",
+    batch_restarted_reducer.LastSequence(),
+    batch_checkpoint + 1);
+  Tests.AssertEqualInt(
+    "the batched Full Close was applied",
+    batch_restarted_reducer.PositionCount(),
+    0);
+  Tests.AssertEqualInt(
+    "the closed Level was released",
+    batch_restarted_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_READY);
+
+  Tests.AssertTrue(
+    "clean the batch test files",
+    batch_restarted.DeleteAllFilesForTest());
+  Tests.EndTest();
+
   Tests.AssertTrue("clean primary test files", cleanup_recovery.DeleteAllFilesForTest());
   Tests.AssertTrue("clean oversized test files", oversized_storage.DeleteAllFilesForTest());
   Tests.AssertTrue("clean damaged test files", broken_recovery.DeleteAllFilesForTest());

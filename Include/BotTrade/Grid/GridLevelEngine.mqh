@@ -564,6 +564,40 @@ public:
     return true;
   }
 
+  // Read-only preview of the post-close state. RecordPositionClosed applies the
+  // same WP-05A.2 rule; exposing the preview lets Reconciliation encode the
+  // durable transition at Consume time without mutating Runtime state and
+  // without duplicating the state rule outside the Engine.
+  bool TryGetPostCloseState(
+    bool is_anchor,
+    int level_index,
+    double current_bid,
+    double current_ask,
+    ENUM_TGK_GRID_LEVEL_STATE &state)
+  {
+    state = TGK_GRID_LEVEL_READY;
+    if(!m_initialized || !IsValidQuote(current_bid, current_ask))
+      return false;
+
+    double level_price = m_anchor_price;
+    if(is_anchor)
+    {
+      if(level_index != -1)
+        return false;
+    }
+    else
+    {
+      if(!IsValidLevelIndex(level_index))
+        return false;
+      level_price = m_level_prices[level_index];
+    }
+
+    double current_price =
+      (m_mode == TGK_GRID_MODE_BUY) ? current_ask : current_bid;
+    state = StateAfterPositionClose(level_price, current_price);
+    return true;
+  }
+
   // Call only after reconciliation confirms that no position remains for
   // this logical Level. A partial close must leave the Level ACTIVE.
   bool RecordPositionClosed(

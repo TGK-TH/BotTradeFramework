@@ -160,6 +160,52 @@ bool ReplayAnchorStateAttempt(string payload, int fixture_kind)
   return reducer.Replay(records, ArraySize(records));
 }
 
+// Committed configuration with two mapped Levels, ready for one Reconciliation
+// Batch record.
+int BuildBatchFixture(STGKGridMappingJournalRecord &records[])
+{
+  AddBaseConfiguration(records);
+  int sequence = ArraySize(records) + 1;
+  AddMappedPosition(records, sequence, "REQ-RB-1", "LEVEL", 1, 8101);
+  AddMappedPosition(records, sequence, "REQ-RB-2", "LEVEL", 2, 8102);
+  return ArraySize(records);
+}
+
+// Replays the fixture plus one Reconciliation Batch record and reports the
+// resulting committed state.
+void ReplayBatchOutcome(
+  string batch_payload,
+  bool &replayed,
+  double &volume_after,
+  int &position_count_after,
+  int &level_one_state_after,
+  int &level_two_state_after)
+{
+  STGKGridMappingJournalRecord records[];
+  BuildBatchFixture(records);
+  AddRecord(
+    records,
+    ArraySize(records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    batch_payload);
+
+  CTGKGridEntryMappingReducer reducer;
+  replayed = false;
+  volume_after = 0.0;
+  position_count_after = 0;
+  level_one_state_after = -1;
+  level_two_state_after = -1;
+
+  if(!reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"))
+    return;
+
+  replayed = reducer.Replay(records, ArraySize(records));
+  volume_after = reducer.PositionVolumeAt(0);
+  position_count_after = reducer.PositionCount();
+  level_one_state_after = reducer.LevelStateAt(1);
+  level_two_state_after = reducer.LevelStateAt(2);
+}
+
 int OnInit()
 {
   Tests.BeginSuite("TGK Grid Entry Mapping Reducer");
@@ -2326,6 +2372,309 @@ int OnInit()
   Tests.AssertTrue(
     "CR01-11 valid WAIT_ACTIVATION to READY is accepted",
     ReplayAnchorStateAttempt("v1|ANCHOR_STATE|1|READY", 1));
+  Tests.EndTest();
+
+  Tests.BeginTest("Reconciliation Batch applies metadata and Full Close atomically");
+  bool batch_replayed = false;
+  double batch_volume = 0.0;
+  int batch_position_count = 0;
+  int batch_level_one_state = -1;
+  int batch_level_two_state = -1;
+  ReplayBatchOutcome(
+    "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3008102|READY",
+    batch_replayed,
+    batch_volume,
+    batch_position_count,
+    batch_level_one_state,
+    batch_level_two_state);
+  Tests.AssertTrue("valid batch replays", batch_replayed);
+  Tests.AssertEqualInt("one Mapping removed", batch_position_count, 1);
+  Tests.AssertEqualDouble("remaining Volume applied", batch_volume, 0.005);
+  Tests.AssertEqualInt(
+    "metadata target keeps ACTIVE",
+    batch_level_one_state,
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.AssertEqualInt(
+    "closed target becomes READY",
+    batch_level_two_state,
+    (int)TGK_GRID_LEVEL_READY);
+  Tests.EndTest();
+
+  Tests.BeginTest("Malformed Reconciliation Batch applies no prefix");
+  string malformed_batches[];
+  ArrayResize(malformed_batches, 0);
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101";
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|1|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3008102|READY";
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|1|BOGUS_OPERATION|3008101|0.005";
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3009999|READY";
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|1|POSITION_METADATA|3008101|0.05|4008101";
+  ArrayResize(malformed_batches, ArraySize(malformed_batches) + 1);
+  malformed_batches[ArraySize(malformed_batches) - 1] =
+    "v1|RECONCILIATION_BATCH|0";
+
+  for(int batch_index = 0; batch_index < ArraySize(malformed_batches); batch_index++)
+  {
+    bool rejected_replay = true;
+    double rejected_volume = 0.0;
+    int rejected_position_count = 0;
+    int rejected_level_one_state = -1;
+    int rejected_level_two_state = -1;
+    ReplayBatchOutcome(
+      malformed_batches[batch_index],
+      rejected_replay,
+      rejected_volume,
+      rejected_position_count,
+      rejected_level_one_state,
+      rejected_level_two_state);
+
+    Tests.AssertFalse(
+      StringFormat("batch %d is rejected", batch_index),
+      rejected_replay);
+    Tests.AssertEqualInt(
+      StringFormat("batch %d removes no Mapping", batch_index),
+      rejected_position_count,
+      2);
+    Tests.AssertEqualDouble(
+      StringFormat("batch %d keeps every Volume", batch_index),
+      rejected_volume,
+      0.01);
+    Tests.AssertEqualInt(
+      StringFormat("batch %d keeps the metadata target ACTIVE", batch_index),
+      rejected_level_one_state,
+      (int)TGK_GRID_LEVEL_ACTIVE);
+    Tests.AssertEqualInt(
+      StringFormat("batch %d keeps the close target ACTIVE", batch_index),
+      rejected_level_two_state,
+      (int)TGK_GRID_LEVEL_ACTIVE);
+  }
+  Tests.EndTest();
+
+  Tests.BeginTest("Rejected Reconciliation Batch enters RECOVERY_ERROR");
+  STGKGridMappingJournalRecord rejected_records[];
+  BuildBatchFixture(rejected_records);
+  AddRecord(
+    rejected_records,
+    ArraySize(rejected_records) + 1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3009999|READY");
+
+  CTGKGridEntryMappingReducer rejected_reducer;
+  Tests.AssertTrue(
+    "initialize rejected batch Reducer",
+    rejected_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertFalse(
+    "rejected batch fails the record",
+    rejected_reducer.Replay(rejected_records, ArraySize(rejected_records)));
+  Tests.AssertEqualInt(
+    "rejected batch reports RECOVERY_ERROR",
+    (int)rejected_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.EndTest();
+
+  Tests.BeginTest("Deal Association projection is read-only and match scoped");
+  STGKGridMappingJournalRecord deal_records[];
+  AddBaseConfiguration(deal_records);
+  AddRecord(
+    deal_records,
+    ArraySize(deal_records) + 1,
+    TGK_GRID_MAPPING_RECORD_ENTRY_INTENT,
+    "v1|REQ-AD-1|XAUUSD|710001|BUY|LEVEL|1|0.10|1|UT-INSTANCE");
+  AddRecord(
+    deal_records,
+    ArraySize(deal_records) + 1,
+    TGK_GRID_MAPPING_RECORD_EXECUTION_RESULT,
+    "v1|REQ-AD-1|DONE_PARTIAL|9101|9201");
+  AddRecord(
+    deal_records,
+    ArraySize(deal_records) + 1,
+    TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION,
+    "v1|REQ-AD-1|9201|3009201|0.04");
+  AddRecord(
+    deal_records,
+    ArraySize(deal_records) + 1,
+    TGK_GRID_MAPPING_RECORD_DEAL_ASSOCIATION,
+    "v1|REQ-AD-1|9202|3009201|0.06");
+
+  CTGKGridEntryMappingReducer deal_reducer;
+  Tests.AssertTrue(
+    "initialize Deal projection Reducer",
+    deal_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay Deal fixture",
+    deal_reducer.Replay(deal_records, ArraySize(deal_records)));
+  Tests.AssertTrue("Request stays unresolved", deal_reducer.HasUnresolvedRequest());
+  Tests.AssertEqualInt("two Deal Associations retained", deal_reducer.DealCount(), 2);
+
+  bool has_association = false;
+  string association_request_id = "";
+  double association_volume = 0.0;
+  Tests.AssertTrue(
+    "projection reads a matching Identifier",
+    deal_reducer.TryGetDealAssociationProjection(
+      "3009201",
+      has_association,
+      association_request_id,
+      association_volume));
+  Tests.AssertTrue("matching Identifier has evidence", has_association);
+  Tests.AssertEqualString(
+    "projected Request Identifier",
+    association_request_id,
+    "REQ-AD-1");
+  Tests.AssertEqualDouble("associated Volume", association_volume, 0.10);
+
+  Tests.AssertTrue(
+    "projection reads an unrelated Identifier",
+    deal_reducer.TryGetDealAssociationProjection(
+      "3009999",
+      has_association,
+      association_request_id,
+      association_volume));
+  Tests.AssertFalse("unrelated Identifier has no evidence", has_association);
+  Tests.AssertEqualString("no projected Request", association_request_id, "");
+  Tests.AssertEqualDouble("no projected Volume", association_volume, 0.0);
+
+  Tests.AssertFalse(
+    "a non-canonical Identifier is refused",
+    deal_reducer.TryGetDealAssociationProjection(
+      "03009201",
+      has_association,
+      association_request_id,
+      association_volume));
+  Tests.AssertEqualInt(
+    "the projection mutates no Deal state",
+    deal_reducer.DealCount(),
+    2);
+  Tests.AssertTrue(
+    "the Request stays unresolved after projection",
+    deal_reducer.HasUnresolvedRequest());
+  Tests.EndTest();
+
+  Tests.BeginTest("CR-04 a rejected Batch rolls back every sub-event");
+  STGKGridMappingJournalRecord rollback_records[];
+  BuildBatchFixture(rollback_records);
+
+  CTGKGridEntryMappingReducer rollback_reducer;
+  Tests.AssertTrue(
+    "initialize rollback Reducer",
+    rollback_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay the batch fixture",
+    rollback_reducer.Replay(rollback_records, ArraySize(rollback_records)));
+  Tests.AssertEqualLong("fixture Sequence", rollback_reducer.LastSequence(), 10);
+
+  // The first sub-event is legal and would change the Volume; the second is
+  // rejected, so the whole Batch must be rolled back.
+  Tests.AssertFalse(
+    "a rejected Batch fails the record",
+    rollback_reducer.ApplyCommittedRecord(
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3009999|READY"));
+  Tests.AssertEqualInt("no Mapping removed", rollback_reducer.PositionCount(), 2);
+  Tests.AssertEqualDouble(
+    "the legal sub-event is rolled back",
+    rollback_reducer.PositionVolumeAt(0),
+    0.01);
+  Tests.AssertEqualString(
+    "the Ticket is unchanged",
+    rollback_reducer.PositionTicketAt(0),
+    "4008101");
+  Tests.AssertEqualInt(
+    "the metadata target stays ACTIVE",
+    rollback_reducer.LevelStateAt(1),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.AssertEqualInt(
+    "the close target stays ACTIVE",
+    rollback_reducer.LevelStateAt(2),
+    (int)TGK_GRID_LEVEL_ACTIVE);
+  Tests.AssertEqualLong(
+    "the Sequence did not advance",
+    rollback_reducer.LastSequence(),
+    10);
+  Tests.AssertEqualInt(
+    "the Reducer stays healthy after a clean rollback",
+    (int)rollback_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_NORMAL);
+  Tests.EndTest();
+
+  Tests.BeginTest("CR-04 a failed rollback fails the Reducer closed");
+  STGKGridMappingJournalRecord restore_records[];
+  BuildBatchFixture(restore_records);
+
+  CTGKGridEntryMappingReducer restore_reducer;
+  Tests.AssertTrue(
+    "initialize restore Reducer",
+    restore_reducer.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "replay the batch fixture",
+    restore_reducer.Replay(restore_records, ArraySize(restore_records)));
+  Tests.AssertTrue(
+    "inject the rollback failure",
+    restore_reducer.SetRestoreFailureInjectionForTest(true));
+
+  Tests.AssertFalse(
+    "a Batch whose rollback fails is rejected",
+    restore_reducer.ApplyCommittedRecord(
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      "v1|RECONCILIATION_BATCH|2|POSITION_METADATA|3008101|0.005|4008101|POSITION_CLOSED|3009999|READY"));
+  Tests.AssertEqualInt(
+    "a failed rollback reports RECOVERY_ERROR",
+    (int)restore_reducer.RecoveryStatus(),
+    (int)TGK_GRID_MAPPING_STATUS_RECOVERY_ERROR);
+  Tests.AssertEqualLong(
+    "the Sequence did not advance",
+    restore_reducer.LastSequence(),
+    10);
+
+  // Every mutation and readiness path must refuse to serve the uncertain state.
+  Tests.AssertFalse(
+    "a later mutation is refused",
+    restore_reducer.ApplyCommittedRecord(
+      TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+      "v1|POSITION_METADATA|3008101|0.01|4008101"));
+  bool restore_has_mapping = true;
+  Tests.AssertFalse(
+    "mapping readiness fails closed",
+    restore_reducer.TryGetPositionMapping(false, 1, restore_has_mapping));
+  Tests.AssertFalse("no Mapping is reported", restore_has_mapping);
+  Tests.AssertFalse(
+    "context validation fails closed",
+    restore_reducer.MatchesContext(
+      "UT-INSTANCE",
+      "XAUUSD",
+      710001,
+      TGK_GRID_MODE_BUY,
+      1));
+
+  // The Journal remains the canonical recovery path.
+  CTGKGridEntryMappingReducer restore_recovered;
+  Tests.AssertTrue(
+    "initialize the recovery Reducer",
+    restore_recovered.Initialize("XAUUSD", 710001, "UT-INSTANCE"));
+  Tests.AssertTrue(
+    "the Journal rebuilds the committed state",
+    restore_recovered.Replay(restore_records, ArraySize(restore_records)));
+  Tests.AssertEqualInt(
+    "recovery restores both Mappings",
+    restore_recovered.PositionCount(),
+    2);
+  Tests.AssertEqualDouble(
+    "recovery restores the committed Volume",
+    restore_recovered.PositionVolumeAt(0),
+    0.01);
+  Tests.AssertEqualLong(
+    "recovery restores the committed Sequence",
+    restore_recovered.LastSequence(),
+    10);
   Tests.EndTest();
 
   Tests.EndSuite();

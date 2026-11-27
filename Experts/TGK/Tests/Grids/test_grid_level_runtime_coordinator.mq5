@@ -25,6 +25,126 @@ void SetPosition(
   position.volume = volume;
 }
 
+#define GATE_SYMBOL "XAUUSD"
+#define GATE_MAGIC 710601
+#define GATE_INSTANCE "UT-GATE"
+#define GATE_NORMAL_LEVEL_COUNT 8
+
+void AddCoordinatorRecord(
+  STGKGridMappingJournalRecord &records[],
+  long sequence,
+  ENUM_TGK_GRID_MAPPING_RECORD_TYPE record_type,
+  string payload)
+{
+  int index = ArraySize(records);
+  ArrayResize(records, index + 1);
+  records[index].sequence = sequence;
+  records[index].record_type = record_type;
+  records[index].payload = payload;
+}
+
+// Complete Canonical Hydration Projection built from a healthy Reducer.
+bool BuildGateProjection(
+  CTGKGridEntryMappingReducer &reducer,
+  ENUM_TGK_GRID_LEVEL_STATE &anchor_state,
+  STGKGridLevelStateHydration &level_states[],
+  STGKGridLevelPositionRecord &positions[],
+  STGKGridEntryRequestHydration &entry_request)
+{
+  ArrayResize(level_states, 0);
+  ArrayResize(positions, 0);
+  entry_request.present = false;
+  entry_request.request_id = "";
+  entry_request.is_anchor = false;
+  entry_request.level_index = -1;
+  entry_request.requested_volume = 0.0;
+
+  if(!reducer.TryGetAnchorState(anchor_state))
+    return false;
+
+  for(int level_index = 0; level_index < GATE_NORMAL_LEVEL_COUNT; level_index++)
+  {
+    int state_value = reducer.LevelStateAt(level_index);
+    if(state_value < 0)
+      return false;
+
+    int index = ArraySize(level_states);
+    if(ArrayResize(level_states, index + 1) != index + 1)
+      return false;
+
+    level_states[index].level_index = level_index;
+    level_states[index].state = (ENUM_TGK_GRID_LEVEL_STATE)state_value;
+  }
+
+  return true;
+}
+
+// Hydrated Runtime waiting on the Reconciliation Gate, with no Position Mapping.
+bool BuildGateFixture(
+  CTGKGridEntryMappingReducer &reducer,
+  CTGKGridLevelRuntimeCoordinator &coordinator)
+{
+  STGKGridMappingJournalRecord records[];
+  AddCoordinatorRecord(
+    records,
+    1,
+    TGK_GRID_MAPPING_RECORD_LIFECYCLE_UPDATE,
+    "v1|RESET_COMMITTED|1|BUY|5.0|3980.0|4020.0|4000.0|9");
+
+  if(!reducer.Initialize(GATE_SYMBOL, GATE_MAGIC, GATE_INSTANCE))
+    return false;
+  if(!reducer.Replay(records, ArraySize(records)))
+    return false;
+
+  STGKGridPersistedConfigProjection config;
+  if(!reducer.TryGetPersistedConfig(config))
+    return false;
+
+  ENUM_TGK_GRID_LEVEL_STATE anchor_state;
+  STGKGridLevelStateHydration level_states[];
+  STGKGridLevelPositionRecord positions[];
+  STGKGridEntryRequestHydration entry_request;
+  if(!BuildGateProjection(
+    reducer,
+    anchor_state,
+    level_states,
+    positions,
+    entry_request))
+    return false;
+
+  return coordinator.HydrateRuntimeState(
+    config.mode,
+    config.anchor_price,
+    config.grid_step,
+    config.lower_bound,
+    config.upper_bound,
+    config.persisted_level_count - 1,
+    config.symbol,
+    config.magic_number,
+    config.config_epoch,
+    config,
+    3999.0,
+    4000.0,
+    anchor_state,
+    level_states,
+    positions,
+    entry_request);
+}
+
+void BuildGateProof(
+  STGKGridReconciliationGateProof &proof,
+  long snapshot_generation,
+  long base_sequence)
+{
+  proof.instance_id = GATE_INSTANCE;
+  proof.symbol = GATE_SYMBOL;
+  proof.magic_number = GATE_MAGIC;
+  proof.mode = TGK_GRID_MODE_BUY;
+  proof.config_epoch = 1;
+  proof.snapshot_generation = snapshot_generation;
+  proof.base_sequence = base_sequence;
+}
+
 int OnInit()
 {
   Tests.BeginSuite("TGK Grid Level Runtime Coordinator");
@@ -1148,6 +1268,237 @@ int OnInit()
     candidate.level_price,
     4000.0,
     0.000001);
+  Tests.EndTest();
+
+  Tests.BeginTest("Gate release is refused before a Stable Snapshot");
+  CTGKGridLevelRuntimeCoordinator not_pending;
+  Tests.AssertTrue(
+    "initialize an unprepared Coordinator",
+    not_pending.Initialize(
+      TGK_GRID_MODE_BUY,
+      4000.0,
+      5.0,
+      3980.0,
+      4020.0,
+      GATE_NORMAL_LEVEL_COUNT,
+      GATE_SYMBOL,
+      GATE_MAGIC,
+      3999.0,
+      4000.0));
+  Tests.AssertFalse(
+    "the Runtime is not waiting for Reconciliation",
+    not_pending.IsReconciliationPending());
+
+  STGKGridReconciliationGateProof unprepared_proof;
+  BuildGateProof(unprepared_proof, 1, 0);
+  ENUM_TGK_GRID_LEVEL_STATE unprepared_anchor_state = TGK_GRID_LEVEL_READY;
+  STGKGridLevelStateHydration unprepared_level_states[];
+  STGKGridLevelPositionRecord unprepared_positions[];
+  STGKGridEntryRequestHydration unprepared_entry_request;
+  unprepared_entry_request.present = false;
+  unprepared_entry_request.request_id = "";
+  unprepared_entry_request.is_anchor = false;
+  unprepared_entry_request.level_index = -1;
+  unprepared_entry_request.requested_volume = 0.0;
+  ArrayResize(unprepared_level_states, 0);
+  ArrayResize(unprepared_positions, 0);
+  Tests.AssertFalse(
+    "release is refused without Hydration",
+    not_pending.ReleaseReconciliationGate(
+      unprepared_proof,
+      unprepared_anchor_state,
+      unprepared_level_states,
+      unprepared_positions,
+      unprepared_entry_request,
+      3999.0,
+      4000.0));
+  Tests.EndTest();
+
+  Tests.BeginTest("Gate release refuses a mismatched proof or Projection");
+  CTGKGridEntryMappingReducer gate_reducer;
+  CTGKGridLevelRuntimeCoordinator gate_coordinator;
+  Tests.AssertTrue(
+    "build hydrated Gate fixture",
+    BuildGateFixture(gate_reducer, gate_coordinator));
+  Tests.AssertTrue(
+    "the hydrated Runtime waits for Reconciliation",
+    gate_coordinator.IsReconciliationPending());
+
+  ENUM_TGK_GRID_LEVEL_STATE gate_anchor_state;
+  STGKGridLevelStateHydration gate_level_states[];
+  STGKGridLevelPositionRecord gate_positions[];
+  STGKGridEntryRequestHydration gate_entry_request;
+  Tests.AssertTrue(
+    "build the Canonical Projection",
+    BuildGateProjection(
+      gate_reducer,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request));
+  Tests.AssertEqualInt(
+    "Projection covers every Level",
+    ArraySize(gate_level_states),
+    GATE_NORMAL_LEVEL_COUNT);
+
+  STGKGridReconciliationGateProof gate_proof;
+  BuildGateProof(gate_proof, 0, 0);
+  Tests.AssertFalse(
+    "a zero Snapshot Generation is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+
+  BuildGateProof(gate_proof, 1, 0);
+  gate_proof.config_epoch = 2;
+  Tests.AssertFalse(
+    "a different Config Epoch is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+
+  BuildGateProof(gate_proof, 1, 0);
+  gate_proof.mode = TGK_GRID_MODE_SELL;
+  Tests.AssertFalse(
+    "a different Mode is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+
+  BuildGateProof(gate_proof, 1, 0);
+  gate_proof.instance_id = "UT-OTHER";
+  Tests.AssertFalse(
+    "a different Instance is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+
+  BuildGateProof(gate_proof, 1, 0);
+  ENUM_TGK_GRID_LEVEL_STATE saved_level_state = gate_level_states[0].state;
+  gate_level_states[0].state = TGK_GRID_LEVEL_WAIT_ACTIVATION;
+  Tests.AssertFalse(
+    "a different Level State is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+  gate_level_states[0].state = saved_level_state;
+
+  Tests.AssertFalse(
+    "a different Anchor State is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      TGK_GRID_LEVEL_WAIT_ACTIVATION,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+
+  Tests.AssertFalse(
+    "an invalid quote is refused",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      0.0,
+      0.0));
+
+  Tests.AssertTrue(
+    "every rejection keeps the Gate closed",
+    gate_coordinator.IsReconciliationPending());
+  Tests.EndTest();
+
+  Tests.BeginTest("Gate release clears the Gate and refreshes the Quote Baseline");
+  BuildGateProof(gate_proof, 1, 0);
+  Tests.AssertTrue(
+    "matching proof releases the Gate",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
+  Tests.AssertFalse(
+    "the Gate is open",
+    gate_coordinator.IsReconciliationPending());
+  Tests.AssertFalse(
+    "the release creates no Anchor activation",
+    gate_coordinator.HasPendingAnchorActivation());
+
+  ENUM_TGK_GRID_COORDINATOR_RESULT release_result;
+  STGKGridLevelCandidate release_candidate;
+  Tests.AssertEqualInt(
+    "the release itself emits no Candidate on the same quote",
+    (int)gate_coordinator.UpdatePrice(
+      3999.0,
+      4000.0,
+      release_result,
+      release_candidate),
+    (int)TGK_GRID_COORDINATOR_NO_CANDIDATE);
+  Tests.AssertEqualInt(
+    "no Level candidate is exposed",
+    release_candidate.level_index,
+    -1);
+  Tests.AssertFalse("no Anchor candidate is exposed", release_candidate.is_anchor);
+
+  Tests.AssertEqualInt(
+    "Price Processing resumes against the released baseline",
+    (int)gate_coordinator.UpdatePrice(
+      3985.0,
+      3986.0,
+      release_result,
+      release_candidate),
+    (int)TGK_GRID_COORDINATOR_CANDIDATE_READY);
+  Tests.AssertEqualInt(
+    "lowest crossed Level is offered",
+    release_candidate.level_index,
+    2);
+  Tests.AssertEqualDouble(
+    "offered Level price",
+    release_candidate.level_price,
+    3990.0,
+    0.000001);
+
+  BuildGateProof(gate_proof, 2, 0);
+  Tests.AssertFalse(
+    "a released Gate cannot be released twice",
+    gate_coordinator.ReleaseReconciliationGate(
+      gate_proof,
+      gate_anchor_state,
+      gate_level_states,
+      gate_positions,
+      gate_entry_request,
+      3999.0,
+      4000.0));
   Tests.EndTest();
 
   Tests.EndSuite();

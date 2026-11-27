@@ -67,6 +67,21 @@ struct STGKGridEntryRequestHydration
   double requested_volume;
 };
 
+// Proof of the Latest Accepted Complete/Stable Live Position Snapshot handed
+// to the explicit Reconciliation Gate release. It carries the Instance
+// identity, the committed configuration context and the Snapshot freshness
+// tokens, so a release can never be inferred from the Snapshot alone.
+struct STGKGridReconciliationGateProof
+{
+  string instance_id;
+  string symbol;
+  long magic_number;
+  ENUM_TGK_GRID_MODE mode;
+  long config_epoch;
+  long snapshot_generation;
+  long base_sequence;
+};
+
 // Runtime Restore outcome. A hydrated Runtime starts in
 // PENDING_RECONCILIATION and keeps the Candidate/Entry gate closed until a
 // Complete/Stable Live Position Snapshot confirms ownership.
@@ -111,6 +126,8 @@ private:
 
   ENUM_TGK_GRID_RUNTIME_RESTORE_STATUS m_restore_status;
   bool m_reconciliation_pending;
+  long m_released_snapshot_generation;
+  long m_released_base_sequence;
   string m_pending_request_id;
   double m_pending_request_volume;
 
@@ -780,6 +797,8 @@ private:
     ClearDeferredCandidate();
     m_restore_status = TGK_GRID_RUNTIME_RESTORE_NONE;
     m_reconciliation_pending = false;
+    m_released_snapshot_generation = 0;
+    m_released_base_sequence = 0;
     m_pending_request_id = "";
     m_pending_request_volume = 0.0;
     ArrayResize(m_positions, 0);
@@ -938,6 +957,8 @@ public:
     m_has_deferred_candidate = false;
     m_restore_status = TGK_GRID_RUNTIME_RESTORE_NONE;
     m_reconciliation_pending = false;
+    m_released_snapshot_generation = 0;
+    m_released_base_sequence = 0;
     m_pending_request_id = "";
     m_pending_request_volume = 0.0;
     m_instance_id = "";
@@ -997,6 +1018,8 @@ public:
     m_anchor_activation_pending = false;
     m_restore_status = TGK_GRID_RUNTIME_RESTORE_NONE;
     m_reconciliation_pending = false;
+    m_released_snapshot_generation = 0;
+    m_released_base_sequence = 0;
     m_pending_request_id = "";
     m_pending_request_volume = 0.0;
     m_instance_id = "";
@@ -1509,6 +1532,159 @@ public:
   bool IsReconciliationPending()
   {
     return m_initialized && m_reconciliation_pending;
+  }
+
+  // Read-only preview of the post-close state of one mapped target. The
+  // durable transition is encoded at Consume time so the state can never be
+  // computed from a stale quote.
+  bool TryGetPostCloseState(
+    bool is_anchor,
+    int level_index,
+    double current_bid,
+    double current_ask,
+    ENUM_TGK_GRID_LEVEL_STATE &state)
+  {
+    state = TGK_GRID_LEVEL_READY;
+    if(!m_initialized)
+      return false;
+
+    return m_engine.TryGetPostCloseState(
+      is_anchor,
+      level_index,
+      current_bid,
+      current_ask,
+      state);
+  }
+
+  // Explicit Reconciliation Gate release.
+  //
+  // The Caller must supply the proof of the Latest Accepted Complete/Stable
+  // Live Position Snapshot and the Canonical Hydration Projection it built from
+  // the Reducer. The release succeeds only when the proof matches the committed
+  // Identity/Configuration, the freshness tokens advance, and the supplied
+  // Projection is exactly the Runtime Projection. It never emits a Candidate:
+  // it only refreshes the Quote Baseline and re-enables Price Processing.
+  bool ReleaseReconciliationGate(
+    STGKGridReconciliationGateProof &proof,
+    ENUM_TGK_GRID_LEVEL_STATE anchor_state,
+    STGKGridLevelStateHydration &level_states[],
+    STGKGridLevelPositionRecord &positions[],
+    STGKGridEntryRequestHydration &entry_request,
+    double current_bid,
+    double current_ask)
+  {
+    if(!m_initialized ||
+       !m_reconciliation_pending ||
+       !IsValidQuote(current_bid, current_ask))
+      return false;
+
+    if(!IsTokenLiteral(proof.instance_id) ||
+       proof.instance_id != m_instance_id ||
+       proof.symbol != m_symbol ||
+       proof.magic_number != m_magic_number ||
+       proof.mode != m_mode ||
+       proof.config_epoch <= 0 ||
+       proof.config_epoch != m_config_epoch ||
+       proof.snapshot_generation <= m_released_snapshot_generation ||
+       proof.base_sequence < 0 ||
+       proof.base_sequence < m_released_base_sequence)
+      return false;
+
+    // A Gate release never emits or retains a Candidate.
+    if(m_candidate_offered ||
+       m_has_deferred_candidate ||
+       m_anchor_activation_pending)
+      return false;
+
+    int normal_level_count = m_engine.LevelCount();
+    if(normal_level_count <= 0 ||
+       ArraySize(level_states) != normal_level_count)
+      return false;
+
+    int level_state_values[];
+    if(ArrayResize(level_state_values, normal_level_count) !=
+       normal_level_count)
+      return false;
+
+    for(int level_index = 0; level_index < normal_level_count; level_index++)
+      level_state_values[level_index] = -1;
+
+    for(int index = 0; index < ArraySize(level_states); index++)
+    {
+      int level_index = level_states[index].level_index;
+      if(level_index < 0 ||
+         level_index >= normal_level_count ||
+         !IsValidHydrationState(level_states[index].state) ||
+         level_state_values[level_index] != -1)
+        return false;
+
+      level_state_values[level_index] = (int)level_states[index].state;
+    }
+
+    for(int level_index = 0; level_index < normal_level_count; level_index++)
+    {
+      ENUM_TGK_GRID_LEVEL_STATE runtime_state;
+      if(level_state_values[level_index] == -1 ||
+         !m_engine.GetLevelState(level_index, runtime_state) ||
+         (int)TGKGridNormalizeLevelState(runtime_state) !=
+           level_state_values[level_index])
+        return false;
+    }
+
+    if(TGKGridNormalizeLevelState(anchor_state) !=
+       TGKGridNormalizeLevelState(m_engine.GetAnchorState()))
+      return false;
+
+    if(ArraySize(positions) != ArraySize(m_positions))
+      return false;
+
+    for(int index = 0; index < ArraySize(positions); index++)
+    {
+      int runtime_index = -1;
+      for(int previous = 0; previous < ArraySize(m_positions); previous++)
+      {
+        if(m_positions[previous].position_identifier ==
+           positions[index].position_identifier)
+        {
+          runtime_index = previous;
+          break;
+        }
+      }
+
+      if(runtime_index < 0 ||
+         m_positions[runtime_index].ticket != positions[index].ticket ||
+         m_positions[runtime_index].symbol != positions[index].symbol ||
+         m_positions[runtime_index].magic_number !=
+           positions[index].magic_number ||
+         m_positions[runtime_index].is_anchor != positions[index].is_anchor ||
+         m_positions[runtime_index].level_index !=
+           positions[index].level_index ||
+         MathAbs(m_positions[runtime_index].volume - positions[index].volume) >
+           0.00000001)
+        return false;
+    }
+
+    if(entry_request.present)
+    {
+      if(!m_request_unresolved ||
+         entry_request.request_id != m_pending_request_id ||
+         MathAbs(entry_request.requested_volume - m_pending_request_volume) >
+           0.00000001 ||
+         entry_request.is_anchor != m_pending_candidate.is_anchor ||
+         entry_request.level_index != m_pending_candidate.level_index)
+        return false;
+    }
+    else if(m_request_unresolved)
+      return false;
+
+    m_previous_bid = current_bid;
+    m_previous_ask = current_ask;
+    m_current_bid = current_bid;
+    m_current_ask = current_ask;
+    m_released_snapshot_generation = proof.snapshot_generation;
+    m_released_base_sequence = proof.base_sequence;
+    m_reconciliation_pending = false;
+    return true;
   }
 
   // The persisted Entry Request Identifier restored by Runtime Hydration.
