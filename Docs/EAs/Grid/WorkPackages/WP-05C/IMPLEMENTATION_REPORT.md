@@ -544,9 +544,16 @@ Product Owner รัน MT5 Test ครบทุกไฟล์ที่เก�
 - เพิ่ม Failure Injection Test ครบทั้ง `POSITION_IDENTIFIER`, `POSITION_TICKET`, `POSITION_SYMBOL`, `POSITION_MAGIC` และ `POSITION_VOLUME`
 - แต่ละกรณียืนยัน Acquire ไม่สำเร็จ, Snapshot เป็น INVALID, ไม่มี Owned Position, Consume ไม่สำเร็จ และไม่มี Trusted Consumed Snapshot ให้ส่งมอบ
 
-### 16.3 Verification Boundary
+### 16.3 Verification Boundary — Final Result
 
-- การแก้ไข Source/Test ใน §16 ทำโดย CTO หลังจาก Compile/MT5 Test ที่บันทึกใน §14–15 ดังนั้นผลเดิม **ไม่ครอบคลุม** การแก้ไข §16
-- ยังไม่ได้รัน MetaEditor Compile หรือ MT5 Test หลังการแก้ไข §16; ต้องให้ Product Owner Compile และรันชุด Test ที่เกี่ยวข้องซ้ำ
-- ไม่มี Commit/Push; การแก้ไข CTO คงเป็น Unstaged Changes แยกจาก Staged Changes เดิมของ Product Owner/Implementer
-- WP-05C ยังไม่ผ่าน Formal CTO Review และยังไม่ปิด
+- Product Owner รายงานเมื่อ 2026-11-27 ว่า MetaEditor Compile ผ่าน และรัน Test ผ่านทุกไฟล์ หลัง CTO Remediation CR-08/CR-09
+- CTO Final Review ตรวจ CR-08/CR-09 แล้ว APPROVED: Diff ใช้ Acquirer-owned Position Set ผ่าน Single-use hand-off เท่านั้น; ป้องกัน replay/stale generation; Failure Injection ครบ Required Position Properties ทั้ง 5 รายการ
+- `git diff --check` ของ Worktree ผ่าน; ตรวจสถานะ Git รอบปิดงานพบไฟล์ WP-05C ทั้ง 12 รายการอยู่ใน Staging Area
+- ไม่มี Commit/Push
+
+### 16.4 Formal Closure — 2026-11-27
+
+- Product Owner อนุมัติปิด WP-05C เมื่อ 2026-11-27 หลัง Compile/Test PASS และ CTO Final Review APPROVED
+- Trello Card ถูกย้ายไป `Done` และ Marked Complete พร้อมบันทึกผลปิดงาน
+- **CR-07 ยังคงเป็น Follow-up แยกต่างหากและเป็น Gate ก่อน WP-05D:** `IsUnresolvedEntryEvidence()` ต้อง aggregate Volume ของ Unmapped Live Position Identifiers ทั้งหมดที่สัมพันธ์กับ Unresolved Entry Request เดียวกัน แล้วตรวจเทียบกับ Requested Volume เพื่อป้องกันการยอมรับ Live Volume รวมที่เกินคำขอ ห้ามถือว่า CR-07 ถูกแก้หรือรวมอยู่ใน WP-05C
+- WP-05C ปิดแล้ว; WP-05D ยังห้ามเริ่มจนกว่า CR-07 จะได้รับการแก้ไข/ทดสอบและมีการอนุมัติ scope/implementation ตาม workflow
