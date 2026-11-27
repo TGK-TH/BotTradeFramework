@@ -47,6 +47,15 @@ WP-06A ถึง WP-06E เป็น Dependency chain ตามลำดับ �
 - Existing Positions retain their already-set TP if GridStep input changes; new Positions use the new Step. The approved GridStep reset still closes old Positions before rebuilding.
 - WP-05A.2 Full Close remains reason-free. TP recycle behavior must be achieved through the Level/quote state contract, not Closing Deal History or TP/Non-TP classification. WP-06D must verify this equivalence.
 
+## CTO Design Review Findings (2026-11-27)
+
+Product Owner approved D-06-03 (typed Initial Entry Intent + atomic Initial Bootstrap schema amendment) and D-06-04 (canonical Reducer configuration authority + Fixed Lot persistence/migration) on 2026-11-27. These are design approvals only; implementation remains unauthorized.
+- WP-06B recommended event model: OnTradeTransaction is a short notification/enqueue path; serialized processing resolves exact Deal Ticket and exact DEAL_ORDER against the durable Order Ticket. A bounded exact-order History fallback is required for missed callbacks, queue overflow and restart. Tester trace is still required before D-06-02 closes.
+- WP-06C requires a distinct Initial Entry Intent and one atomic Initial Bootstrap journal commit. The current normal Entry Pipeline cannot start a fresh Grid because it requires an existing Config Epoch/geometry. This requires a scoped Reducer/Journal schema amendment.
+- WP-06B also requires a versioned Deal evidence projection: current Reducer records omit Deal price and reject all duplicate Deal Tickets, so weighted Anchor recovery and exact duplicate idempotency cannot be achieved by the existing schema unchanged.
+- WP-06A recommended authority split: canonical Mapping Reducer Snapshot/Journal owns trading configuration and geometry; extend it to persist Fixed Lot. Lifecycle Persistence owns orchestration/reset metadata; duplicated legacy values are mirrors and must match or fail closed.
+- These are CTO design recommendations, not implementation authorization. See WP-06_DECISIONS.md and each child SPEC for details and required approvals.
+
 ## Work Package Index
 - [WP-06A SPEC](WP-06A/SPEC.md) · [TEST_PLAN](WP-06A/TEST_PLAN.md)
 - [WP-06B SPEC](WP-06B/SPEC.md) · [TEST_PLAN](WP-06B/TEST_PLAN.md)

@@ -85,7 +85,33 @@ This is a proposed event architecture, not yet a final choice between event-driv
 ## 7. Observability
 At minimum log instance, symbol, magic, state, config epoch, request ID, order/deal ticket, position identifier, candidate target, reconciliation generation/base sequence, and explicit reason for each gate/error. Avoid converting 64-bit identifiers to floating point.
 
-## 8. Open Decisions
+## 8. CTO Design Review Addendum
+
+### Deal Evidence Intake
+OnTradeTransaction is a short notification path: enqueue relevant 64-bit Deal Tickets, then process History evidence serially outside the callback. Correlate only through exact DEAL_ORDER == persisted Order Ticket. CTrade ResultDeal is a hint, not the sole source. A bounded exact-order History scan is required for missed callbacks, queue overflow and restart recovery. Persist unique Deal Associations before WP-05C. The selected Tester build must prove callback/History/restart semantics before D-06-02 closes.
+
+### Deal Evidence Persistence
+The current Reducer Deal projection stores Request ID, Deal Ticket, Position Identifier and volume only, and rejects any repeated Deal Ticket. It cannot independently reconstruct a volume-weighted Anchor after restart or distinguish an identical replay from conflicting evidence. WP-06B must version the Deal Association payload/projection to retain exact Order Ticket, Symbol, Magic, Deal Entry type, Position Identifier, volume and Deal price. Identical duplicate evidence is a no-op; conflicting evidence for the same Deal Ticket is Recovery Error.
+
+### Initial Bootstrap
+Fresh initial entry is a distinct pre-configuration flow. Persist Initial Entry Intent, obtain exact Order/Deal evidence and a complete/stable Position snapshot, then commit one compound Initial Bootstrap journal record containing canonical config, actual Anchor, geometry, Anchor mapping and ACTIVE. This requires a narrowly scoped Reducer/Journal schema amendment; separate Lifecycle and Reducer writes are not atomic. No normal candidate processing before commit.
+
+### Configuration Authority
+Canonical Mapping Reducer Snapshot + Journal owns trading configuration and geometry. Extend it to include Fixed Lot. Lifecycle Persistence owns orchestration/reset metadata; overlapping legacy values are mirrors validated against canonical projection. Any mismatch fails closed. Explicit migration is required for old snapshots lacking canonical Fixed Lot.
+
+## 9. Approved Design Decisions and Remaining Proof
+- D-06-03 Initial Entry Intent / atomic Initial Bootstrap schema amendment: Product Owner approved 2026-11-27. Implement only as specified in WP-06C; implementation is not authorized yet.
+- D-06-04 canonical Reducer configuration authority / Fixed Lot persistence / legacy migration: Product Owner approved 2026-11-27. Implement only as specified in WP-06A; implementation is not authorized yet.
+
+Remaining proof / decisions:
+1. D-06-02: selected MT5 Strategy Tester build must prove OnTradeTransaction callback, History selection, exact Order-to-Deal enumeration and restart fallback before production event-bridge implementation.
+2. D-06-05: verify exact Tester Hedging execution contract; multi-Identifier evidence stops the flow.
+3. D-06-06: define realistic restart/recovery coverage and its limitations.
+1. D-06-02: selected MT5 Strategy Tester build must prove OnTradeTransaction callback, History selection, exact Order-to-Deal enumeration and restart fallback.
+2. D-06-03: approve Initial Entry Intent / atomic Initial Bootstrap schema amendment and fill-price rule.
+3. D-06-04: PO confirmation of canonical authority split and Fixed Lot schema extension.
+4. D-06-05: verify exact Tester Hedging execution contract; multi-Identifier evidence stops the flow.
+5. D-06-06: define realistic restart/recovery coverage and its limitations.
 1. Verify TP recycle behavior against the reason-free Full Close state contract using the already-approved per-Position broker-side TP rule (BUY fill + one GridStep; SELL fill − one GridStep).
 2. Deal correlation: OnTradeTransaction primary with bounded History fallback vs serialized History polling; validate actual Tester callback ordering.
 3. Initial Anchor atomic bootstrap: define one durable transition that commits Anchor configuration + mapping without violating existing Reducer schema/API.

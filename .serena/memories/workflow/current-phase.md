@@ -76,5 +76,20 @@ Repository documents created:
 4. D-06-05 verify exact Tester execution contract; multi-Identifier evidence stops the flow and triggers architecture review.
 5. D-06-06 define realistic restart/recovery coverage in Strategy Tester.
 
+## Latest CTO Design Review — PO approvals and WP-06A/B/C contracts (2026-11-27)
+Product Owner explicitly approved both recommendations on 2026-11-27:
+- D-06-03: typed pre-configuration INITIAL_ENTRY Intent + one atomic Initial Bootstrap journal record, including actual fill-derived Anchor, canonical config/Fixed Lot, Config Epoch, geometry, Anchor Position Mapping and ACTIVE. Multiple partial Deals for one Position Identifier use volume-weighted actual Deal price; multiple Position Identifiers fail closed.
+- D-06-04: canonical Mapping Reducer Snapshot/Journal is sole trading configuration/geometry authority and must persist Fixed Lot. Lifecycle owns orchestration metadata; duplicate fields are mirrors and mismatch fails closed. Legacy Fixed Lot migration may adopt current validated Input only when no owned live Position and no unresolved Request; durable migration commit required before gate release; otherwise Recovery Error.
+
+Design documentation finalized/updated:
+- WP-06A SPEC/TEST_PLAN: canonical-first restore order, explicit Lifecycle mirror checks, Fixed Lot schema migration and tests A-16..A-22.
+- WP-06B SPEC/TEST_PLAN: short OnTradeTransaction enqueue callback; serialized exact Order→Deal correlation; versioned full Deal evidence schema; duplicate idempotency/conflict behavior; bounded exact-order History recovery; partial fill rules; INITIAL_ENTRY support; tests B-01..B-28.
+- WP-06C SPEC/TEST_PLAN: typed Initial Entry Intent before Adapter, exact evidence + stable snapshot, one atomic Initial Bootstrap journal commit, volume-weighted actual fill Anchor rule, rollback/replay behavior; tests C-01..C-30.
+- Updated WP-06_DECISIONS.md, ARCHITECTURE.md, README.md and Trello comments on parent and WP-06A/B/C.
+
+Remaining gate: D-06-02 is not proven. Before production WP-06B event bridge implementation, a separately approved MT5 Strategy Tester probe must capture callback/History semantics, exact-order Deal enumeration, partial-fill behavior where available, and restart recovery. Do not build/run this probe or send a Tester Trade Request without separate explicit Product Owner approval. D-06-05 exact Hedging Tester execution contract and D-06-06 realistic restart coverage remain to be defined/proven.
+
+Validation after documentation changes: `git diff --check` passed; all WP-06 Markdown relative links resolve; WP-06A/B/C test IDs have no duplicates (22/28/30 cases after latest updates); no `.mq5` or `.mqh` source files changed. No compile/tests, commit or push. All WP-06 Trello cards remain planning only; no implementation authorized.
+
 ## Exact next step
-Continue CTO design review: resolve event/deal correlation and initial Anchor/config authority contracts, check draft WPs against full source and tests, then finalize implementation-ready SPEC/TEST_PLAN for WP-06A and its dependencies. No source coding authorized yet.
+Ask Product Owner whether to authorize a separate minimal Strategy Tester probe for D-06-02 (this is distinct from production implementation and may send a test Trade Request only inside the approved Tester). Until explicitly authorized, do not create/run a trade probe, implement code, or move cards into implementation execution. After probe evidence is approved, close D-06-02 and sequence WP-06A → WP-06B → WP-06C one implementation card at a time, with fresh no-trade Grid Regression PASS and explicit implementation authorization before coding.
