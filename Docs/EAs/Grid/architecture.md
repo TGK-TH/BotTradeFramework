@@ -189,3 +189,12 @@ Product Owner อนุมัติ Design/Scope ของ WP-05A.3, WP-05B แ�
 - Persistence เก็บข้อมูลสถานะของ Instance ที่ระบุมาให้ แต่ไม่ได้เป็นผู้กำหนด Lifecycle ของ Instance
 - Types ประกาศรูปแบบข้อมูลและ Enum โดยไม่ได้ดำเนินการซื้อขายเอง
 - Test framework ตรวจเงื่อนไขและรายงานผล ไม่ได้เป็นหลักฐานแทนการทดสอบจริงใน MetaEditor/MT5
+
+
+## WP-06 — Production EA / Strategy Tester Integration (Design Draft 2026-11-27)
+
+The component architecture is now being planned for Strategy Tester integration. See [WP-06 Overview](WorkPackages/WP-06/README.md), [Proposed Runtime Architecture](WorkPackages/WP-06/ARCHITECTURE.md), and [Open Decisions](WorkPackages/WP-06/WP-06_DECISIONS.md). The planned sequence is Bootstrap/Recovery → Trade Event & Deal Correlation → Initial Anchor/Grid Entry Runtime → Position Management/TP/Reset → Strategy Tester End-to-End Readiness.
+
+Current Source still has no production Grid V1 EA shell/event loop. WP-05C provides stable Open Positions acquisition/reconciliation but depends on durable Entry Deal Association evidence; it does not discover Entry Deals or create those associations. A minimal evidence-intake bridge is therefore being designed for Strategy Tester, without assuming that all of WP-05D is required.
+
+The current one Entry Request : one Position Identifier contract must be verified under the exact Strategy Tester Hedging configuration. Any multi-Identifier or ambiguous evidence fails closed and triggers architecture review. WP-06D is blocked on Product Owner confirmation of the TP rule and execution ownership. All WP-06 documents are design drafts; no source implementation is authorized.

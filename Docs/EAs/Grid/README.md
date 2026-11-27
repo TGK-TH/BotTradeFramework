@@ -32,7 +32,8 @@
 - [WP-05A — Persistence Foundation](WorkPackages/WP-05A/README.md)
 - [WP-05A.3 — Anchor State Persistence Integration & Hardening](WorkPackages/WP-05A/Phase-1.3/SPEC.md)
 - [WP-05B — Runtime State Restoration](WorkPackages/WP-05B/SPEC.md) — DONE 2026-11-26; [CTO Code Review](WorkPackages/WP-05B/CODE_REVIEW.md)
-- [WP-05C — Open Positions Reconciliation](WorkPackages/WP-05C/SPEC.md)
+- [WP-05C — Open Positions Reconciliation](WorkPackages/WP-05C/SPEC.md) — DONE 2026-11-27
+- [WP-06 — Production EA / Strategy Tester Integration](WorkPackages/WP-06/README.md) — CTO Design & Planning; implementation not authorized
 
 ## Current implementation boundary
 

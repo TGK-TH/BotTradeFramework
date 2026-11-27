@@ -196,3 +196,41 @@ Grid V1 จะถือว่าเสร็จได้เมื่อครบ
 - [Development Workflow](../../Development/workflow.md) — Repository-wide workflow
 
 หากเอกสารขัดแย้งกัน ให้หยุดระบุความขัดแย้งก่อนแก้ Source; ใช้ผล User-approved decision ที่ใหม่กว่าเป็นหลัก และอัปเดตเอกสารที่เก่ากว่าให้สอดคล้อง
+
+
+## 7. Strategy Tester First — Roadmap Addendum (2026-11-27)
+
+Product Owner has explicitly reprioritized Grid V1: make the current Grid operational on MT5 Strategy Tester first, collect reproducible trading data, then complete Multi-Position Architecture before broker Demo.
+
+### 7.1 Current Milestone — WP-06 Production EA / Strategy Tester Integration
+
+CTO Design & Planning is active; implementation is NOT authorized. The detailed decomposition and design drafts are in [WP-06 README](WorkPackages/WP-06/README.md), [Architecture](WorkPackages/WP-06/ARCHITECTURE.md), and [Open Decisions](WorkPackages/WP-06/WP-06_DECISIONS.md).
+
+| WP | Work Package | Current Planning State | Outcome |
+|---|---|---|---|
+| WP-06A | Production EA Bootstrap & Recovery Gate | Design Draft | Production EA shell, configuration validation, Identity, canonical restore and WP-05C gate release |
+| WP-06B | Trade Event Intake & Entry Deal Correlation | Design Draft | Exact durable Request/Order/Deal association required before Position reconciliation |
+| WP-06C | Initial Anchor & Grid Entry Runtime | Design Draft | Initial fill becomes Anchor; normal Grid Candidate → Resolver → Policy → Adapter → Reconciliation flow |
+| WP-06D | Position Management, TP & Configuration Reset | Design Draft; TP decision pending PO | Existing-position management, approved TP behavior, Mode/Step reset |
+| WP-06E | Strategy Tester End-to-End Readiness | Design Draft | Production EA compile and agreed Hedging Strategy Tester functional matrix |
+
+### 7.2 Strategy Tester / Demo Separation
+
+1. Strategy Tester Readiness (WP-06A through WP-06E).
+2. Strategy Tester Validation and reproducible trade-data collection.
+3. Multi-Position Architecture for one Entry Request / Grid Level to multiple Position Identifiers.
+4. Demo Readiness & Demo Validation.
+
+The current one Entry Request : one Position Identifier contract is only acceptable for a specifically verified Tester configuration. Do not assume the Tester always guarantees this. Conflicting or ambiguous evidence must fail closed and trigger architecture review.
+
+WP-05D full Production Event Integration is deferred for Demo readiness. WP-06B may implement only the minimum event/deal evidence bridge proven necessary for Strategy Tester. CR-07 remains deferred until the Multi-Position contract is approved and its criteria are rewritten.
+
+### 7.3 Open Product / Architecture Decisions
+
+- The per-Position broker-side TP rule is already approved: BUY actual fill + one GridStep; SELL actual fill − one GridStep; no Basket TP. CTO must verify that reason-free Full Close + Level/quote state preserves the required retouch-before-reentry behavior.
+- CTO must verify MT5 Strategy Tester trade-event ordering and decide between OnTradeTransaction with bounded History fallback versus serialized History polling.
+- Initial Anchor + Position Mapping must be durably bootstrapped atomically from actual fill evidence.
+- Lifecycle and canonical Reducer configuration authority must be unified/validated before implementation.
+- Restart/recovery validation must distinguish true EA/terminal restart from in-memory reinitialization.
+
+No Demo/Live execution, no implementation, and no commit/push are authorized by this roadmap addendum.
