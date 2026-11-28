@@ -11,7 +11,7 @@ Trello: https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe
 - `.agents/skills/tgk-implementation-self-review/references/adversarial-review-protocol.md`
 
 Implementer: **ChatGPT (CTO acting as Implementer after explicit Product Owner instruction on 2026-11-28)**
-สถานะ: **Source remediation implemented; MetaEditor compile reports 0 errors / 0 warnings; Product Owner compile verification PASS; Strategy Tester R-03 BUY runtime evidence received and CTO-reviewed. Core BUY request/event/History/Position/same-run recovery path PASS for this run. TRUE_RESTART_RECOVERY remains NOT_TESTED; environment evidence and FileFlush durability limitations remain documented. D-06-02 is not declared fully complete until the outstanding restart acceptance is dispositioned by Product Owner.**
+สถานะ: **CLOSED — Minimal Probe scope accepted by Product Owner on 2026-11-28. MetaEditor compile reports 0 errors / 0 warnings; Product Owner compile verification PASS; Strategy Tester R-03 BUY runtime evidence received and CTO-reviewed. Core BUY request/event/History/Position/same-run recovery path PASS for this run. TRUE_RESTART_RECOVERY remains NOT_TESTED and is explicitly transferred to follow-up D-06-06 — True EA/Terminal Restart Recovery Proof (https://trello.com/c/2ga9zY56/25-d-06-06-true-ea-terminal-restart-recovery-proof). This closure does not claim true restart, SELL symmetry, or partial-fill behavior passed.**
 
 ---
 
@@ -25,7 +25,7 @@ Implementer: **ChatGPT (CTO acting as Implementer after explicit Product Owner i
 
 ไม่แก้ Production EA / Production `.mqh`, SPEC, TEST_PLAN, Handoff, Skill หรือไฟล์ทดสอบ Grid อื่น
 
-ไม่มีการรัน Strategy Tester, ไม่มี Trade Request, ไม่มี Close/Modify Request, ไม่มีการเปลี่ยน Product/Trading Contract, ไม่มี Git staging operation, Commit หรือ Push
+Strategy Tester R-03 was executed by the Product Owner after explicit approval and sent exactly one BUY Entry Request within Tester. The Probe issued no Close/Modify Request; MT5 automatically closed the remaining Position at end-of-test. No Production EA / Production `.mqh` changes, no Product/Trading Contract changes, no Git staging operation, Commit or Push.
 
 ## 2. Implementation Summary
 
@@ -182,7 +182,7 @@ Implementer: **ChatGPT (CTO acting as Implementer after explicit Product Owner i
 ### CTO assessment
 
 - **R-03 core BUY path: PASS** — one request, persisted request state and order ticket, exact Order→Deal evidence, live Position correlation, callbacks and same-run recovery all matched.
-- **D-06-02 full acceptance: OPEN / NOT FULLY CLOSED** — true restart remains NOT_TESTED as required by SPEC/TEST_PLAN; Product Owner must decide whether to track it as a separate follow-up (e.g. WP-06E / D-06-06) or require further evidence before closing the parent acceptance.
+- **D-06-02 Minimal Probe scope: CLOSED / ACCEPTED** — Product Owner approved closing the minimal diagnostic probe after R-03 CTO review. The remaining true-restart proof is not silently waived or marked PASS; it is transferred to separate planning card **D-06-06 — True EA/Terminal Restart Recovery Proof** (https://trello.com/c/2ga9zY56/25-d-06-06-true-ea-terminal-restart-recovery-proof), linked to WP-06E. D-06-06 is Product Backlog / design-only; implementation and trade execution are not authorized.
 
 ## 9. Git State and Change Preservation
 
@@ -213,7 +213,7 @@ AM Experts/TGK/Tests/Grids/test_grid_trade_event_probe.mq5
 
 1. R-03 BUY core path has passed CTO review based on the supplied Strategy Tester Journal.
 2. Record the missing Environment evidence if available from the Strategy Tester configuration/account properties: exact `ACCOUNT_MARGIN_MODE` and actual Order Filling Type. Do not infer these from `Fill=3` alone.
-3. `TRUE_RESTART_RECOVERY=NOT_TESTED` remains open. Same-run recovery simulation is not a true EA/Terminal restart. Product Owner decision is required on whether to create/retain a separate true-restart follow-up (e.g. WP-06E / D-06-06) and close only the minimal probe scope, or keep D-06-02 full acceptance open.
+3. `TRUE_RESTART_RECOVERY=NOT_TESTED` remains explicitly open and is now tracked separately by D-06-06 — True EA/Terminal Restart Recovery Proof: https://trello.com/c/2ga9zY56/25-d-06-06-true-ea-terminal-restart-recovery-proof. D-06-02 is closed only for its Minimal Probe scope; same-run recovery is not a true EA/Terminal restart. D-06-06 remains design/planning only pending separate SPEC/TEST_PLAN and Product Owner authorization.
 4. `FileFlush()` cannot expose a verifiable success return or OS-level crash durability through the MQL5 API; this is a documented platform limitation, not a proven durability guarantee.
 5. SELL, partial-fill/multi-Deal behavior and true restart were not exercised in R-03. Do not claim those scenarios passed. Any additional Tester request requires a separately scoped run and a new unique Session ID; no automatic retry is permitted.
 6. No Production EA changes, no Commit/Push, and no Git staging operation were performed as part of the R-03 review.
