@@ -63,5 +63,10 @@ Product Owner approved D-06-03 (typed Initial Entry Intent + atomic Initial Boot
 - [WP-06D SPEC](WP-06D/SPEC.md) · [TEST_PLAN](WP-06D/TEST_PLAN.md)
 - [WP-06E SPEC](WP-06E/SPEC.md) · [TEST_PLAN](WP-06E/TEST_PLAN.md)
 
+## D-06-02 Minimal Strategy Tester Probe
+Product Owner authorized preparation of a separate diagnostic Probe on 2026-11-28. Its source must remain isolated from Production Grid components. See [Probe SPEC](D-06-02_PROBE/SPEC.md), [Probe TEST_PLAN](D-06-02_PROBE/TEST_PLAN.md), and [Trello card #24](https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe). Probe execution that sends one Tester-only Market Request requires a separate explicit Product Owner approval after Compile.
+
+The Probe can exercise persisted-ticket recovery simulation within one Tester run, but this is not a true EA/Terminal restart. Official MQL5 documentation states chart operations including `ChartSetSymbolPeriod()` have no effect in Strategy Tester; therefore do not claim true restart recovery unless an actual supported restart path is demonstrated.
+
 ## Completion Rule
 Each WP requires approved SPEC/TEST_PLAN, a fresh pre-change no-trade Grid Regression baseline, explicit Product Owner implementation authorization, Implementer report, user MetaEditor/MT5 verification, CTO review, and documentation consistency checks. Completion of WP-06E means the EA is ready for the agreed Strategy Tester validation milestone; it does not mean profitable or Demo-ready.

@@ -88,7 +88,7 @@ At minimum log instance, symbol, magic, state, config epoch, request ID, order/d
 ## 8. CTO Design Review Addendum
 
 ### Deal Evidence Intake
-OnTradeTransaction is a short notification path: enqueue relevant 64-bit Deal Tickets, then process History evidence serially outside the callback. Correlate only through exact DEAL_ORDER == persisted Order Ticket. CTrade ResultDeal is a hint, not the sole source. A bounded exact-order History scan is required for missed callbacks, queue overflow and restart recovery. Persist unique Deal Associations before WP-05C. The selected Tester build must prove callback/History/restart semantics before D-06-02 closes.
+OnTradeTransaction is a short notification path: enqueue relevant 64-bit Deal Tickets, then process History evidence serially outside the callback. Correlate only through exact DEAL_ORDER == persisted Order Ticket. CTrade ResultDeal is a hint, not the sole source. A bounded exact-order History scan is required for missed callbacks, queue overflow and recovery of a known unresolved Order Ticket. Persist unique Deal Associations before WP-05C. Product Owner authorized preparation of the separate [D-06-02 Minimal Strategy Tester Probe](D-06-02_PROBE/SPEC.md) and [TEST_PLAN](D-06-02_PROBE/TEST_PLAN.md); actual Tester execution requires a separate explicit approval. The Probe's same-run cold-state recovery simulation is not a true EA/Terminal restart. If the selected Tester build cannot demonstrate a genuine restart path, record true restart recovery as NOT_TESTED and keep that acceptance open.
 
 ### Deal Evidence Persistence
 The current Reducer Deal projection stores Request ID, Deal Ticket, Position Identifier and volume only, and rejects any repeated Deal Ticket. It cannot independently reconstruct a volume-weighted Anchor after restart or distinguish an identical replay from conflicting evidence. WP-06B must version the Deal Association payload/projection to retain exact Order Ticket, Symbol, Magic, Deal Entry type, Position Identifier, volume and Deal price. Identical duplicate evidence is a no-op; conflicting evidence for the same Deal Ticket is Recovery Error.
@@ -100,21 +100,20 @@ Fresh initial entry is a distinct pre-configuration flow. Persist Initial Entry 
 Canonical Mapping Reducer Snapshot + Journal owns trading configuration and geometry. Extend it to include Fixed Lot. Lifecycle Persistence owns orchestration/reset metadata; overlapping legacy values are mirrors validated against canonical projection. Any mismatch fails closed. Explicit migration is required for old snapshots lacking canonical Fixed Lot.
 
 ## 9. Approved Design Decisions and Remaining Proof
-- D-06-03 Initial Entry Intent / atomic Initial Bootstrap schema amendment: Product Owner approved 2026-11-27. Implement only as specified in WP-06C; implementation is not authorized yet.
-- D-06-04 canonical Reducer configuration authority / Fixed Lot persistence / legacy migration: Product Owner approved 2026-11-27. Implement only as specified in WP-06A; implementation is not authorized yet.
 
-Remaining proof / decisions:
-1. D-06-02: selected MT5 Strategy Tester build must prove OnTradeTransaction callback, History selection, exact Order-to-Deal enumeration and restart fallback before production event-bridge implementation.
-2. D-06-05: verify exact Tester Hedging execution contract; multi-Identifier evidence stops the flow.
-3. D-06-06: define realistic restart/recovery coverage and its limitations.
-1. D-06-02: selected MT5 Strategy Tester build must prove OnTradeTransaction callback, History selection, exact Order-to-Deal enumeration and restart fallback.
-2. D-06-03: approve Initial Entry Intent / atomic Initial Bootstrap schema amendment and fill-price rule.
-3. D-06-04: PO confirmation of canonical authority split and Fixed Lot schema extension.
-4. D-06-05: verify exact Tester Hedging execution contract; multi-Identifier evidence stops the flow.
-5. D-06-06: define realistic restart/recovery coverage and its limitations.
-1. Verify TP recycle behavior against the reason-free Full Close state contract using the already-approved per-Position broker-side TP rule (BUY fill + one GridStep; SELL fill − one GridStep).
-2. Deal correlation: OnTradeTransaction primary with bounded History fallback vs serialized History polling; validate actual Tester callback ordering.
-3. Initial Anchor atomic bootstrap: define one durable transition that commits Anchor configuration + mapping without violating existing Reducer schema/API.
-4. Lifecycle snapshot vs canonical mapping snapshot: define one authoritative source for Mode/Step/FixedLot/Bounds/Anchor/Level geometry and config epoch.
-5. Tester account mode: user target is MT5 Hedging; confirm exact Tester setting and symbol execution configuration before acceptance.
-6. Restart simulation in Strategy Tester: define whether restart is tested through terminal/EA restart or deterministic restore harness; Tester single-pass limitations must be explicit.
+### Product Owner-approved design contracts
+- D-06-01: per-Position broker-side TP contract is resolved; WP-06D verifies the reason-free Full Close state contract preserves retouch-before-reentry behavior.
+- D-06-03: typed Initial Entry Intent and one atomic Initial Bootstrap journal record, including actual fill-derived Anchor, canonical config/Fixed Lot, Config Epoch, geometry, Anchor Position Mapping and ACTIVE; approved 2026-11-27. Design approval only; implementation is not authorized.
+- D-06-04: canonical Mapping Reducer Snapshot/Journal is the sole trading configuration/geometry authority and persists Fixed Lot; Lifecycle owns orchestration metadata and duplicate mirrors fail closed; approved 2026-11-27. Design approval only; implementation is not authorized.
+- D-06-02: Product Owner authorized preparation of the separate diagnostic Probe on 2026-11-28. Probe SPEC/TEST_PLAN are prepared; Trello card #24 is in Ready. Source implementation awaits user-selected Implementer and explicit implementation authorization. Running the Probe and sending its one Tester-only Market Request requires separate explicit approval after Compile.
+
+### Open proof / decisions
+1. D-06-02: capture real Tester callback sequence, immediate/deferred History behavior, exact Order-to-Deal enumeration, Deal property availability, and partial-fill behavior where naturally supported. Same-run cold-state recovery simulation is not true EA/Terminal restart; record TRUE_RESTART_RECOVERY=NOT_TESTED unless a genuine restart path is demonstrated.
+2. D-06-05: verify exact Tester Hedging execution contract (account mode, execution/filling mode, symbol volume constraints, tick model, Order/Deal/Position evidence). Multiple Position Identifiers for one Order stops the current one-Request-to-one-Position flow and triggers architecture review.
+3. D-06-06: define and prove realistic restart/recovery coverage within an actually supported test environment; do not treat object reinitialization or same-process reload as a real restart.
+
+### Current execution boundaries
+- WP-06A/B/C Production implementation is not authorized by the Probe preparation approval.
+- Unit Tests remain no-trade. Only the separately approved Probe may send its single Market Request, and only inside Strategy Tester.
+- No Demo/Live execution, no close/modify request, no commit/push without explicit Product Owner authorization.
+- User selects Codex or Freebuff as Implementer. Fresh no-trade Grid Regression baseline PASS and explicit implementation authorization are required before source changes.

@@ -74,3 +74,15 @@ Verify supported Tester account mode, execution mode, symbol volume constraints,
 
 ## Open Decision D-06-06 — Restart Coverage
 Define realistic Tester restart/recovery coverage separately from normal single-pass backtest. Do not claim restart resilience from a test that only reinitializes in-memory objects.
+
+## D-06-02 Probe Authorization / Scope Update (2026-11-28)
+Product Owner authorized preparation of a minimal Strategy Tester Probe. Probe design is documented in:
+- [Probe SPEC](D-06-02_PROBE/SPEC.md)
+- [Probe TEST_PLAN](D-06-02_PROBE/TEST_PLAN.md)
+- [Trello card #24](https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe)
+
+The Probe is a separate diagnostic EA, not Production WP-06B code. It may send at most one Market Request per unique Session, only when running in Strategy Tester with an explicit enable input and all Hedging/symbol/volume/Magic safety gates passing. The default input must not send a request. Actual Tester execution requires a separate explicit Product Owner approval after Source Compile.
+
+Important limitation found during official MQL5 documentation review: chart operations, including `ChartSetSymbolPeriod()`, have no effect in Strategy Tester. Therefore the Probe cannot use chart switching to claim a genuine EA reinitialization/restart. It will test a cold-state recovery simulation by clearing volatile callback state and reloading the persisted decimal-string Order Ticket within the same Tester run. This is not a true EA/Terminal restart. If a genuine restart path cannot be demonstrated, true restart recovery remains NOT_TESTED and D-06-02/D-06-06 must not be marked fully proven on that basis.
+
+Status: Probe scope authorized for preparation; Probe implementation/execution gates remain separate.

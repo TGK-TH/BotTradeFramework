@@ -3,6 +3,8 @@
 สถานะ: CTO Design — Tester proof pending; no implementation authorization
 
 ## Preconditions
+- D-06-02 Probe evidence reviewed and approved by Product Owner; see [Probe TEST_PLAN](../D-06-02_PROBE/TEST_PLAN.md).
+- Any true restart claim is backed by an actual EA/Terminal restart test; same-run recovery simulation is not equivalent.
 - D-06-02 approved with observed Strategy Tester evidence.
 - WP-06A integration seam defined.
 - No-trade Regression baseline recorded.

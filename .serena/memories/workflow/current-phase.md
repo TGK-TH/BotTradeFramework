@@ -91,5 +91,13 @@ Remaining gate: D-06-02 is not proven. Before production WP-06B event bridge imp
 
 Validation after documentation changes: `git diff --check` passed; all WP-06 Markdown relative links resolve; WP-06A/B/C test IDs have no duplicates (22/28/30 cases after latest updates); no `.mq5` or `.mqh` source files changed. No compile/tests, commit or push. All WP-06 Trello cards remain planning only; no implementation authorized.
 
-## Exact next step
-Ask Product Owner whether to authorize a separate minimal Strategy Tester probe for D-06-02 (this is distinct from production implementation and may send a test Trade Request only inside the approved Tester). Until explicitly authorized, do not create/run a trade probe, implement code, or move cards into implementation execution. After probe evidence is approved, close D-06-02 and sequence WP-06A → WP-06B → WP-06C one implementation card at a time, with fresh no-trade Grid Regression PASS and explicit implementation authorization before coding.
+## D-06-02 Minimal Strategy Tester Probe — PO authorization (2026-11-28)
+Product Owner authorized preparation of a separate minimal Strategy Tester Probe. The following design/handoff files are prepared:
+- `Docs/EAs/Grid/WorkPackages/WP-06/D-06-02_PROBE/SPEC.md`
+- `Docs/EAs/Grid/WorkPackages/WP-06/D-06-02_PROBE/TEST_PLAN.md`
+
+Trello card #24 is in Ready: https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe. The card is diagnostic-only and isolated from Production WP-06B. User chooses Codex or Freebuff; source implementation requires the selected Implementer and explicit implementation authorization. Probe execution and its single Tester-only Market Request require a separate explicit PO approval after Compile. Hard gates: MQL_TESTER true, optimization false, EnableTestTrade default false, Hedging account, validated Symbol/volume/Magic, one request per unique session, no close/modify request, no Demo/Live.
+
+Important Tester limitation: official MQL5 docs state chart operations including `ChartSetSymbolPeriod()` have no effect in Strategy Tester. Probe may test same-run cold-state recovery by clearing volatile callback state and reloading a persisted decimal-string Order Ticket, but this is NOT a true EA/Terminal restart. If no genuine restart path can be demonstrated, record TRUE_RESTART_RECOVERY=NOT_TESTED and keep that acceptance open; do not claim restart proof from an in-memory reinitialization simulation.
+
+Current next step: user selects the Implementer and explicitly authorizes Probe source implementation. Before implementation, user runs and reports a fresh no-trade Grid Regression baseline PASS. After source compile (0 errors, 0 warnings), request separate approval before the Tester run that sends the one Market Request. Review Tester evidence before deciding whether D-06-02 can close; WP-06B Production implementation remains separately gated.
