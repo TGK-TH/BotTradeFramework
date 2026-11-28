@@ -26,9 +26,12 @@
 | E-12 | Mode reset | Close → stable reconcile → apply new mode → wait for new Anchor |
 | E-13 | GridStep reset | Close → stable reconcile → rebuild same Anchor per approved contract |
 | E-14 | Foreign position exists | Remains untouched |
-| E-15 | Restart/restore scenario | Durable state restored; gate closed until stable reconcile |
+| E-15 | Tester-supported state restore only (if available) | Durable state restored; gate closed until stable reconcile; not accepted as proof of true Terminal Process Restart |
 | E-16 | Storage/event/history failure injection where feasible | No unsafe new entry; clear Recovery Required |
 | E-17 | Repeat identical configuration | Reproducible report and trade records |
+
+## Restart Evidence Boundary
+D-06-02 same-run recovery is already accepted for its limited Probe scope. It is not a terminal restart. A genuine EA/Terminal restart proof is tracked separately in D-06-06 and is not a prerequisite that Strategy Tester can claim to satisfy through same-run recovery. Do not expand WP-06E into a second restart-proof project.
 
 ## Reproducibility Record
 - EA source revision / version.

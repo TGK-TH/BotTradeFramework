@@ -14,6 +14,9 @@ Prove the integrated Production Grid V1 EA can execute the approved functional l
 - Record known limitations versus real broker Demo execution.
 - Prepare handoff to the separate Strategy Tester Validation milestone; do not optimize strategy parameters in this WP.
 
+## D-06-02 Dependency Evidence
+D-06-02 Minimal Strategy Tester Probe is CLOSED / Product Owner accepted (2026-11-28). Its R-03 run validates one BUY request, exact Deal-set recovery, Position Identifier correlation, callbacks, and same-run recovery only. It does not establish true EA/Terminal restart recovery, SELL symmetry, partial-fill/multi-Deal behavior, or crash/power-loss durability. True EA/Terminal restart is tracked separately in D-06-06 and must not be inferred from Strategy Tester same-run recovery.
+
 ## Out of Scope
 - Profitability claims or parameter optimization.
 - Multi-Position Architecture implementation.

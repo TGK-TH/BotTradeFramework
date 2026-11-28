@@ -1,6 +1,6 @@
 # WP-06 — Grid V1 Production EA / Strategy Tester Integration
 
-อัปเดต: 2026-11-27
+อัปเดต: 2026-11-28
 สถานะ: CTO Design & Planning — ยังไม่อนุมัติ Implementation
 
 ## เป้าหมาย
@@ -50,7 +50,7 @@ WP-06A ถึง WP-06E เป็น Dependency chain ตามลำดับ �
 ## CTO Design Review Findings (2026-11-27)
 
 Product Owner approved D-06-03 (typed Initial Entry Intent + atomic Initial Bootstrap schema amendment) and D-06-04 (canonical Reducer configuration authority + Fixed Lot persistence/migration) on 2026-11-27. These are design approvals only; implementation remains unauthorized.
-- WP-06B recommended event model: OnTradeTransaction is a short notification/enqueue path; serialized processing resolves exact Deal Ticket and exact DEAL_ORDER against the durable Order Ticket. A bounded exact-order History fallback is required for missed callbacks, queue overflow and restart. Tester trace is still required before D-06-02 closes.
+- WP-06B recommended event model: OnTradeTransaction is a short notification/enqueue path; serialized processing resolves exact Deal Ticket and exact DEAL_ORDER against the durable Order Ticket. A bounded exact-order History fallback is required for missed callbacks, queue overflow and restart. D-06-02 is now closed based on the R-03 Tester trace; true terminal restart remains a separate D-06-06 item.
 - WP-06C requires a distinct Initial Entry Intent and one atomic Initial Bootstrap journal commit. The current normal Entry Pipeline cannot start a fresh Grid because it requires an existing Config Epoch/geometry. This requires a scoped Reducer/Journal schema amendment.
 - WP-06B also requires a versioned Deal evidence projection: current Reducer records omit Deal price and reject all duplicate Deal Tickets, so weighted Anchor recovery and exact duplicate idempotency cannot be achieved by the existing schema unchanged.
 - WP-06A recommended authority split: canonical Mapping Reducer Snapshot/Journal owns trading configuration and geometry; extend it to persist Fixed Lot. Lifecycle Persistence owns orchestration/reset metadata; duplicated legacy values are mirrors and must match or fail closed.
@@ -63,10 +63,12 @@ Product Owner approved D-06-03 (typed Initial Entry Intent + atomic Initial Boot
 - [WP-06D SPEC](WP-06D/SPEC.md) · [TEST_PLAN](WP-06D/TEST_PLAN.md)
 - [WP-06E SPEC](WP-06E/SPEC.md) · [TEST_PLAN](WP-06E/TEST_PLAN.md)
 
-## D-06-02 Minimal Strategy Tester Probe
-Product Owner authorized preparation of a separate diagnostic Probe on 2026-11-28. Its source must remain isolated from Production Grid components. See [Probe SPEC](D-06-02_PROBE/SPEC.md), [Probe TEST_PLAN](D-06-02_PROBE/TEST_PLAN.md), and [Trello card #24](https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe). Probe execution that sends one Tester-only Market Request requires a separate explicit Product Owner approval after Compile.
+## D-06-02 Minimal Strategy Tester Probe — CLOSED
+Product Owner accepted D-06-02 on 2026-11-28 after R-03 runtime evidence and CTO review. The minimal BUY path passed for one Tester request: persisted request/order evidence, exact History Deal set, Position Identifier correlation, callback capture, and same-run recovery. See [Probe SPEC](D-06-02_PROBE/SPEC.md), [TEST_PLAN](D-06-02_PROBE/TEST_PLAN.md), [IMPLEMENTATION_REPORT](D-06-02_PROBE/IMPLEMENTATION_REPORT.md), and [Trello card #24](https://trello.com/c/7S8Pw7nE/24-d-06-02-minimal-strategy-tester-probe).
 
-The Probe can exercise persisted-ticket recovery simulation within one Tester run, but this is not a true EA/Terminal restart. Official MQL5 documentation states chart operations including `ChartSetSymbolPeriod()` have no effect in Strategy Tester; therefore do not claim true restart recovery unless an actual supported restart path is demonstrated.
+**Limitations retained:** `TRUE_RESTART_RECOVERY=NOT_TESTED`; same-run recovery is not a true EA/Terminal restart. R-03 exercised BUY only and one Deal; it does not prove SELL symmetry or partial-fill/multi-Deal behavior. `FileFlush()` invocation does not prove OS/hardware crash durability. These gaps are not silently treated as PASS.
+
+True EA/Terminal Restart Recovery is tracked separately by [D-06-06 — Trello card #25](https://trello.com/c/2ga9zY56/25-d-06-06-true-ea-terminal-restart-recovery-proof). D-06-06 is currently design/planning only; implementation and any Trade Request remain unauthorized. Keep its validation focused on the minimum essential restart and process-crash recovery evidence needed for Grid V1. Strategy Tester same-run recovery must not be used as a substitute for a genuine terminal process restart.
 
 ## Completion Rule
 Each WP requires approved SPEC/TEST_PLAN, a fresh pre-change no-trade Grid Regression baseline, explicit Product Owner implementation authorization, Implementer report, user MetaEditor/MT5 verification, CTO review, and documentation consistency checks. Completion of WP-06E means the EA is ready for the agreed Strategy Tester validation milestone; it does not mean profitable or Demo-ready.
